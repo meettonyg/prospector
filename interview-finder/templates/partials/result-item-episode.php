@@ -5,6 +5,7 @@
  * @package Interview_Finder
  * @var array $item Result item
  * @var int $index Item index
+ * @var array $ranking_details Optional ranking details array
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -15,10 +16,22 @@ $name = $item['name'] ?? '';
 $description = $item['description'] ?? '';
 $date_published = $item['datePublished'] ?? '';
 $audio_url = $item['audioUrl'] ?? '';
+$duration = $item['duration'] ?? 0;
 $podcast_series = $item['podcastSeries'] ?? [];
 $podcast_name = $podcast_series['name'] ?? '';
 $podcast_image = $podcast_series['imageUrl'] ?? '';
 $item_id = $item['uuid'] ?? $index;
+
+// Get ranking score if available
+$ranking_score = null;
+if ( ! empty( $ranking_details ) && is_array( $ranking_details ) ) {
+    foreach ( $ranking_details as $ranking ) {
+        if ( ( $ranking['uuid'] ?? '' ) === $item_id ) {
+            $ranking_score = $ranking['rankingScore'] ?? null;
+            break;
+        }
+    }
+}
 ?>
 <li class="if-result-item if-result-item--episode" data-index="<?php echo esc_attr( $index ); ?>">
     <div class="if-result-item__checkbox">
@@ -82,5 +95,20 @@ $item_id = $item['uuid'] ?? $index;
                 <?php echo esc_html( wp_trim_words( wp_strip_all_tags( $description ), 30 ) ); ?>
             </p>
         <?php endif; ?>
+
+        <div class="if-result-item__meta">
+            <?php if ( $duration ) : ?>
+                <span class="if-result-item__duration" title="<?php esc_attr_e( 'Duration', 'interview-finder' ); ?>">
+                    <?php echo esc_html( gmdate( 'H:i:s', $duration ) ); ?>
+                </span>
+            <?php endif; ?>
+
+            <?php if ( null !== $ranking_score ) : ?>
+                <span class="if-result-item__ranking" title="<?php esc_attr_e( 'Relevance Score', 'interview-finder' ); ?>">
+                    <span class="if-ranking-label"><?php esc_html_e( 'Score:', 'interview-finder' ); ?></span>
+                    <span class="if-ranking-value"><?php echo esc_html( number_format( $ranking_score, 1 ) ); ?></span>
+                </span>
+            <?php endif; ?>
+        </div>
     </div>
 </li>

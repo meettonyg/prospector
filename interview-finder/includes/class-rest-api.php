@@ -371,6 +371,20 @@ class Interview_Finder_REST_API {
                 'default'  => 'BEST_MATCH',
                 'enum'     => [ 'BEST_MATCH', 'LATEST', 'OLDEST' ],
             ],
+            'sort_by' => [
+                'required'    => false,
+                'type'        => 'string',
+                'default'     => 'EXACTNESS',
+                'enum'        => [ 'EXACTNESS', 'POPULARITY' ],
+                'description' => __( 'Sort by EXACTNESS (best match) or POPULARITY (for Taddy API)', 'interview-finder' ),
+            ],
+            'match_by' => [
+                'required'    => false,
+                'type'        => 'string',
+                'default'     => 'MOST_TERMS',
+                'enum'        => [ 'MOST_TERMS', 'ALL_TERMS', 'EXACT_PHRASE' ],
+                'description' => __( 'Match by MOST_TERMS, ALL_TERMS, or EXACT_PHRASE (for Taddy API)', 'interview-finder' ),
+            ],
         ];
     }
 

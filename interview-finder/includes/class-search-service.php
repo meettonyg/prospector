@@ -376,6 +376,16 @@ class Interview_Finder_Search_Result {
         if ( isset( $this->data['feeds'] ) ) {
             return count( $this->data['feeds'] );
         }
+
+        // Taddy - new API format (search)
+        if ( isset( $this->data['data']['search']['podcastEpisodes'] ) ) {
+            return count( $this->data['data']['search']['podcastEpisodes'] );
+        }
+        if ( isset( $this->data['data']['search']['podcastSeries'] ) ) {
+            return count( $this->data['data']['search']['podcastSeries'] );
+        }
+
+        // Taddy - legacy API format (searchForTerm)
         if ( isset( $this->data['data']['searchForTerm']['podcastEpisodes'] ) ) {
             return count( $this->data['data']['searchForTerm']['podcastEpisodes'] );
         }
@@ -384,5 +394,39 @@ class Interview_Finder_Search_Result {
         }
 
         return 0;
+    }
+
+    /**
+     * Get ranking details from Taddy API response.
+     *
+     * @return array
+     */
+    public function get_ranking_details(): array {
+        if ( ! $this->data ) {
+            return [];
+        }
+
+        if ( isset( $this->data['data']['search']['rankingDetails'] ) ) {
+            return $this->data['data']['search']['rankingDetails'];
+        }
+
+        return [];
+    }
+
+    /**
+     * Get response details (pagination info) from Taddy API response.
+     *
+     * @return array
+     */
+    public function get_response_details(): array {
+        if ( ! $this->data ) {
+            return [];
+        }
+
+        if ( isset( $this->data['data']['search']['responseDetails'] ) ) {
+            return $this->data['data']['search']['responseDetails'];
+        }
+
+        return [];
     }
 }

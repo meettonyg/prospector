@@ -32,11 +32,25 @@ class Interview_Finder_Validator {
     private const VALID_SEARCH_TYPES = [ 'byperson', 'bytitle', 'byadvancedpodcast', 'byadvancedepisode' ];
 
     /**
-     * Valid sort orders.
+     * Valid sort orders (legacy).
      *
      * @var array
      */
     private const VALID_SORT_ORDERS = [ 'BEST_MATCH', 'LATEST', 'OLDEST' ];
+
+    /**
+     * Valid sort by options (Taddy API).
+     *
+     * @var array
+     */
+    private const VALID_SORT_BY = [ 'EXACTNESS', 'POPULARITY' ];
+
+    /**
+     * Valid match by options (Taddy API).
+     *
+     * @var array
+     */
+    private const VALID_MATCH_BY = [ 'MOST_TERMS', 'ALL_TERMS', 'EXACT_PHRASE' ];
 
     /**
      * Valid languages.
@@ -199,7 +213,7 @@ class Interview_Finder_Validator {
     }
 
     /**
-     * Validate sort order.
+     * Validate sort order (legacy).
      *
      * @param string $order Sort order.
      * @return string Valid sort order.
@@ -207,6 +221,28 @@ class Interview_Finder_Validator {
     public function validate_sort_order( string $order ): string {
         $order = strtoupper( trim( $order ) );
         return in_array( $order, self::VALID_SORT_ORDERS, true ) ? $order : 'BEST_MATCH';
+    }
+
+    /**
+     * Validate sort by option (Taddy API).
+     *
+     * @param string $sort_by Sort by value.
+     * @return string Valid sort by option.
+     */
+    public function validate_sort_by( string $sort_by ): string {
+        $sort_by = strtoupper( trim( $sort_by ) );
+        return in_array( $sort_by, self::VALID_SORT_BY, true ) ? $sort_by : 'EXACTNESS';
+    }
+
+    /**
+     * Validate match by option (Taddy API).
+     *
+     * @param string $match_by Match by value.
+     * @return string Valid match by option.
+     */
+    public function validate_match_by( string $match_by ): string {
+        $match_by = strtoupper( trim( $match_by ) );
+        return in_array( $match_by, self::VALID_MATCH_BY, true ) ? $match_by : 'MOST_TERMS';
     }
 
     /**
@@ -255,6 +291,10 @@ class Interview_Finder_Validator {
         // Sort and safe mode
         $result->set( 'sort_order', $this->validate_sort_order( $input['sort_order'] ?? 'BEST_MATCH' ) );
         $result->set( 'is_safe_mode', $this->validate_boolean( $input['isSafeMode'] ?? false ) );
+
+        // Taddy API specific options
+        $result->set( 'sort_by', $this->validate_sort_by( $input['sort_by'] ?? 'EXACTNESS' ) );
+        $result->set( 'match_by', $this->validate_match_by( $input['match_by'] ?? 'MOST_TERMS' ) );
 
         return $result;
     }

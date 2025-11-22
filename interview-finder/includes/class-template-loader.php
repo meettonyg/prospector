@@ -140,11 +140,17 @@ class Interview_Finder_Template_Loader {
             ], true );
         }
 
+        // Extract ranking and response details for Taddy API results
+        $ranking_details = $this->extract_ranking_details( $results );
+        $response_details = $this->extract_response_details( $results );
+
         return $this->render( 'results-' . $search_type, [
-            'items'       => $items,
-            'search_type' => $search_type,
-            'options'     => $options,
-            'loader'      => $this,
+            'items'            => $items,
+            'search_type'      => $search_type,
+            'options'          => $options,
+            'loader'           => $this,
+            'ranking_details'  => $ranking_details,
+            'response_details' => $response_details,
         ], true );
     }
 
@@ -164,12 +170,50 @@ class Interview_Finder_Template_Loader {
             return $results['feeds'];
         }
 
-        // Taddy responses
+        // Taddy responses - new API format (search)
+        if ( isset( $results['data']['search']['podcastEpisodes'] ) ) {
+            return $results['data']['search']['podcastEpisodes'];
+        }
+        if ( isset( $results['data']['search']['podcastSeries'] ) ) {
+            return $results['data']['search']['podcastSeries'];
+        }
+
+        // Taddy responses - legacy API format (searchForTerm)
         if ( isset( $results['data']['searchForTerm']['podcastEpisodes'] ) ) {
             return $results['data']['searchForTerm']['podcastEpisodes'];
         }
         if ( isset( $results['data']['searchForTerm']['podcastSeries'] ) ) {
             return $results['data']['searchForTerm']['podcastSeries'];
+        }
+
+        return [];
+    }
+
+    /**
+     * Extract ranking details from Taddy API response.
+     *
+     * @param array $results Raw results.
+     * @return array
+     */
+    private function extract_ranking_details( array $results ): array {
+        // New API format
+        if ( isset( $results['data']['search']['rankingDetails'] ) ) {
+            return $results['data']['search']['rankingDetails'];
+        }
+
+        return [];
+    }
+
+    /**
+     * Extract response details from Taddy API response.
+     *
+     * @param array $results Raw results.
+     * @return array
+     */
+    private function extract_response_details( array $results ): array {
+        // New API format
+        if ( isset( $results['data']['search']['responseDetails'] ) ) {
+            return $results['data']['search']['responseDetails'];
         }
 
         return [];
