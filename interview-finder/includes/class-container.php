@@ -136,6 +136,23 @@ class Interview_Finder_Container {
             );
         } );
 
+        // YouTube API
+        $this->singleton( 'api.youtube', function ( $c ) {
+            return new Interview_Finder_API_YouTube(
+                $c->get( 'settings' ),
+                $c->get( 'logger' ),
+                $c->get( 'rate_limiter' )
+            );
+        } );
+
+        // YouTube Channel Repository (for deduplication)
+        $this->singleton( 'youtube_channel', function ( $c ) {
+            return new Interview_Finder_YouTube_Channel_Repository(
+                $c->get( 'settings' ),
+                $c->get( 'logger' )
+            );
+        } );
+
         // Renderer
         $this->singleton( 'renderer', function ( $c ) {
             return new Interview_Finder_Renderer( $c->get( 'rss_cache' ) );

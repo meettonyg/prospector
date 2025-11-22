@@ -84,6 +84,10 @@ class Interview_Finder_Settings {
         // Location Features
         'location_features_enabled' => false,
         'location_table_name'       => 'pit_podcasts', // Custom table name without prefix
+
+        // YouTube Features
+        'youtube_features_enabled'  => false,
+        'youtube_api_key'           => '',
     ];
 
     /**
@@ -316,6 +320,17 @@ class Interview_Finder_Settings {
 
         $this->add_settings_field( 'location_features_enabled', __( 'Enable Location Features', 'interview-finder' ), 'location_section', 'checkbox' );
         $this->add_settings_field( 'location_table_name', __( 'Location Table Name', 'interview-finder' ), 'location_section', 'text' );
+
+        // YouTube Features Section
+        add_settings_section(
+            'youtube_section',
+            __( 'YouTube Features', 'interview-finder' ),
+            [ $this, 'render_youtube_section_description' ],
+            self::PAGE_SLUG
+        );
+
+        $this->add_settings_field( 'youtube_features_enabled', __( 'Enable YouTube Search', 'interview-finder' ), 'youtube_section', 'checkbox' );
+        $this->add_settings_field( 'youtube_api_key', __( 'YouTube API Key', 'interview-finder' ), 'youtube_section', 'password' );
     }
 
     /**
@@ -411,6 +426,17 @@ class Interview_Finder_Settings {
     }
 
     /**
+     * Render YouTube section description.
+     *
+     * @return void
+     */
+    public function render_youtube_section_description(): void {
+        echo '<p>' . esc_html__( 'Configure YouTube video search. Requires a YouTube Data API v3 key from Google Cloud Console.', 'interview-finder' ) . '</p>';
+        echo '<p><a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener">' . esc_html__( 'Get YouTube API Key', 'interview-finder' ) . '</a></p>';
+        echo '<p class="description">' . esc_html__( 'Free quota: ~100 searches/day. Request increase in Google Cloud Console for more.', 'interview-finder' ) . '</p>';
+    }
+
+    /**
      * Render a settings field.
      *
      * @param array $args Field arguments.
@@ -503,6 +529,7 @@ class Interview_Finder_Settings {
         // Boolean fields
         $sanitized['debug_logging_enabled'] = ! empty( $input['debug_logging_enabled'] );
         $sanitized['location_features_enabled'] = ! empty( $input['location_features_enabled'] );
+        $sanitized['youtube_features_enabled'] = ! empty( $input['youtube_features_enabled'] );
 
         // Select fields
         $valid_log_levels = [ 'error', 'warning', 'info', 'debug' ];
@@ -514,6 +541,11 @@ class Interview_Finder_Settings {
         $sanitized['location_table_name'] = isset( $input['location_table_name'] )
             ? preg_replace( '/[^a-zA-Z0-9_]/', '', $input['location_table_name'] )
             : 'pit_podcasts';
+
+        // YouTube API key
+        $sanitized['youtube_api_key'] = isset( $input['youtube_api_key'] )
+            ? sanitize_text_field( $input['youtube_api_key'] )
+            : '';
 
         return $sanitized;
     }

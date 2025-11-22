@@ -53,6 +53,20 @@ class Interview_Finder_Search_Service {
     private ?Interview_Finder_Logger $logger;
 
     /**
+     * YouTube API.
+     *
+     * @var Interview_Finder_API_YouTube|null
+     */
+    private ?Interview_Finder_API_YouTube $youtube_api = null;
+
+    /**
+     * YouTube Channel Repository (for deduplication).
+     *
+     * @var Interview_Finder_YouTube_Channel_Repository|null
+     */
+    private ?Interview_Finder_YouTube_Channel_Repository $youtube_channel_repo = null;
+
+    /**
      * Constructor.
      *
      * @param Interview_Finder_API_PodcastIndex $podcastindex_api PodcastIndex API.
@@ -73,6 +87,22 @@ class Interview_Finder_Search_Service {
         $this->cache = $cache;
         $this->membership = $membership;
         $this->logger = $logger;
+
+        // Initialize YouTube API if available
+        if ( class_exists( 'Interview_Finder_API_YouTube' ) ) {
+            $container = Interview_Finder_Container::get_instance();
+            if ( $container->has( 'api.youtube' ) ) {
+                $this->youtube_api = $container->get( 'api.youtube' );
+            }
+        }
+
+        // Initialize YouTube Channel Repository for deduplication
+        if ( class_exists( 'Interview_Finder_YouTube_Channel_Repository' ) ) {
+            $container = Interview_Finder_Container::get_instance();
+            if ( $container->has( 'youtube_channel' ) ) {
+                $this->youtube_channel_repo = $container->get( 'youtube_channel' );
+            }
+        }
     }
 
     /**
@@ -235,6 +265,9 @@ class Interview_Finder_Search_Service {
             case 'byadvancedpodcast':
                 return $this->taddy_api->search_podcasts( $params );
 
+            case 'byyoutube':
+                return $this->search_youtube( $params );
+
             case 'bytitle':
                 return $this->podcastindex_api->search_by_term(
                     $params['search_term'],
@@ -248,6 +281,38 @@ class Interview_Finder_Search_Service {
                     $params['results_per_page'] ?? 10
                 );
         }
+    }
+
+    /**
+     * Perform YouTube search.
+     *
+     * @param array $params Search parameters.
+     * @return array|WP_Error
+     */
+    private function search_youtube( array $params ) {
+        if ( ! $this->youtube_api ) {
+            return new WP_Error( 'youtube_unavailable', __( 'YouTube API is not available.', 'interview-finder' ) );
+        }
+
+        if ( ! $this->youtube_api->is_enabled() ) {
+            return new WP_Error( 'youtube_disabled', __( 'YouTube search is not enabled.', 'interview-finder' ) );
+        }
+
+        $result = $this->youtube_api->search_videos( $params );
+
+        if ( ! $result['success'] ) {
+            return new WP_Error( 'youtube_error', $result['error'] ?? __( 'YouTube search failed.', 'interview-finder' ) );
+        }
+
+        // Apply channel deduplication if available
+        if ( $this->youtube_channel_repo && ! empty( $result['data']['items'] ) ) {
+            $result['data']['items'] = $this->youtube_channel_repo->mark_duplicates( $result['data']['items'] );
+            $result['data']['deduplication_available'] = $this->youtube_channel_repo->is_available();
+        } else {
+            $result['data']['deduplication_available'] = false;
+        }
+
+        return $result;
     }
 
     /**
@@ -375,6 +440,11 @@ class Interview_Finder_Search_Result {
         }
         if ( isset( $this->data['feeds'] ) ) {
             return count( $this->data['feeds'] );
+        }
+
+        // YouTube format
+        if ( isset( $this->data['data']['items'] ) ) {
+            return count( $this->data['data']['items'] );
         }
 
         // Taddy - new API format (search)

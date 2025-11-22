@@ -386,7 +386,7 @@ class Interview_Finder_REST_API {
                 'required' => false,
                 'type'     => 'string',
                 'default'  => 'byperson',
-                'enum'     => [ 'byperson', 'bytitle', 'byadvancedpodcast', 'byadvancedepisode' ],
+                'enum'     => [ 'byperson', 'bytitle', 'byadvancedpodcast', 'byadvancedepisode', 'byyoutube' ],
             ],
             'page' => [
                 'required' => false,

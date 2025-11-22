@@ -29,7 +29,7 @@ class Interview_Finder_Validator {
      *
      * @var array
      */
-    private const VALID_SEARCH_TYPES = [ 'byperson', 'bytitle', 'byadvancedpodcast', 'byadvancedepisode' ];
+    private const VALID_SEARCH_TYPES = [ 'byperson', 'bytitle', 'byadvancedpodcast', 'byadvancedepisode', 'byyoutube' ];
 
     /**
      * Valid sort orders (legacy).

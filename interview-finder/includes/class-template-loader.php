@@ -174,6 +174,11 @@ class Interview_Finder_Template_Loader {
             return $results['feeds'];
         }
 
+        // YouTube responses
+        if ( isset( $results['data']['items'] ) ) {
+            return $results['data']['items'];
+        }
+
         // Taddy responses - new API format (search)
         if ( isset( $results['data']['search']['podcastEpisodes'] ) ) {
             return $results['data']['search']['podcastEpisodes'];
