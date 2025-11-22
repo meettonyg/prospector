@@ -22,7 +22,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Plugin version.
  */
-define( 'INTERVIEW_FINDER_VERSION', '2.0.0' );
+define( 'INTERVIEW_FINDER_VERSION', '2.1.0' );
+
+/**
+ * Plugin file path.
+ */
+define( 'INTERVIEW_FINDER_FILE', __FILE__ );
 
 /**
  * Plugin directory path.
@@ -88,6 +93,13 @@ final class Interview_Finder {
     }
 
     /**
+     * Container instance.
+     *
+     * @var Interview_Finder_Container|null
+     */
+    public ?Interview_Finder_Container $container = null;
+
+    /**
      * Load required files.
      *
      * @return void
@@ -108,9 +120,107 @@ final class Interview_Finder {
         require_once $includes_dir . 'class-ajax-handler.php';
         require_once $includes_dir . 'class-shortcode.php';
 
+        // New enhanced classes
+        require_once $includes_dir . 'class-container.php';
+        require_once $includes_dir . 'class-validator.php';
+        require_once $includes_dir . 'class-rate-limiter.php';
+        require_once $includes_dir . 'class-search-cache.php';
+        require_once $includes_dir . 'class-search-service.php';
+        require_once $includes_dir . 'class-rest-api.php';
+        require_once $includes_dir . 'class-template-loader.php';
+        require_once $includes_dir . 'class-error-handler.php';
+        require_once $includes_dir . 'class-admin-dashboard.php';
+        require_once $includes_dir . 'class-webhooks.php';
+        require_once $includes_dir . 'class-multisite.php';
+
         // Initialize core instances
         $this->settings = Interview_Finder_Settings::get_instance();
         $this->logger = Interview_Finder_Logger::get_instance();
+
+        // Initialize dependency injection container
+        $this->container = Interview_Finder_Container::get_instance();
+        $this->register_services();
+    }
+
+    /**
+     * Register services in the container.
+     *
+     * @return void
+     */
+    private function register_services(): void {
+        // Register logger
+        $this->container->singleton( Interview_Finder_Logger::class, function() {
+            return $this->logger;
+        } );
+
+        // Register validator
+        $this->container->singleton( Interview_Finder_Validator::class, function() {
+            return Interview_Finder_Validator::get_instance();
+        } );
+
+        // Register rate limiter
+        $this->container->singleton( Interview_Finder_Rate_Limiter::class, function() {
+            return new Interview_Finder_Rate_Limiter( $this->logger );
+        } );
+
+        // Register search cache
+        $this->container->singleton( Interview_Finder_Search_Cache::class, function() {
+            return new Interview_Finder_Search_Cache( $this->logger );
+        } );
+
+        // Register membership
+        $this->container->singleton( Interview_Finder_Membership::class, function() {
+            return Interview_Finder_Membership::get_instance();
+        } );
+
+        // Register PodcastIndex API
+        $this->container->singleton( Interview_Finder_API_PodcastIndex::class, function() {
+            return new Interview_Finder_API_PodcastIndex( $this->logger );
+        } );
+
+        // Register Taddy API
+        $this->container->singleton( Interview_Finder_API_Taddy::class, function() {
+            return new Interview_Finder_API_Taddy( $this->logger );
+        } );
+
+        // Register search service
+        $this->container->singleton( Interview_Finder_Search_Service::class, function() {
+            return new Interview_Finder_Search_Service(
+                $this->container->get( Interview_Finder_API_PodcastIndex::class ),
+                $this->container->get( Interview_Finder_API_Taddy::class ),
+                $this->container->get( Interview_Finder_Search_Cache::class ),
+                $this->container->get( Interview_Finder_Membership::class ),
+                $this->logger
+            );
+        } );
+
+        // Register form handler
+        $this->container->singleton( Interview_Finder_Form_Handler::class, function() {
+            return Interview_Finder_Form_Handler::get_instance();
+        } );
+
+        // Register REST API
+        $this->container->singleton( Interview_Finder_REST_API::class, function() {
+            return new Interview_Finder_REST_API(
+                $this->container->get( Interview_Finder_Search_Service::class ),
+                $this->container->get( Interview_Finder_Form_Handler::class ),
+                $this->container->get( Interview_Finder_Validator::class ),
+                $this->container->get( Interview_Finder_Membership::class ),
+                $this->logger
+            );
+        } );
+
+        // Register template loader
+        $this->container->singleton( Interview_Finder_Template_Loader::class, function() {
+            return new Interview_Finder_Template_Loader();
+        } );
+
+        // Register error handler
+        $this->container->singleton( Interview_Finder_Error_Handler::class, function() {
+            $handler = Interview_Finder_Error_Handler::get_instance();
+            $handler->set_logger( $this->logger );
+            return $handler;
+        } );
     }
 
     /**
@@ -131,6 +241,24 @@ final class Interview_Finder {
 
         // Frontend hooks
         add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_scripts' ] );
+
+        // REST API hooks
+        add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
+
+        // Multisite support
+        if ( Interview_Finder_Multisite::is_multisite() ) {
+            Interview_Finder_Multisite::get_instance()->init();
+        }
+    }
+
+    /**
+     * Register REST API routes.
+     *
+     * @return void
+     */
+    public function register_rest_routes(): void {
+        $rest_api = $this->container->get( Interview_Finder_REST_API::class );
+        $rest_api->register_routes();
     }
 
     /**
@@ -180,6 +308,13 @@ final class Interview_Finder {
         // Initialize shortcode
         $shortcode = Interview_Finder_Shortcode::get_instance();
         $shortcode->init();
+
+        // Initialize admin dashboard widget
+        $dashboard = new Interview_Finder_Admin_Dashboard();
+        $dashboard->init();
+
+        // Initialize webhooks
+        Interview_Finder_Webhooks::get_instance()->init();
     }
 
     /**
@@ -211,31 +346,48 @@ final class Interview_Finder {
             INTERVIEW_FINDER_VERSION
         );
 
-        // Scripts
-        wp_enqueue_script( 'jquery' );
+        // Determine which JavaScript to use (modern or legacy)
+        $use_modern_js = apply_filters( 'interview_finder_use_modern_js', true );
 
-        wp_enqueue_script(
-            'interview-finder-scripts',
-            INTERVIEW_FINDER_PLUGIN_URL . 'assets/podcast-selection.js',
-            [ 'jquery' ],
-            INTERVIEW_FINDER_VERSION,
-            true
-        );
+        if ( $use_modern_js ) {
+            // Modern ES6+ JavaScript (no jQuery dependency)
+            wp_enqueue_script(
+                'interview-finder-scripts',
+                INTERVIEW_FINDER_PLUGIN_URL . 'assets/js/interview-finder.js',
+                [],
+                INTERVIEW_FINDER_VERSION,
+                true
+            );
+        } else {
+            // Legacy jQuery-based JavaScript
+            wp_enqueue_script( 'jquery' );
+            wp_enqueue_script(
+                'interview-finder-scripts',
+                INTERVIEW_FINDER_PLUGIN_URL . 'assets/podcast-selection.js',
+                [ 'jquery' ],
+                INTERVIEW_FINDER_VERSION,
+                true
+            );
+        }
 
         // Localize script with AJAX data and nonces
         wp_localize_script( 'interview-finder-scripts', 'interviewFinderData', [
             'ajaxurl'      => admin_url( 'admin-ajax.php' ),
+            'restUrl'      => rest_url( 'interview-finder/v1' ),
             'searchNonce'  => Interview_Finder_Ajax_Handler::create_search_nonce(),
             'importNonce'  => Interview_Finder_Ajax_Handler::create_import_nonce(),
+            'restNonce'    => wp_create_nonce( 'wp_rest' ),
             'i18n'         => [
-                'selectAtLeastOne' => __( 'Please select at least one podcast/episode using the checkboxes.', 'interview-finder' ),
-                'importing'        => __( 'Importing...', 'interview-finder' ),
-                'imported'         => __( 'Imported!', 'interview-finder' ),
-                'importSelected'   => __( 'Import Selected', 'interview-finder' ),
-                'importToTracker'  => __( 'Import to Tracker', 'interview-finder' ),
-                'invalidData'      => __( 'Error: Invalid data format received for this item.', 'interview-finder' ),
+                'selectAtLeastOne'   => __( 'Please select at least one podcast/episode using the checkboxes.', 'interview-finder' ),
+                'importing'          => __( 'Importing...', 'interview-finder' ),
+                'imported'           => __( 'Imported!', 'interview-finder' ),
+                'importSelected'     => __( 'Import Selected', 'interview-finder' ),
+                'importToTracker'    => __( 'Import to Tracker', 'interview-finder' ),
+                'invalidData'        => __( 'Error: Invalid data format received for this item.', 'interview-finder' ),
                 'communicationError' => __( 'A communication error occurred. Please try again.', 'interview-finder' ),
                 'unexpectedResponse' => __( 'Received an unexpected response from the server.', 'interview-finder' ),
+                'searching'          => __( 'Searching...', 'interview-finder' ),
+                'noResults'          => __( 'No results found.', 'interview-finder' ),
             ],
         ] );
     }
@@ -296,6 +448,43 @@ final class Interview_Finder {
      */
     public function get_logger(): Interview_Finder_Logger {
         return $this->logger;
+    }
+
+    /**
+     * Get service from container.
+     *
+     * @param string $service Service class name.
+     * @return mixed
+     */
+    public function get( string $service ) {
+        return $this->container->get( $service );
+    }
+
+    /**
+     * Get template loader.
+     *
+     * @return Interview_Finder_Template_Loader
+     */
+    public function get_template_loader(): Interview_Finder_Template_Loader {
+        return $this->container->get( Interview_Finder_Template_Loader::class );
+    }
+
+    /**
+     * Get error handler.
+     *
+     * @return Interview_Finder_Error_Handler
+     */
+    public function get_error_handler(): Interview_Finder_Error_Handler {
+        return $this->container->get( Interview_Finder_Error_Handler::class );
+    }
+
+    /**
+     * Get search service.
+     *
+     * @return Interview_Finder_Search_Service
+     */
+    public function get_search_service(): Interview_Finder_Search_Service {
+        return $this->container->get( Interview_Finder_Search_Service::class );
     }
 }
 
