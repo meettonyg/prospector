@@ -135,6 +135,8 @@ final class Interview_Finder {
         require_once $includes_dir . 'class-podcast-location-repository.php';
         require_once $includes_dir . 'class-api-youtube.php';
         require_once $includes_dir . 'class-youtube-channel-repository.php';
+        require_once $includes_dir . 'class-sponsored-listings.php';
+        require_once $includes_dir . 'class-sponsored-listings-admin.php';
 
         // Initialize core instances
         $this->settings = Interview_Finder_Settings::get_instance();
@@ -274,6 +276,10 @@ final class Interview_Finder {
         $database = Interview_Finder_Database::get_instance();
         $database->create_table();
 
+        // Create sponsored listings tables
+        $sponsored = Interview_Finder_Sponsored_Listings::get_instance();
+        $sponsored->create_tables();
+
         // Migrate legacy settings if needed
         $this->migrate_legacy_settings();
 
@@ -318,6 +324,11 @@ final class Interview_Finder {
 
         // Initialize webhooks
         Interview_Finder_Webhooks::get_instance()->init();
+
+        // Initialize sponsored listings admin
+        $sponsored_listings = Interview_Finder_Sponsored_Listings::get_instance();
+        $sponsored_admin = new Interview_Finder_Sponsored_Listings_Admin( $sponsored_listings );
+        $sponsored_admin->init();
     }
 
     /**

@@ -67,6 +67,13 @@ class Interview_Finder_Search_Service {
     private ?Interview_Finder_YouTube_Channel_Repository $youtube_channel_repo = null;
 
     /**
+     * Sponsored listings service.
+     *
+     * @var Interview_Finder_Sponsored_Listings|null
+     */
+    private ?Interview_Finder_Sponsored_Listings $sponsored_listings = null;
+
+    /**
      * Constructor.
      *
      * @param Interview_Finder_API_PodcastIndex $podcastindex_api PodcastIndex API.
@@ -102,6 +109,11 @@ class Interview_Finder_Search_Service {
             if ( $container->has( 'youtube_channel' ) ) {
                 $this->youtube_channel_repo = $container->get( 'youtube_channel' );
             }
+        }
+
+        // Initialize sponsored listings
+        if ( class_exists( 'Interview_Finder_Sponsored_Listings' ) ) {
+            $this->sponsored_listings = Interview_Finder_Sponsored_Listings::get_instance();
         }
     }
 
@@ -313,6 +325,82 @@ class Interview_Finder_Search_Service {
         }
 
         return $result;
+    }
+
+    /**
+     * Get matching sponsored listings for a search.
+     *
+     * @param array $params Search parameters.
+     * @param int   $limit  Maximum listings to return.
+     * @return array Sponsored listings formatted for display.
+     */
+    public function get_sponsored_listings( array $params, int $limit = 3 ): array {
+        if ( ! $this->sponsored_listings ) {
+            return [];
+        }
+
+        // Extract categories from search params
+        $categories = [];
+
+        // Try to get categories from params
+        if ( ! empty( $params['categories'] ) ) {
+            $categories = $params['categories'];
+        } elseif ( ! empty( $params['category'] ) ) {
+            $categories = [ $params['category'] ];
+        }
+
+        // Get matching listings
+        $listings = $this->sponsored_listings->get_matching(
+            [ 'categories' => $categories ],
+            $limit
+        );
+
+        // Record impressions for each listing shown
+        foreach ( $listings as $listing ) {
+            $this->sponsored_listings->record_impression( (int) $listing['id'] );
+        }
+
+        // Format for display (match podcast result format)
+        return array_map( [ $this, 'format_sponsored_listing' ], $listings );
+    }
+
+    /**
+     * Format a sponsored listing to match podcast result format.
+     *
+     * @param array $listing Sponsored listing data.
+     * @return array Formatted listing.
+     */
+    private function format_sponsored_listing( array $listing ): array {
+        return [
+            'id'                => 'sponsored_' . $listing['id'],
+            'sponsored_id'      => (int) $listing['id'],
+            'uuid'              => $listing['podcast_uuid'],
+            'name'              => $listing['podcast_title'],
+            'title'             => $listing['podcast_title'],
+            'description'       => $listing['podcast_description'],
+            'imageUrl'          => $listing['podcast_image_url'],
+            'itunesId'          => $listing['podcast_itunes_id'],
+            'websiteUrl'        => $listing['podcast_url'],
+            'rssUrl'            => $listing['podcast_rss_url'],
+            'categories'        => $listing['categories_array'] ?? [],
+            'is_sponsored'      => true,
+            'sponsored_name'    => $listing['name'],
+            'source'            => 'sponsored',
+        ];
+    }
+
+    /**
+     * Record a click on a sponsored listing.
+     *
+     * @param int $sponsored_id Sponsored listing ID.
+     * @return bool
+     */
+    public function record_sponsored_click( int $sponsored_id ): bool {
+        if ( ! $this->sponsored_listings ) {
+            return false;
+        }
+
+        return $this->sponsored_listings->record_click( $sponsored_id );
     }
 
     /**

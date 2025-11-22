@@ -162,6 +162,39 @@ class Interview_Finder_REST_API {
             'permission_callback' => [ $this, 'check_search_permission' ],
             'args'                => $this->get_location_search_args(),
         ] );
+
+        // Sponsored listings endpoints
+        register_rest_route( self::NAMESPACE, '/sponsored/click', [
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => [ $this, 'record_sponsored_click' ],
+            'permission_callback' => [ $this, 'check_search_permission' ],
+            'args'                => [
+                'sponsored_id' => [
+                    'required' => true,
+                    'type'     => 'integer',
+                    'minimum'  => 1,
+                ],
+            ],
+        ] );
+
+        register_rest_route( self::NAMESPACE, '/sponsored', [
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => [ $this, 'get_sponsored_listings' ],
+            'permission_callback' => [ $this, 'check_search_permission' ],
+            'args'                => [
+                'categories' => [
+                    'required' => false,
+                    'type'     => 'string',
+                ],
+                'limit' => [
+                    'required' => false,
+                    'type'     => 'integer',
+                    'default'  => 3,
+                    'minimum'  => 1,
+                    'maximum'  => 10,
+                ],
+            ],
+        ] );
     }
 
     /**
@@ -730,5 +763,53 @@ class Interview_Finder_REST_API {
         }
 
         return array_unique( $itunes_ids );
+    }
+
+    /**
+     * Get sponsored listings.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function get_sponsored_listings( WP_REST_Request $request ) {
+        $categories = $request->get_param( 'categories' );
+        $limit = (int) ( $request->get_param( 'limit' ) ?? 3 );
+
+        $params = [];
+        if ( ! empty( $categories ) ) {
+            $params['categories'] = array_map( 'trim', explode( ',', $categories ) );
+        }
+
+        $listings = $this->search_service->get_sponsored_listings( $params, $limit );
+
+        return new WP_REST_Response( [
+            'success' => true,
+            'data'    => $listings,
+            'count'   => count( $listings ),
+        ], 200 );
+    }
+
+    /**
+     * Record a click on a sponsored listing.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function record_sponsored_click( WP_REST_Request $request ) {
+        $sponsored_id = (int) $request->get_param( 'sponsored_id' );
+
+        if ( $sponsored_id < 1 ) {
+            return new WP_Error(
+                'invalid_id',
+                __( 'Invalid sponsored listing ID.', 'interview-finder' ),
+                [ 'status' => 400 ]
+            );
+        }
+
+        $success = $this->search_service->record_sponsored_click( $sponsored_id );
+
+        return new WP_REST_Response( [
+            'success' => $success,
+        ], 200 );
     }
 }
