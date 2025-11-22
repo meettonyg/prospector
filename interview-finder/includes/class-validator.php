@@ -256,6 +256,32 @@ class Interview_Finder_Validator {
     }
 
     /**
+     * Sanitize location field (city, state, country).
+     *
+     * @param string $value Location value.
+     * @return string Sanitized location.
+     */
+    public function sanitize_location_field( string $value ): string {
+        $value = wp_strip_all_tags( $value );
+        $value = sanitize_text_field( $value );
+        return trim( $value );
+    }
+
+    /**
+     * Validate location filter parameters.
+     *
+     * @param array $input Raw location input.
+     * @return array Validated location data.
+     */
+    public function validate_location_filter( array $input ): array {
+        return [
+            'city'         => $this->sanitize_location_field( $input['location_city'] ?? '' ),
+            'state_region' => $this->sanitize_location_field( $input['location_state'] ?? '' ),
+            'country'      => $this->sanitize_location_field( $input['location_country'] ?? '' ),
+        ];
+    }
+
+    /**
      * Validate a full search request.
      *
      * @param array $input Raw input data.
@@ -295,6 +321,12 @@ class Interview_Finder_Validator {
         // Taddy API specific options
         $result->set( 'sort_by', $this->validate_sort_by( $input['sort_by'] ?? 'EXACTNESS' ) );
         $result->set( 'match_by', $this->validate_match_by( $input['match_by'] ?? 'MOST_TERMS' ) );
+
+        // Location filter parameters
+        $location = $this->validate_location_filter( $input );
+        $result->set( 'location_city', $location['city'] );
+        $result->set( 'location_state', $location['state_region'] );
+        $result->set( 'location_country', $location['country'] );
 
         return $result;
     }

@@ -128,6 +128,14 @@ class Interview_Finder_Container {
             );
         } );
 
+        // Podcast Location Repository
+        $this->singleton( 'podcast_location', function ( $c ) {
+            return new Interview_Finder_Podcast_Location_Repository(
+                $c->get( 'settings' ),
+                $c->get( 'logger' )
+            );
+        } );
+
         // Renderer
         $this->singleton( 'renderer', function ( $c ) {
             return new Interview_Finder_Renderer( $c->get( 'rss_cache' ) );

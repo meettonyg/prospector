@@ -144,6 +144,9 @@ class Interview_Finder_Template_Loader {
         $ranking_details = $this->extract_ranking_details( $results );
         $response_details = $this->extract_response_details( $results );
 
+        // Extract location data (from REST API enrichment or passed in options)
+        $location_data = $this->extract_location_data( $results, $options );
+
         return $this->render( 'results-' . $search_type, [
             'items'            => $items,
             'search_type'      => $search_type,
@@ -151,6 +154,7 @@ class Interview_Finder_Template_Loader {
             'loader'           => $this,
             'ranking_details'  => $ranking_details,
             'response_details' => $response_details,
+            'location_data'    => $location_data,
         ], true );
     }
 
@@ -217,6 +221,60 @@ class Interview_Finder_Template_Loader {
         }
 
         return [];
+    }
+
+    /**
+     * Extract location data from results or options.
+     *
+     * Location data can come from:
+     * - REST API enrichment (results['locations'])
+     * - Passed directly in options (options['location_data'])
+     *
+     * @param array $results Raw results.
+     * @param array $options Additional options.
+     * @return array Map of iTunes ID to location data.
+     */
+    private function extract_location_data( array $results, array $options ): array {
+        // Check if location data was passed in options
+        if ( ! empty( $options['location_data'] ) && is_array( $options['location_data'] ) ) {
+            return $options['location_data'];
+        }
+
+        // Check if location data is in the results (from REST API enrichment)
+        if ( isset( $results['locations'] ) && is_array( $results['locations'] ) ) {
+            return $results['locations'];
+        }
+
+        return [];
+    }
+
+    /**
+     * Get location for a specific iTunes ID.
+     *
+     * @param array  $location_data Map of iTunes ID to location.
+     * @param string $itunes_id     iTunes ID to look up.
+     * @return array|null Location data or null if not found.
+     */
+    public function get_location_for_itunes_id( array $location_data, string $itunes_id ): ?array {
+        if ( empty( $itunes_id ) || empty( $location_data ) ) {
+            return null;
+        }
+
+        return $location_data[ $itunes_id ] ?? null;
+    }
+
+    /**
+     * Format location for display.
+     *
+     * @param array|null $location Location data.
+     * @return string Formatted location string.
+     */
+    public function format_location( ?array $location ): string {
+        if ( empty( $location ) || empty( $location['has_location'] ) ) {
+            return '';
+        }
+
+        return $location['formatted'] ?? '';
     }
 
     /**

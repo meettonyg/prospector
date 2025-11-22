@@ -6,6 +6,8 @@
  * @var array $item Result item
  * @var int $index Item index
  * @var array $ranking_details Optional ranking details array
+ * @var array $location_data Optional location data keyed by iTunes ID
+ * @var Interview_Finder_Template_Loader $loader Optional template loader
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -21,6 +23,7 @@ $website_url = $item['websiteUrl'] ?? '';
 $genres = $item['genres'] ?? [];
 $total_episodes = $item['totalEpisodesCount'] ?? 0;
 $item_id = $item['uuid'] ?? $index;
+$itunes_id = isset( $item['itunesId'] ) ? (string) $item['itunesId'] : '';
 
 // Get ranking score if available
 $ranking_score = null;
@@ -31,6 +34,14 @@ if ( ! empty( $ranking_details ) && is_array( $ranking_details ) ) {
             break;
         }
     }
+}
+
+// Get location if available
+$location = null;
+$location_formatted = '';
+if ( ! empty( $location_data ) && ! empty( $itunes_id ) && isset( $location_data[ $itunes_id ] ) ) {
+    $location = $location_data[ $itunes_id ];
+    $location_formatted = $location['formatted'] ?? '';
 }
 ?>
 <li class="if-result-item if-result-item--podcast-series" data-index="<?php echo esc_attr( $index ); ?>">
@@ -118,6 +129,16 @@ if ( ! empty( $ranking_details ) && is_array( $ranking_details ) ) {
                 <span class="if-result-item__ranking" title="<?php esc_attr_e( 'Relevance Score', 'interview-finder' ); ?>">
                     <span class="if-ranking-label"><?php esc_html_e( 'Score:', 'interview-finder' ); ?></span>
                     <span class="if-ranking-value"><?php echo esc_html( number_format( $ranking_score, 1 ) ); ?></span>
+                </span>
+            <?php endif; ?>
+
+            <?php if ( ! empty( $location_formatted ) ) : ?>
+                <span class="if-result-item__location" title="<?php esc_attr_e( 'Podcast Location', 'interview-finder' ); ?>">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="if-location-icon" aria-hidden="true">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <span class="if-location-value"><?php echo esc_html( $location_formatted ); ?></span>
                 </span>
             <?php endif; ?>
         </div>

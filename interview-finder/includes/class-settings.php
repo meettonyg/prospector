@@ -80,6 +80,10 @@ class Interview_Finder_Settings {
         // Debug Settings
         'debug_logging_enabled'   => false,
         'log_level'               => 'error', // error, warning, info, debug
+
+        // Location Features
+        'location_features_enabled' => false,
+        'location_table_name'       => 'pit_podcasts', // Custom table name without prefix
     ];
 
     /**
@@ -301,6 +305,17 @@ class Interview_Finder_Settings {
                 'debug'   => __( 'All (Debug)', 'interview-finder' ),
             ],
         ] );
+
+        // Location Features Section
+        add_settings_section(
+            'location_section',
+            __( 'Location Features', 'interview-finder' ),
+            [ $this, 'render_location_section_description' ],
+            self::PAGE_SLUG
+        );
+
+        $this->add_settings_field( 'location_features_enabled', __( 'Enable Location Features', 'interview-finder' ), 'location_section', 'checkbox' );
+        $this->add_settings_field( 'location_table_name', __( 'Location Table Name', 'interview-finder' ), 'location_section', 'text' );
     }
 
     /**
@@ -361,6 +376,38 @@ class Interview_Finder_Settings {
      */
     public function render_debug_section_description(): void {
         echo '<p>' . esc_html__( 'Configure logging and debug options.', 'interview-finder' ) . '</p>';
+    }
+
+    /**
+     * Render location section description.
+     *
+     * @return void
+     */
+    public function render_location_section_description(): void {
+        echo '<p>' . esc_html__( 'Configure podcast location features. Enable this once your location database is populated.', 'interview-finder' ) . '</p>';
+
+        // Show location stats if available
+        if ( class_exists( 'Interview_Finder_Podcast_Location_Repository' ) ) {
+            $container = Interview_Finder_Container::get_instance();
+            if ( $container->has( 'podcast_location' ) ) {
+                $location_repo = $container->get( 'podcast_location' );
+                $stats = $location_repo->get_location_stats();
+
+                if ( $stats['table_exists'] ) {
+                    printf(
+                        '<p><strong>%s</strong> %s | <strong>%s</strong> %s | <strong>%s</strong> %s</p>',
+                        esc_html__( 'Podcasts with location:', 'interview-finder' ),
+                        esc_html( number_format( $stats['with_location'] ) . ' / ' . number_format( $stats['total_podcasts'] ) ),
+                        esc_html__( 'Unique cities:', 'interview-finder' ),
+                        esc_html( number_format( $stats['unique_cities'] ) ),
+                        esc_html__( 'Unique countries:', 'interview-finder' ),
+                        esc_html( number_format( $stats['unique_countries'] ) )
+                    );
+                } else {
+                    echo '<p class="notice notice-warning" style="padding: 10px;">' . esc_html__( 'Location table not found. Please ensure the pit_podcasts table exists.', 'interview-finder' ) . '</p>';
+                }
+            }
+        }
     }
 
     /**
@@ -455,12 +502,18 @@ class Interview_Finder_Settings {
 
         // Boolean fields
         $sanitized['debug_logging_enabled'] = ! empty( $input['debug_logging_enabled'] );
+        $sanitized['location_features_enabled'] = ! empty( $input['location_features_enabled'] );
 
         // Select fields
         $valid_log_levels = [ 'error', 'warning', 'info', 'debug' ];
         $sanitized['log_level'] = isset( $input['log_level'] ) && in_array( $input['log_level'], $valid_log_levels, true )
             ? $input['log_level']
             : 'error';
+
+        // Location table name (sanitize as table name - alphanumeric and underscores only)
+        $sanitized['location_table_name'] = isset( $input['location_table_name'] )
+            ? preg_replace( '/[^a-zA-Z0-9_]/', '', $input['location_table_name'] )
+            : 'pit_podcasts';
 
         return $sanitized;
     }

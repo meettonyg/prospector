@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $ranking_details = $ranking_details ?? $options['ranking_details'] ?? [];
 $response_details = $response_details ?? $options['response_details'] ?? [];
+$location_data = $location_data ?? $options['location_data'] ?? [];
 $total_results = $response_details['totalResults'] ?? count( $items );
 $total_pages = $response_details['totalPages'] ?? 1;
 $current_page = $response_details['currentPage'] ?? 1;
@@ -49,6 +50,8 @@ $current_page = $response_details['currentPage'] ?? 1;
                     'item'            => $item,
                     'index'           => $index,
                     'ranking_details' => $ranking_details,
+                    'location_data'   => $location_data,
+                    'loader'          => $loader,
                 ] );
                 ?>
             <?php endforeach; ?>

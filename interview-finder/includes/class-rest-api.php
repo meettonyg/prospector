@@ -60,6 +60,13 @@ class Interview_Finder_REST_API {
     private ?Interview_Finder_Logger $logger;
 
     /**
+     * Location repository.
+     *
+     * @var Interview_Finder_Podcast_Location_Repository|null
+     */
+    private ?Interview_Finder_Podcast_Location_Repository $location_repo = null;
+
+    /**
      * Constructor.
      *
      * @param Interview_Finder_Search_Service $search_service Search service.
@@ -80,6 +87,14 @@ class Interview_Finder_REST_API {
         $this->validator = $validator;
         $this->membership = $membership;
         $this->logger = $logger;
+
+        // Initialize location repository if available
+        if ( class_exists( 'Interview_Finder_Podcast_Location_Repository' ) ) {
+            $container = Interview_Finder_Container::get_instance();
+            if ( $container->has( 'podcast_location' ) ) {
+                $this->location_repo = $container->get( 'podcast_location' );
+            }
+        }
     }
 
     /**
@@ -116,6 +131,36 @@ class Interview_Finder_REST_API {
             'methods'             => WP_REST_Server::DELETABLE,
             'callback'            => [ $this, 'clear_cache' ],
             'permission_callback' => [ $this, 'check_admin_permission' ],
+        ] );
+
+        // Location autocomplete endpoints
+        register_rest_route( self::NAMESPACE, '/locations/cities', [
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => [ $this, 'get_location_cities' ],
+            'permission_callback' => [ $this, 'check_search_permission' ],
+            'args'                => $this->get_location_autocomplete_args(),
+        ] );
+
+        register_rest_route( self::NAMESPACE, '/locations/states', [
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => [ $this, 'get_location_states' ],
+            'permission_callback' => [ $this, 'check_search_permission' ],
+            'args'                => $this->get_location_autocomplete_args(),
+        ] );
+
+        register_rest_route( self::NAMESPACE, '/locations/countries', [
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => [ $this, 'get_location_countries' ],
+            'permission_callback' => [ $this, 'check_search_permission' ],
+            'args'                => $this->get_location_autocomplete_args(),
+        ] );
+
+        // Location search endpoint (search by location only)
+        register_rest_route( self::NAMESPACE, '/locations/search', [
+            'methods'             => WP_REST_Server::READABLE,
+            'callback'            => [ $this, 'search_by_location' ],
+            'permission_callback' => [ $this, 'check_search_permission' ],
+            'args'                => $this->get_location_search_args(),
         ] );
     }
 
@@ -172,13 +217,19 @@ class Interview_Finder_REST_API {
         // Get updated user stats
         $updated_data = $database->get_user_data( $ghl_id, $user_id );
 
+        // Get result data and enrich with location info
+        $response_data = $result->get_data();
+        $enriched_data = $this->enrich_with_location( $response_data );
+
         return new WP_REST_Response( [
-            'success'     => true,
-            'data'        => $result->get_data(),
-            'from_cache'  => $result->is_from_cache(),
-            'search_type' => $result->get_search_type(),
-            'count'       => $result->get_count(),
-            'user_stats'  => [
+            'success'        => true,
+            'data'           => $enriched_data,
+            'from_cache'     => $result->is_from_cache(),
+            'search_type'    => $result->get_search_type(),
+            'count'          => $result->get_count(),
+            'locations'      => $enriched_data['locations'] ?? [],
+            'location_count' => $enriched_data['location_count'] ?? 0,
+            'user_stats'     => [
                 'search_count'       => $updated_data ? (int) $updated_data->search_count : 0,
                 'searches_remaining' => max( 0, $search_cap - ( $updated_data ? (int) $updated_data->search_count : 0 ) ),
                 'search_cap'         => $search_cap,
@@ -385,6 +436,27 @@ class Interview_Finder_REST_API {
                 'enum'        => [ 'MOST_TERMS', 'ALL_TERMS', 'EXACT_PHRASE' ],
                 'description' => __( 'Match by MOST_TERMS, ALL_TERMS, or EXACT_PHRASE (for Taddy API)', 'interview-finder' ),
             ],
+            'location_city' => [
+                'required'          => false,
+                'type'              => 'string',
+                'default'           => '',
+                'sanitize_callback' => 'sanitize_text_field',
+                'description'       => __( 'Filter by podcast city (requires location features enabled)', 'interview-finder' ),
+            ],
+            'location_state' => [
+                'required'          => false,
+                'type'              => 'string',
+                'default'           => '',
+                'sanitize_callback' => 'sanitize_text_field',
+                'description'       => __( 'Filter by podcast state/region (requires location features enabled)', 'interview-finder' ),
+            ],
+            'location_country' => [
+                'required'          => false,
+                'type'              => 'string',
+                'default'           => '',
+                'sanitize_callback' => 'sanitize_text_field',
+                'description'       => __( 'Filter by podcast country (requires location features enabled)', 'interview-finder' ),
+            ],
         ];
     }
 
@@ -410,5 +482,253 @@ class Interview_Finder_REST_API {
                 'default'  => 'byperson',
             ],
         ];
+    }
+
+    /**
+     * Get location autocomplete arguments.
+     *
+     * @return array
+     */
+    private function get_location_autocomplete_args(): array {
+        return [
+            'search' => [
+                'required'          => false,
+                'type'              => 'string',
+                'default'           => '',
+                'sanitize_callback' => 'sanitize_text_field',
+                'description'       => __( 'Search term to filter results', 'interview-finder' ),
+            ],
+            'limit' => [
+                'required' => false,
+                'type'     => 'integer',
+                'default'  => 50,
+                'minimum'  => 1,
+                'maximum'  => 100,
+            ],
+        ];
+    }
+
+    /**
+     * Get location search arguments.
+     *
+     * @return array
+     */
+    private function get_location_search_args(): array {
+        return [
+            'city' => [
+                'required'          => false,
+                'type'              => 'string',
+                'default'           => '',
+                'sanitize_callback' => 'sanitize_text_field',
+            ],
+            'state' => [
+                'required'          => false,
+                'type'              => 'string',
+                'default'           => '',
+                'sanitize_callback' => 'sanitize_text_field',
+            ],
+            'country' => [
+                'required'          => false,
+                'type'              => 'string',
+                'default'           => '',
+                'sanitize_callback' => 'sanitize_text_field',
+            ],
+            'limit' => [
+                'required' => false,
+                'type'     => 'integer',
+                'default'  => 50,
+                'minimum'  => 1,
+                'maximum'  => 100,
+            ],
+        ];
+    }
+
+    /**
+     * Get distinct cities for autocomplete.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_location_cities( WP_REST_Request $request ) {
+        if ( ! $this->location_repo || ! $this->location_repo->is_enabled() ) {
+            return new WP_Error(
+                'location_disabled',
+                __( 'Location features are not enabled.', 'interview-finder' ),
+                [ 'status' => 400 ]
+            );
+        }
+
+        $search = $request->get_param( 'search' ) ?? '';
+        $limit = (int) ( $request->get_param( 'limit' ) ?? 50 );
+
+        $cities = $this->location_repo->get_distinct_cities( $search, $limit );
+
+        return new WP_REST_Response( [
+            'success' => true,
+            'data'    => $cities,
+            'count'   => count( $cities ),
+        ], 200 );
+    }
+
+    /**
+     * Get distinct states for autocomplete.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_location_states( WP_REST_Request $request ) {
+        if ( ! $this->location_repo || ! $this->location_repo->is_enabled() ) {
+            return new WP_Error(
+                'location_disabled',
+                __( 'Location features are not enabled.', 'interview-finder' ),
+                [ 'status' => 400 ]
+            );
+        }
+
+        $search = $request->get_param( 'search' ) ?? '';
+        $limit = (int) ( $request->get_param( 'limit' ) ?? 50 );
+
+        $states = $this->location_repo->get_distinct_states( $search, $limit );
+
+        return new WP_REST_Response( [
+            'success' => true,
+            'data'    => $states,
+            'count'   => count( $states ),
+        ], 200 );
+    }
+
+    /**
+     * Get distinct countries for autocomplete.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function get_location_countries( WP_REST_Request $request ) {
+        if ( ! $this->location_repo || ! $this->location_repo->is_enabled() ) {
+            return new WP_Error(
+                'location_disabled',
+                __( 'Location features are not enabled.', 'interview-finder' ),
+                [ 'status' => 400 ]
+            );
+        }
+
+        $search = $request->get_param( 'search' ) ?? '';
+        $limit = (int) ( $request->get_param( 'limit' ) ?? 50 );
+
+        $countries = $this->location_repo->get_distinct_countries( $search, $limit );
+
+        return new WP_REST_Response( [
+            'success' => true,
+            'data'    => $countries,
+            'count'   => count( $countries ),
+        ], 200 );
+    }
+
+    /**
+     * Search podcasts by location.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function search_by_location( WP_REST_Request $request ) {
+        if ( ! $this->location_repo || ! $this->location_repo->is_enabled() ) {
+            return new WP_Error(
+                'location_disabled',
+                __( 'Location features are not enabled.', 'interview-finder' ),
+                [ 'status' => 400 ]
+            );
+        }
+
+        $params = [
+            'city'         => $request->get_param( 'city' ) ?? '',
+            'state_region' => $request->get_param( 'state' ) ?? '',
+            'country'      => $request->get_param( 'country' ) ?? '',
+            'limit'        => (int) ( $request->get_param( 'limit' ) ?? 50 ),
+        ];
+
+        // Require at least one location parameter
+        if ( empty( $params['city'] ) && empty( $params['state_region'] ) && empty( $params['country'] ) ) {
+            return new WP_Error(
+                'missing_location',
+                __( 'At least one location parameter (city, state, or country) is required.', 'interview-finder' ),
+                [ 'status' => 400 ]
+            );
+        }
+
+        $results = $this->location_repo->search_by_location( $params );
+
+        return new WP_REST_Response( [
+            'success' => true,
+            'data'    => $results,
+            'count'   => count( $results ),
+            'params'  => $params,
+        ], 200 );
+    }
+
+    /**
+     * Enrich search results with location data.
+     *
+     * @param array $data Search result data.
+     * @return array Enriched data with location info.
+     */
+    public function enrich_with_location( array $data ): array {
+        if ( ! $this->location_repo || ! $this->location_repo->is_enabled() ) {
+            return $data;
+        }
+
+        // Extract iTunes IDs from results
+        $itunes_ids = $this->extract_itunes_ids( $data );
+
+        if ( empty( $itunes_ids ) ) {
+            return $data;
+        }
+
+        // Batch lookup locations
+        $locations = $this->location_repo->get_locations_by_itunes_ids( $itunes_ids );
+
+        // Attach locations to response
+        $data['locations'] = $locations;
+        $data['location_count'] = count( $locations );
+
+        return $data;
+    }
+
+    /**
+     * Extract iTunes IDs from search results.
+     *
+     * @param array $data Search result data.
+     * @return array Array of iTunes IDs.
+     */
+    private function extract_itunes_ids( array $data ): array {
+        $itunes_ids = [];
+
+        // Handle Taddy API response format
+        if ( isset( $data['data']['search']['podcastSeries'] ) ) {
+            foreach ( $data['data']['search']['podcastSeries'] as $podcast ) {
+                if ( ! empty( $podcast['itunesId'] ) ) {
+                    $itunes_ids[] = (string) $podcast['itunesId'];
+                }
+            }
+        }
+
+        // Handle podcast episodes - get the podcast iTunes ID
+        if ( isset( $data['data']['search']['podcastEpisodes'] ) ) {
+            foreach ( $data['data']['search']['podcastEpisodes'] as $episode ) {
+                if ( ! empty( $episode['podcastSeries']['itunesId'] ) ) {
+                    $itunes_ids[] = (string) $episode['podcastSeries']['itunesId'];
+                }
+            }
+        }
+
+        // Legacy format
+        if ( isset( $data['data']['searchForTerm']['podcastSeries'] ) ) {
+            foreach ( $data['data']['searchForTerm']['podcastSeries'] as $podcast ) {
+                if ( ! empty( $podcast['itunesId'] ) ) {
+                    $itunes_ids[] = (string) $podcast['itunesId'];
+                }
+            }
+        }
+
+        return array_unique( $itunes_ids );
     }
 }

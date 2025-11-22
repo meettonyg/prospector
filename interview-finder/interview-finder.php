@@ -132,6 +132,7 @@ final class Interview_Finder {
         require_once $includes_dir . 'class-admin-dashboard.php';
         require_once $includes_dir . 'class-webhooks.php';
         require_once $includes_dir . 'class-multisite.php';
+        require_once $includes_dir . 'class-podcast-location-repository.php';
 
         // Initialize core instances
         $this->settings = Interview_Finder_Settings::get_instance();
