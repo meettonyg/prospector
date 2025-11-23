@@ -120,7 +120,7 @@ class Interview_Finder_Sponsored_Listings {
     public function create_tables(): bool {
         $charset_collate = $this->wpdb->get_charset_collate();
 
-        // Main sponsored listings table
+        // Main sponsored listings table with optimized indexes
         $sql_listings = "CREATE TABLE {$this->table_name} (
             id BIGINT(20) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
@@ -131,7 +131,7 @@ class Interview_Finder_Sponsored_Listings {
             podcast_description TEXT,
             podcast_url VARCHAR(500) DEFAULT '',
             podcast_rss_url VARCHAR(500) DEFAULT '',
-            categories TEXT,
+            categories VARCHAR(500) DEFAULT '',
             priority INT(11) DEFAULT 0,
             status ENUM('active', 'paused', 'expired') DEFAULT 'active',
             start_date DATETIME DEFAULT NULL,
@@ -143,10 +143,10 @@ class Interview_Finder_Sponsored_Listings {
             created_by BIGINT(20) UNSIGNED NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            KEY status (status),
-            KEY priority (priority),
-            KEY start_date (start_date),
-            KEY end_date (end_date)
+            KEY idx_status_priority (status, priority DESC),
+            KEY idx_active_lookup (status, start_date, end_date, impression_limit, click_limit),
+            KEY idx_categories (categories(100)),
+            KEY idx_created_at (created_at)
         ) $charset_collate;";
 
         // Daily stats table for reporting
@@ -480,15 +480,25 @@ class Interview_Finder_Sponsored_Listings {
     /**
      * Record an impression for a sponsored listing.
      *
-     * @param int $id Listing ID.
+     * Uses queue for batch processing at scale.
+     *
+     * @param int  $id     Listing ID.
+     * @param bool $direct Whether to write directly to DB (for low traffic/testing).
      * @return bool
      */
-    public function record_impression( int $id ): bool {
+    public function record_impression( int $id, bool $direct = false ): bool {
         if ( ! $this->tables_exist() ) {
             return false;
         }
 
-        // Update total count
+        // Use queue for scalability (if available)
+        if ( ! $direct && class_exists( 'Interview_Finder_Impression_Queue' ) ) {
+            $queue = Interview_Finder_Impression_Queue::get_instance();
+            $queue->queue_impression( $id );
+            return true;
+        }
+
+        // Direct write fallback
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $this->wpdb->query(
             $this->wpdb->prepare(
@@ -520,15 +530,25 @@ class Interview_Finder_Sponsored_Listings {
     /**
      * Record a click for a sponsored listing.
      *
-     * @param int $id Listing ID.
+     * Uses queue for batch processing at scale.
+     *
+     * @param int  $id     Listing ID.
+     * @param bool $direct Whether to write directly to DB (for low traffic/testing).
      * @return bool
      */
-    public function record_click( int $id ): bool {
+    public function record_click( int $id, bool $direct = false ): bool {
         if ( ! $this->tables_exist() ) {
             return false;
         }
 
-        // Update total count
+        // Use queue for scalability (if available)
+        if ( ! $direct && class_exists( 'Interview_Finder_Impression_Queue' ) ) {
+            $queue = Interview_Finder_Impression_Queue::get_instance();
+            $queue->queue_click( $id );
+            return true;
+        }
+
+        // Direct write fallback
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $this->wpdb->query(
             $this->wpdb->prepare(

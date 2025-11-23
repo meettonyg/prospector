@@ -137,6 +137,7 @@ final class Interview_Finder {
         require_once $includes_dir . 'class-youtube-channel-repository.php';
         require_once $includes_dir . 'class-sponsored-listings.php';
         require_once $includes_dir . 'class-sponsored-listings-admin.php';
+        require_once $includes_dir . 'class-impression-queue.php';
 
         // Initialize core instances
         $this->settings = Interview_Finder_Settings::get_instance();

@@ -2,6 +2,8 @@
 /**
  * Search Result Cache Class
  *
+ * Supports WordPress object cache (Redis/Memcached) for scalability.
+ *
  * @package Interview_Finder
  * @since 2.1.0
  */
@@ -14,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Class Interview_Finder_Search_Cache
  *
  * Caches search results to reduce API calls.
+ * Uses object cache when available (Redis/Memcached), falls back to transients.
  */
 class Interview_Finder_Search_Cache {
 
@@ -25,11 +28,32 @@ class Interview_Finder_Search_Cache {
     private const CACHE_PREFIX = 'if_search_';
 
     /**
-     * Default cache duration (5 minutes).
+     * Cache group for object cache.
+     *
+     * @var string
+     */
+    private const CACHE_GROUP = 'interview_finder';
+
+    /**
+     * Default cache duration (15 minutes - increased for scalability).
      *
      * @var int
      */
-    private const DEFAULT_TTL = 300;
+    private const DEFAULT_TTL = 900;
+
+    /**
+     * TTL for external API responses (30 minutes).
+     *
+     * @var int
+     */
+    private const API_TTL = 1800;
+
+    /**
+     * TTL for podcast data (1 hour - changes infrequently).
+     *
+     * @var int
+     */
+    private const PODCAST_TTL = 3600;
 
     /**
      * Logger instance.
@@ -39,12 +63,59 @@ class Interview_Finder_Search_Cache {
     private ?Interview_Finder_Logger $logger;
 
     /**
+     * Whether object cache is available.
+     *
+     * @var bool
+     */
+    private bool $use_object_cache;
+
+    /**
      * Constructor.
      *
      * @param Interview_Finder_Logger|null $logger Logger instance.
      */
     public function __construct( ?Interview_Finder_Logger $logger = null ) {
         $this->logger = $logger;
+        $this->use_object_cache = wp_using_ext_object_cache();
+
+        if ( $this->use_object_cache ) {
+            $this->log_debug( 'Using external object cache (Redis/Memcached)' );
+        }
+    }
+
+    /**
+     * Check if external object cache is being used.
+     *
+     * @return bool
+     */
+    public function is_using_object_cache(): bool {
+        return $this->use_object_cache;
+    }
+
+    /**
+     * Get appropriate TTL based on search type.
+     *
+     * @param string $search_type Search type.
+     * @return int TTL in seconds.
+     */
+    public function get_ttl_for_type( string $search_type ): int {
+        switch ( $search_type ) {
+            case 'byperson':
+            case 'bytitle':
+                return self::API_TTL; // 30 min - search results change moderately
+
+            case 'byadvancedpodcast':
+                return self::PODCAST_TTL; // 1 hour - podcast data is stable
+
+            case 'byadvancedepisode':
+                return self::API_TTL; // 30 min
+
+            case 'byyoutube':
+                return self::DEFAULT_TTL; // 15 min - YouTube data updates more frequently
+
+            default:
+                return self::DEFAULT_TTL;
+        }
     }
 
     /**
@@ -64,23 +135,31 @@ class Interview_Finder_Search_Cache {
     /**
      * Get cached results.
      *
+     * Uses object cache (Redis/Memcached) when available, falls back to transients.
+     *
      * @param string $key Cache key.
      * @return array|null Cached data or null if not found.
      */
     public function get( string $key ): ?array {
-        $data = get_transient( $key );
+        if ( $this->use_object_cache ) {
+            $data = wp_cache_get( $key, self::CACHE_GROUP );
+        } else {
+            $data = get_transient( $key );
+        }
 
         if ( false === $data ) {
-            $this->log_debug( 'Cache miss', [ 'key' => $key ] );
+            $this->log_debug( 'Cache miss', [ 'key' => $key, 'object_cache' => $this->use_object_cache ] );
             return null;
         }
 
-        $this->log_debug( 'Cache hit', [ 'key' => $key ] );
+        $this->log_debug( 'Cache hit', [ 'key' => $key, 'object_cache' => $this->use_object_cache ] );
         return $data;
     }
 
     /**
      * Store results in cache.
+     *
+     * Uses object cache (Redis/Memcached) when available, falls back to transients.
      *
      * @param string $key  Cache key.
      * @param array  $data Data to cache.
@@ -88,8 +167,13 @@ class Interview_Finder_Search_Cache {
      * @return bool
      */
     public function set( string $key, array $data, int $ttl = self::DEFAULT_TTL ): bool {
-        $result = set_transient( $key, $data, $ttl );
-        $this->log_debug( 'Cache set', [ 'key' => $key, 'ttl' => $ttl ] );
+        if ( $this->use_object_cache ) {
+            $result = wp_cache_set( $key, $data, self::CACHE_GROUP, $ttl );
+        } else {
+            $result = set_transient( $key, $data, $ttl );
+        }
+
+        $this->log_debug( 'Cache set', [ 'key' => $key, 'ttl' => $ttl, 'object_cache' => $this->use_object_cache ] );
         return $result;
     }
 
@@ -100,6 +184,9 @@ class Interview_Finder_Search_Cache {
      * @return bool
      */
     public function delete( string $key ): bool {
+        if ( $this->use_object_cache ) {
+            return wp_cache_delete( $key, self::CACHE_GROUP );
+        }
         return delete_transient( $key );
     }
 
@@ -109,6 +196,18 @@ class Interview_Finder_Search_Cache {
      * @return int Number of caches cleared.
      */
     public function clear_all(): int {
+        if ( $this->use_object_cache ) {
+            // For object cache, flush the group if supported, otherwise can't reliably clear
+            if ( function_exists( 'wp_cache_flush_group' ) ) {
+                wp_cache_flush_group( self::CACHE_GROUP );
+                $this->log_debug( 'Flushed object cache group' );
+                return 1;
+            }
+            // Can't reliably clear object cache without group flush support
+            $this->log_debug( 'Object cache clear not supported without group flush' );
+            return 0;
+        }
+
         global $wpdb;
 
         $transients = $wpdb->get_col(
@@ -128,6 +227,33 @@ class Interview_Finder_Search_Cache {
 
         $this->log_debug( 'Cleared all search caches', [ 'count' => $count ] );
         return $count;
+    }
+
+    /**
+     * Get cache statistics.
+     *
+     * @return array
+     */
+    public function get_stats(): array {
+        $stats = [
+            'using_object_cache' => $this->use_object_cache,
+            'cache_group'        => self::CACHE_GROUP,
+            'default_ttl'        => self::DEFAULT_TTL,
+            'api_ttl'            => self::API_TTL,
+            'podcast_ttl'        => self::PODCAST_TTL,
+        ];
+
+        if ( ! $this->use_object_cache ) {
+            global $wpdb;
+            $stats['transient_count'] = (int) $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s",
+                    $wpdb->esc_like( '_transient_' . self::CACHE_PREFIX ) . '%'
+                )
+            );
+        }
+
+        return $stats;
     }
 
     /**
