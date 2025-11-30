@@ -1,11 +1,42 @@
+/**
+ * Interview Finder - Frontend JavaScript
+ *
+ * Handles search form submission, pagination, and podcast import functionality.
+ *
+ * @package Interview_Finder
+ * @since 2.0.0
+ */
+
 jQuery(document).ready(function ($) {
-    // ******************************************
-    // Toggle between PodcastIndex and Taddy UI blocks new 3
-    // ******************************************
+    'use strict';
+
+    // Configuration object - populated by wp_localize_script
+    var config = window.interviewFinderData || window.frontendajax || {};
+    var ajaxUrl = config.ajaxurl || (window.frontendajax && window.frontendajax.ajaxurl);
+    var searchNonce = config.searchNonce || '';
+    var importNonce = config.importNonce || '';
+    var i18n = config.i18n || {};
+
+    // Default translations if not provided
+    i18n = $.extend({
+        selectAtLeastOne: 'Please select at least one podcast/episode using the checkboxes.',
+        importing: 'Importing...',
+        imported: 'Imported!',
+        importSelected: 'Import Selected',
+        importToTracker: 'Import to Tracker',
+        invalidData: 'Error: Invalid data format received for this item.',
+        communicationError: 'A communication error occurred. Please try again.',
+        unexpectedResponse: 'Received an unexpected response from the server.'
+    }, i18n);
+
+    /**
+     * Toggle between PodcastIndex (basic) and Taddy (advanced) UI blocks.
+     */
     function toggleSearchBlocks() {
         $('#filter-sidebar').hide();
-        let val = $('input[name="search_type"]:checked').val();
-        if (val === 'byperson' || val === 'bytitle') {
+        var searchType = $('input[name="search_type"]:checked').val();
+
+        if (searchType === 'byperson' || searchType === 'bytitle') {
             $('#basic-block').show();
             $('#advanced-block').hide();
             $('#toggle-filters').hide();
@@ -15,239 +46,326 @@ jQuery(document).ready(function ($) {
             $('#toggle-filters').show();
         }
     }
-    toggleSearchBlocks(); // Initial setup
-    $('input[name="search_type"]').on('change', toggleSearchBlocks); // Update on change
 
-    // ******************************************
-    // Toggle advanced filters sidebar
-    // ******************************************
+    // Initial setup
+    toggleSearchBlocks();
+
+    // Update on tab change
+    $('input[name="search_type"]').on('change', toggleSearchBlocks);
+
+    /**
+     * Toggle advanced filters sidebar.
+     */
     $('#toggle-filters').on('click', function () {
         $('#filter-sidebar').toggle();
     });
 
-     // ******************************************
-    // Helper function to handle AJAX call for importing (BOTH Bulk & Individual)
-    // ******************************************
-     function performImportAjax(selectedData, triggerElement) {
-        const messageContainer = $('#search-error-message'); // Area for feedback
-        messageContainer.html('').removeAttr('style'); // Clear previous messages/styles
+    /**
+     * Build error message HTML.
+     *
+     * @param {string} message Error message.
+     * @return {string} HTML string.
+     */
+    function buildErrorHtml(message) {
+        return '<div class="import-message error">' +
+            '<div class="message-content">' +
+            '<i class="fas fa-exclamation-triangle message-icon"></i>' +
+            '<span class="message-text">' + message + '</span>' +
+            '</div>' +
+            '</div>';
+    }
+
+    /**
+     * Get form data for search/pagination requests.
+     *
+     * @param {jQuery} form Form element.
+     * @param {number} page Page number.
+     * @return {object} Form data object.
+     */
+    function getFormData(form, page) {
+        var searchType = form.find('input[name="search_type"]:checked').val();
+        var resultsPerPage;
+
+        if (searchType === 'byperson' || searchType === 'bytitle') {
+            resultsPerPage = form.find('#number_of_results').val();
+        } else {
+            resultsPerPage = form.find('#results_per_page').val();
+        }
+
+        return {
+            action: 'perform_search',
+            _ajax_nonce: searchNonce,
+            search_term: form.find('input[name="search_term"]').val(),
+            search_type: searchType,
+            language: form.find('select[name="language"]').val(),
+            country: form.find('select[name="country"]').val(),
+            genre: form.find('select[name="genre"]').val(),
+            after_date: form.find('input[name="after_date"]').val(),
+            before_date: form.find('input[name="before_date"]').val(),
+            isSafeMode: form.find('input[name="isSafeMode"]').is(':checked'),
+            results_per_page: resultsPerPage,
+            page: page,
+            sort_order: form.find('#sort_order').val()
+        };
+    }
+
+    /**
+     * Handle successful search response.
+     *
+     * @param {object} response AJAX response.
+     */
+    function handleSearchSuccess(response) {
+        $('#loading-spinner').hide();
+        $('.podsearch-results-container').remove();
+
+        if (response.success) {
+            var resultsContainer = $('<div class="podsearch-results-container"></div>');
+            resultsContainer.html(response.data.html);
+            $('.search-form-wrapper').after(resultsContainer);
+
+            // Update user data display if available
+            var userData = response.data.user_data;
+            if (userData) {
+                if ($('#search_count').length) {
+                    $('#search_count').text(userData.search_count);
+                }
+                if ($('#searches_remaining').length) {
+                    $('#searches_remaining').text(userData.searches_remaining);
+                }
+                if ($('#last_searched').length) {
+                    $('#last_searched').text(userData.last_searched);
+                }
+            }
+
+            bindCheckAll();
+        } else {
+            var errorMsg = response.data && response.data.message
+                ? response.data.message
+                : 'An unknown error occurred during the search.';
+            $('#search-error-message')
+                .html(errorMsg)
+                .css('color', 'red')
+                .css('font-weight', 'bold');
+        }
+    }
+
+    /**
+     * Handle search error.
+     *
+     * @param {object} jqXHR jQuery XHR object.
+     * @param {string} textStatus Status text.
+     * @param {string} errorThrown Error message.
+     */
+    function handleSearchError(jqXHR, textStatus, errorThrown) {
+        console.error('AJAX Error during search:', textStatus, errorThrown, jqXHR.responseText);
+        $('#loading-spinner').hide();
+        $('.podsearch-results-container').remove();
+        $('#search-error-message')
+            .html(i18n.communicationError)
+            .css('color', 'red')
+            .css('font-weight', 'bold');
+    }
+
+    /**
+     * Perform import AJAX request.
+     *
+     * @param {array} selectedData Array of podcast JSON strings.
+     * @param {HTMLElement} triggerElement The button that triggered the import.
+     */
+    function performImportAjax(selectedData, triggerElement) {
+        var messageContainer = $('#search-error-message');
+        messageContainer.html('').removeAttr('style');
 
         if (!selectedData || selectedData.length === 0) {
-             console.error("performImportAjax called with no data.");
-             messageContainer.html('<div class="import-message error"><div class="message-content"><i class="fas fa-exclamation-triangle message-icon"></i><span class="message-text">Error: No data selected for import.</span></div></div>');
-             return;
-         }
+            console.error('performImportAjax called with no data.');
+            messageContainer.html(buildErrorHtml(i18n.selectAtLeastOne));
+            return;
+        }
 
-        // Determine button type for feedback
-        const isIndividual = triggerElement && $(triggerElement).hasClass('individual-import-button');
-        const button = $(triggerElement); // The specific button clicked (bulk or individual)
+        var isIndividual = triggerElement && $(triggerElement).hasClass('individual-import-button');
+        var button = $(triggerElement);
 
         // Get context
-        const searchTerm = $('input[name="search_term"]').val(); // Use value from main search input
-        const searchType = $('input[name="search_type"]:checked').val() || 'byperson'; // Use current search type
+        var searchTerm = $('input[name="search_term"]').val();
+        var searchType = $('input[name="search_type"]:checked').val() || 'byperson';
 
-         // Provide visual feedback
-        button.prop('disabled', true).text('Importing...');
-         // Show global spinner (can be shown for both or just bulk)
-         $('#loading-spinner').show();
+        // Visual feedback
+        button.prop('disabled', true).text(i18n.importing);
+        $('#loading-spinner').show();
 
         $.ajax({
             type: 'POST',
-            url: frontendajax.ajaxurl, // Ensure localized
+            url: ajaxUrl,
             dataType: 'json',
             data: {
                 action: 'add_podcasts_to_form',
-                podcasts: selectedData, // Array of JSON strings (one or many)
+                _ajax_nonce: importNonce,
+                podcasts: selectedData,
                 search_term: searchTerm,
                 search_type: searchType
-                // Add nonce if needed: _ajax_nonce: frontendajax.nonce
             },
             success: function (response) {
-                 if (response.data && response.data.html) {
-                    messageContainer.html(response.data.html); // Display success/error HTML from PHP
+                if (response.data && response.data.html) {
+                    messageContainer.html(response.data.html);
+
                     if (response.success) {
-                        button.text('Imported!'); // Indicate success on the button
-                        // Clear checkboxes after successful bulk import
+                        button.text(i18n.imported);
+
                         if (!isIndividual) {
-                             // Use a container that definitely exists when results are present
-                             $('.podsearch-results-container .podcast-results-table input[name="selected_podcasts[]"]:checked').prop('checked', false);
-                             $('#select_all').prop('checked', false); // Deselect header checkbox too
-                             // Re-enable bulk button after success
-                             button.prop('disabled', false).text('Import Selected');
-                         } else {
-                             // Optionally re-enable individual button after success after a delay or immediately
-                              button.prop('disabled', false).text('Import to Tracker');
-                         }
+                            // Clear checkboxes after successful bulk import
+                            $('.podsearch-results-container .podcast-results-table input[name="selected_podcasts[]"]:checked')
+                                .prop('checked', false);
+                            $('#select_all').prop('checked', false);
+                            button.prop('disabled', false).text(i18n.importSelected);
+                        } else {
+                            button.prop('disabled', false).text(i18n.importToTracker);
+                        }
                     } else {
-                         // Re-enable button on partial/total failure reported by PHP
-                         button.prop('disabled', false).text(isIndividual ? 'Import to Tracker' : 'Import Selected');
+                        button.prop('disabled', false).text(isIndividual ? i18n.importToTracker : i18n.importSelected);
                     }
                 } else {
-                    // Fallback if HTML is missing in the response data
-                    const fallbackHtml = '<div class="import-message error"><div class="message-content"><i class="fas fa-exclamation-triangle message-icon"></i><span class="message-text">Received an unexpected response from the server after import.</span></div></div>';
-                    messageContainer.html(fallbackHtml);
-                    console.warn("Import response missing expected HTML:", response);
-                    button.prop('disabled', false).text(isIndividual ? 'Import to Tracker' : 'Import Selected');
+                    messageContainer.html(buildErrorHtml(i18n.unexpectedResponse));
+                    console.warn('Import response missing expected HTML:', response);
+                    button.prop('disabled', false).text(isIndividual ? i18n.importToTracker : i18n.importSelected);
                 }
             },
             error: function (jqXHR, textStatus, errorThrown) {
-                 // Handle network errors, server errors (5xx), etc.
-                 console.error("AJAX Error during import:", textStatus, errorThrown, jqXHR.responseText);
-                 let errorHtml = '<div class="import-message error"><div class="message-content"><i class="fas fa-exclamation-triangle message-icon"></i><span class="message-text">A communication error occurred. Please try again.</span></div></div>';
-                  try { if (jqXHR.responseJSON && jqXHR.responseJSON.data && jqXHR.responseJSON.data.html) { errorHtml = jqXHR.responseJSON.data.html; }
-                  } catch (e) { console.error("Could not parse error response JSON."); }
-                 messageContainer.html(errorHtml);
-                 button.prop('disabled', false).text(isIndividual ? 'Import to Tracker' : 'Import Selected'); // Re-enable button
-            },
-            complete: function() {
-                 // Hide global spinner on complete
-                 $('#loading-spinner').hide();
-             }
-        });
-     }
+                console.error('AJAX Error during import:', textStatus, errorThrown, jqXHR.responseText);
 
-    // ******************************************
-    // Bulk Import Button Handler (uses checkboxes - MODIFIED TO USE HELPER)
-    // ******************************************
-     // Use delegation in case button is loaded dynamically (e.g., within results)
-    $(document).on('click', '#add-to-formidable-button', function () {
-        const selectedPodcasts = [];
-        // Find checked checkboxes within the currently displayed results container
-        $('.podsearch-results-container .podcast-results-table input[name="selected_podcasts[]"]:checked').each(function () {
-            if ($(this).val()) { // Ensure checkbox has a value
-                 selectedPodcasts.push($(this).val());
+                var errorHtml = buildErrorHtml(i18n.communicationError);
+                try {
+                    if (jqXHR.responseJSON && jqXHR.responseJSON.data && jqXHR.responseJSON.data.html) {
+                        errorHtml = jqXHR.responseJSON.data.html;
+                    }
+                } catch (e) {
+                    console.error('Could not parse error response JSON.');
+                }
+
+                messageContainer.html(errorHtml);
+                button.prop('disabled', false).text(isIndividual ? i18n.importToTracker : i18n.importSelected);
+            },
+            complete: function () {
+                $('#loading-spinner').hide();
             }
         });
+    }
+
+    /**
+     * Bulk Import Button Handler.
+     */
+    $(document).on('click', '#add-to-formidable-button', function () {
+        var selectedPodcasts = [];
+
+        $('.podsearch-results-container .podcast-results-table input[name="selected_podcasts[]"]:checked')
+            .each(function () {
+                if ($(this).val()) {
+                    selectedPodcasts.push($(this).val());
+                }
+            });
 
         if (selectedPodcasts.length === 0) {
-            $('#search-error-message').html('<div class="import-message error"><div class="message-content"><i class="fas fa-exclamation-triangle message-icon"></i><span class="message-text">Please select at least one podcast/episode using the checkboxes.</span></div></div>');
+            $('#search-error-message').html(buildErrorHtml(i18n.selectAtLeastOne));
             return;
         }
-        performImportAjax(selectedPodcasts, this); // Call helper with selected data and this button
+
+        performImportAjax(selectedPodcasts, this);
     });
 
-    // ******************************************
-    // Individual Import Button Handler (NEW)
-    // ******************************************
-    // Use event delegation on a static parent
-// ******************************************
-// Individual Import Button Handler (UPDATED)
-// ******************************************
-$(document).on('click', '.individual-import-button', function () {
-    const button = $(this);
+    /**
+     * Individual Import Button Handler.
+     */
+    $(document).on('click', '.individual-import-button', function () {
+        var button = $(this);
 
-    // 1) grab the raw attribute
-    const raw = button.attr('data-podcast');
-    console.log("🔍 raw attr data-podcast:", raw);
+        // Get raw attribute
+        var raw = button.attr('data-podcast');
+        console.log('Raw data-podcast attribute:', raw);
 
-    // 2) decode any HTML entities back into plain JSON text
-    const decoded = $('<textarea/>').html(raw).text();
-    console.log("📥 decoded JSON string:", decoded);
+        // Decode HTML entities
+        var decoded = $('<textarea/>').html(raw).text();
+        console.log('Decoded JSON string:', decoded);
 
-    // 3) sanity-check that it’s valid JSON
-    let parsed;
-    try {
-        parsed = JSON.parse(decoded);
-        console.log("✅ parsed JSON object:", parsed);
-    } catch (err) {
-        console.error("❌ invalid JSON in data-podcast:", err);
-        $('#search-error-message').html(
-            '<div class="import-message error">' +
-              '<div class="message-content">' +
-                '<i class="fas fa-exclamation-triangle message-icon"></i>' +
-                '<span class="message-text">Error: Invalid data format received for this item.</span>' +
-              '</div>' +
-            '</div>'
-        );
-        return;
-    }
+        // Validate JSON
+        var parsed;
+        try {
+            parsed = JSON.parse(decoded);
+            console.log('Parsed JSON object:', parsed);
+        } catch (err) {
+            console.error('Invalid JSON in data-podcast:', err);
+            $('#search-error-message').html(buildErrorHtml(i18n.invalidData));
+            return;
+        }
 
-    // 4) hand it off to your bulk-import helper
-    performImportAjax([ decoded ], this);
-});
-
-
-
-    // ******************************************
-    // Main Search Form Submission Handler (Ensure results container class matches PHP)
-    // ******************************************
-     $('.search-form-wrapper').on('submit', '.search-form', function (e) {
-         e.preventDefault();
-         const messageContainer = $('#search-error-message');
-         messageContainer.html('').removeAttr('style'); // Clear import/error messages on new search
-         const form = $(this); let searchTerm = form.find('input[name="search_term"]').val(); let searchType = form.find('input[name="search_type"]:checked').val(); let language = form.find('select[name="language"]').val(); let country = form.find('select[name="country"]').val(); let genre = form.find('select[name="genre"]').val(); let after_date = form.find('input[name="after_date"]').val(); let before_date = form.find('input[name="before_date"]').val(); let isSafeMode = form.find('input[name="isSafeMode"]').is(':checked'); let resultsPerPage; if (searchType === 'byperson' || searchType === 'bytitle') { resultsPerPage = form.find('#number_of_results').val(); } else { resultsPerPage = form.find('#results_per_page').val(); } let sortOrder = form.find('#sort_order').val();
-         $('#loading-spinner').show();
-         $('.podsearch-results-container').remove(); // Use the container class from PHP display functions
-
-         $.ajax({
-             type: 'POST', url: frontendajax.ajaxurl, dataType: 'json',
-             data: { action: 'perform_search', search_term: searchTerm, search_type: searchType, language: language, country: country, genre: genre, after_date: after_date, before_date: before_date, isSafeMode: isSafeMode, results_per_page: resultsPerPage, page: 1, sort_order: sortOrder },
-             success: function (response) {
-                 $('#loading-spinner').hide(); $('.podsearch-results-container').remove(); // Remove again just in case
-                 if (response.success) {
-                     const resultsContainer = $('<div class="podsearch-results-container"></div>'); // Add the container div
-                     resultsContainer.html(response.data.html); // Contains the table etc.
-                     $('.search-form-wrapper').after(resultsContainer); // Insert after form wrapper
-                     const userData = response.data.user_data; if (userData) { if ($('#search_count').length) $('#search_count').text(userData.search_count); if ($('#searches_remaining').length) $('#searches_remaining').text(userData.searches_remaining); if ($('#last_searched').length) $('#last_searched').text(userData.last_searched); }
-                     bindCheckAll(); // Re-bind select-all
-                 } else {
-                     let errMsg = 'An unknown error occurred during the search.'; if (response.data && response.data.message) { errMsg = response.data.message; }
-                     messageContainer.html(errMsg).css('color', 'red').css('font-weight', 'bold');
-                 }
-             },
-             error: function (jqXHR, textStatus, errorThrown) {
-                 console.error("AJAX Error during search:", textStatus, errorThrown, jqXHR.responseText); $('#loading-spinner').hide(); $('.podsearch-results-container').remove();
-                 messageContainer.html('An error occurred communicating with the server during the search.').css('color', 'red').css('font-weight', 'bold');
-             }
-         });
+        performImportAjax([decoded], this);
     });
 
-    // ******************************************
-    // Pagination Handler (Ensure results container class matches PHP)
-    // ******************************************
-      // Use delegation from a static parent
-      $('.search-form-wrapper').parent().on('click', '.pagination-btn', function (event) {
-           event.preventDefault();
-           const messageContainer = $('#search-error-message');
-           messageContainer.html('').removeAttr('style'); // Clear import messages
-           let newPage = $(this).data('page'); const form = $('.search-form-wrapper').find('.search-form'); if(form.length === 0) { console.error("Could not find search form for pagination."); return; } let searchTerm = form.find('input[name="search_term"]').val(); let searchType = form.find('input[name="search_type"]:checked').val(); let language = form.find('select[name="language"]').val(); let country = form.find('select[name="country"]').val(); let genre = form.find('select[name="genre"]').val(); let after_date = form.find('input[name="after_date"]').val(); let before_date = form.find('input[name="before_date"]').val(); let isSafeMode = form.find('input[name="isSafeMode"]').is(':checked'); let resultsPerPage; if (searchType === 'byperson' || searchType === 'bytitle') { resultsPerPage = form.find('#number_of_results').val(); } else { resultsPerPage = form.find('#results_per_page').val(); } let sortOrder = form.find('#sort_order').val();
-           $('#loading-spinner').show(); $('.podsearch-results-container').remove(); // Remove results container
-           $.ajax({
-               type: 'POST', url: frontendajax.ajaxurl, dataType: 'json',
-               data: { action: 'perform_search', search_term: searchTerm, search_type: searchType, language: language, country: country, genre: genre, after_date: after_date, before_date: before_date, isSafeMode: isSafeMode, results_per_page: resultsPerPage, page: newPage, sort_order: sortOrder },
-               success: function (response) {
-                   $('#loading-spinner').hide(); $('.podsearch-results-container').remove();
-                   if (response.success) {
-                       const resultsContainer = $('<div class="podsearch-results-container"></div>'); // Add container
-                       resultsContainer.html(response.data.html);
-                       $('.search-form-wrapper').after(resultsContainer); // Insert after form wrapper
-                       const userData = response.data.user_data; if (userData) { if ($('#search_count').length) $('#search_count').text(userData.search_count); if ($('#searches_remaining').length) $('#searches_remaining').text(userData.searches_remaining); if ($('#last_searched').length) $('#last_searched').text(userData.last_searched); }
-                       bindCheckAll(); // Re-bind select-all
-                   } else {
-                       let errMsg = 'An unknown error occurred during pagination.'; if (response.data && response.data.message) { errMsg = response.data.message; }
-                       messageContainer.html(errMsg).css('color', 'red').css('font-weight', 'bold');
-                   }
-               },
-               error: function (jqXHR, textStatus, errorThrown) {
-                   console.error("AJAX Error during pagination:", textStatus, errorThrown, jqXHR.responseText); $('#loading-spinner').hide(); $('.podsearch-results-container').remove();
-                    messageContainer.html('An error occurred communicating with the server during pagination.').css('color', 'red').css('font-weight', 'bold');
-               }
-           });
-      });
+    /**
+     * Main Search Form Submission Handler.
+     */
+    $('.search-form-wrapper').on('submit', '.search-form', function (e) {
+        e.preventDefault();
 
-    // ******************************************
-    // Bind "Select All" functionality (RESTORED)
-    // ******************************************
+        var messageContainer = $('#search-error-message');
+        messageContainer.html('').removeAttr('style');
+
+        var form = $(this);
+
+        $('#loading-spinner').show();
+        $('.podsearch-results-container').remove();
+
+        $.ajax({
+            type: 'POST',
+            url: ajaxUrl,
+            dataType: 'json',
+            data: getFormData(form, 1),
+            success: handleSearchSuccess,
+            error: handleSearchError
+        });
+    });
+
+    /**
+     * Pagination Handler.
+     */
+    $('.search-form-wrapper').parent().on('click', '.pagination-btn', function (event) {
+        event.preventDefault();
+
+        var messageContainer = $('#search-error-message');
+        messageContainer.html('').removeAttr('style');
+
+        var newPage = $(this).data('page');
+        var form = $('.search-form-wrapper').find('.search-form');
+
+        if (form.length === 0) {
+            console.error('Could not find search form for pagination.');
+            return;
+        }
+
+        $('#loading-spinner').show();
+        $('.podsearch-results-container').remove();
+
+        $.ajax({
+            type: 'POST',
+            url: ajaxUrl,
+            dataType: 'json',
+            data: getFormData(form, newPage),
+            success: handleSearchSuccess,
+            error: handleSearchError
+        });
+    });
+
+    /**
+     * Bind "Select All" checkbox functionality.
+     */
     function bindCheckAll() {
-         // Use event delegation on document as a reliable static parent
-         $(document).off('change', '#select_all'); // Unbind previous delegated events from document
-         $(document).on('change', '#select_all', function () { // Re-bind to document
-            let isChecked = this.checked;
-            // Target checkboxes within the current results container specifically
-            $('.podsearch-results-container .podcast-results-table input[name="selected_podcasts[]"]').prop('checked', isChecked);
+        $(document).off('change', '#select_all');
+        $(document).on('change', '#select_all', function () {
+            var isChecked = this.checked;
+            $('.podsearch-results-container .podcast-results-table input[name="selected_podcasts[]"]')
+                .prop('checked', isChecked);
         });
     }
-    // Call bindCheckAll once on page load to ensure the handler is ready
+
+    // Initialize select all binding
     bindCheckAll();
 
-}); // End jQuery(document).ready
+});
