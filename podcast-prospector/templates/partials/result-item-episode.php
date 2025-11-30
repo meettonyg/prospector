@@ -1,0 +1,135 @@
+<?php
+/**
+ * Partial: Episode Result Item (Taddy API)
+ *
+ * @package Podcast_Prospector
+ * @var array $item Result item
+ * @var int $index Item index
+ * @var array $ranking_details Optional ranking details array
+ * @var array $location_data Optional location data keyed by iTunes ID
+ * @var Podcast_Prospector_Template_Loader $loader Optional template loader
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+$name = $item['name'] ?? '';
+$description = $item['description'] ?? '';
+$date_published = $item['datePublished'] ?? '';
+$audio_url = $item['audioUrl'] ?? '';
+$duration = $item['duration'] ?? 0;
+$podcast_series = $item['podcastSeries'] ?? [];
+$podcast_name = $podcast_series['name'] ?? '';
+$podcast_image = $podcast_series['imageUrl'] ?? '';
+$item_id = $item['uuid'] ?? $index;
+$itunes_id = isset( $podcast_series['itunesId'] ) ? (string) $podcast_series['itunesId'] : '';
+
+// Get ranking score if available
+$ranking_score = null;
+if ( ! empty( $ranking_details ) && is_array( $ranking_details ) ) {
+    foreach ( $ranking_details as $ranking ) {
+        if ( ( $ranking['uuid'] ?? '' ) === $item_id ) {
+            $ranking_score = $ranking['rankingScore'] ?? null;
+            break;
+        }
+    }
+}
+
+// Get location if available (from parent podcast)
+$location = null;
+$location_formatted = '';
+if ( ! empty( $location_data ) && ! empty( $itunes_id ) && isset( $location_data[ $itunes_id ] ) ) {
+    $location = $location_data[ $itunes_id ];
+    $location_formatted = $location['formatted'] ?? '';
+}
+?>
+<li class="if-result-item if-result-item--episode" data-index="<?php echo esc_attr( $index ); ?>">
+    <div class="if-result-item__checkbox">
+        <input
+            type="checkbox"
+            id="if-item-<?php echo esc_attr( $item_id ); ?>"
+            name="podcasts[]"
+            value="<?php echo esc_attr( wp_json_encode( $item ) ); ?>"
+            class="if-checkbox"
+            aria-describedby="if-item-desc-<?php echo esc_attr( $item_id ); ?>"
+        >
+        <label for="if-item-<?php echo esc_attr( $item_id ); ?>" class="screen-reader-text">
+            <?php echo esc_html( $name ); ?>
+        </label>
+    </div>
+
+    <div class="if-result-item__image">
+        <?php if ( $podcast_image ) : ?>
+            <img
+                src="<?php echo esc_url( $podcast_image ); ?>"
+                alt=""
+                loading="lazy"
+                width="80"
+                height="80"
+            >
+        <?php else : ?>
+            <div class="if-result-item__placeholder" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18V5l12-2v13"></path>
+                    <circle cx="6" cy="18" r="3"></circle>
+                    <circle cx="18" cy="16" r="3"></circle>
+                </svg>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <div class="if-result-item__content" id="if-item-desc-<?php echo esc_attr( $item_id ); ?>">
+        <h3 class="if-result-item__title">
+            <?php if ( $audio_url ) : ?>
+                <a href="<?php echo esc_url( $audio_url ); ?>" target="_blank" rel="noopener noreferrer">
+                    <?php echo esc_html( $name ); ?>
+                    <span class="screen-reader-text"><?php esc_html_e( '(opens in new tab)', 'interview-finder' ); ?></span>
+                </a>
+            <?php else : ?>
+                <?php echo esc_html( $name ); ?>
+            <?php endif; ?>
+        </h3>
+
+        <?php if ( $podcast_name ) : ?>
+            <p class="if-result-item__podcast"><?php echo esc_html( $podcast_name ); ?></p>
+        <?php endif; ?>
+
+        <?php if ( $date_published ) : ?>
+            <time class="if-result-item__date" datetime="<?php echo esc_attr( $date_published ); ?>">
+                <?php echo esc_html( date_i18n( get_option( 'date_format' ), strtotime( $date_published ) ) ); ?>
+            </time>
+        <?php endif; ?>
+
+        <?php if ( $description ) : ?>
+            <p class="if-result-item__description">
+                <?php echo esc_html( wp_trim_words( wp_strip_all_tags( $description ), 30 ) ); ?>
+            </p>
+        <?php endif; ?>
+
+        <div class="if-result-item__meta">
+            <?php if ( $duration ) : ?>
+                <span class="if-result-item__duration" title="<?php esc_attr_e( 'Duration', 'interview-finder' ); ?>">
+                    <?php echo esc_html( gmdate( 'H:i:s', $duration ) ); ?>
+                </span>
+            <?php endif; ?>
+
+            <?php if ( null !== $ranking_score ) : ?>
+                <span class="if-result-item__ranking" title="<?php esc_attr_e( 'Relevance Score', 'interview-finder' ); ?>">
+                    <span class="if-ranking-label"><?php esc_html_e( 'Score:', 'interview-finder' ); ?></span>
+                    <span class="if-ranking-value"><?php echo esc_html( number_format( $ranking_score, 1 ) ); ?></span>
+                </span>
+            <?php endif; ?>
+
+            <?php if ( ! empty( $location_formatted ) ) : ?>
+                <span class="if-result-item__location" title="<?php esc_attr_e( 'Podcast Location', 'interview-finder' ); ?>">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="if-location-icon" aria-hidden="true">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <span class="if-location-value"><?php echo esc_html( $location_formatted ); ?></span>
+                </span>
+            <?php endif; ?>
+        </div>
+    </div>
+</li>
