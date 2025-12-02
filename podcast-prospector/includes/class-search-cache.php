@@ -76,16 +76,19 @@ class Podcast_Prospector_Search_Cache {
      */
     public function __construct( ?Podcast_Prospector_Logger $logger = null ) {
         $this->logger = $logger;
+        $cache_status            = function_exists( 'wp_using_ext_object_cache' ) ? wp_using_ext_object_cache() : null;
 
-        // Harden against hosts/plugins that return null or override the helper.
-        if ( function_exists( 'wp_using_ext_object_cache' ) ) {
-            $use_ext_object_cache = (bool) wp_using_ext_object_cache();
-        } else {
-            $use_ext_object_cache = false;
-            $this->log_debug( 'wp_using_ext_object_cache() missing; defaulting to transients' );
+        if ( null === $cache_status ) {
+            if ( $this->logger ) {
+                $this->logger->warning( '[Search Cache] Object cache check unavailable; defaulting to transient cache' );
+            }
+        } elseif ( ! is_bool( $cache_status ) ) {
+            if ( $this->logger ) {
+                $this->logger->warning( '[Search Cache] Object cache check returned unexpected value; coercing to boolean', [ 'cache_status' => $cache_status ] );
+            }
         }
 
-        $this->use_object_cache = $use_ext_object_cache;
+        $this->use_object_cache = (bool) $cache_status;
 
         if ( $this->use_object_cache ) {
             $this->log_debug( 'Using external object cache (Redis/Memcached)' );
