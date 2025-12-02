@@ -76,7 +76,15 @@ class Podcast_Prospector_Search_Cache {
      */
     public function __construct( ?Podcast_Prospector_Logger $logger = null ) {
         $this->logger = $logger;
-        $this->use_object_cache = wp_using_ext_object_cache();
+        $cache_status            = function_exists( 'wp_using_ext_object_cache' ) ? wp_using_ext_object_cache() : null;
+
+        if ( null === $cache_status ) {
+            $this->log_debug( 'Object cache check unavailable; defaulting to transient cache' );
+        } elseif ( ! is_bool( $cache_status ) ) {
+            $this->log_debug( 'Object cache check returned unexpected value; coercing to boolean', [ 'cache_status' => $cache_status ] );
+        }
+
+        $this->use_object_cache = (bool) $cache_status;
 
         if ( $this->use_object_cache ) {
             $this->log_debug( 'Using external object cache (Redis/Memcached)' );
