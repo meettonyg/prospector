@@ -181,12 +181,12 @@ final class Podcast_Prospector {
 
         // Register PodcastIndex API
         $this->container->singleton( Podcast_Prospector_API_PodcastIndex::class, function() {
-            return new Podcast_Prospector_API_PodcastIndex( $this->logger );
+            return Podcast_Prospector_API_PodcastIndex::get_instance();
         } );
 
         // Register Taddy API
         $this->container->singleton( Podcast_Prospector_API_Taddy::class, function() {
-            return new Podcast_Prospector_API_Taddy( $this->logger );
+            return Podcast_Prospector_API_Taddy::get_instance();
         } );
 
         // Register search service
