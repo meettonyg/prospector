@@ -31,7 +31,7 @@ class Podcast_Prospector_Database {
      *
      * @var string
      */
-    const DB_VERSION = '2.0.0';
+    const DB_VERSION = '2.0.1';
 
     /**
      * Singleton instance.

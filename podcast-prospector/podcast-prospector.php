@@ -340,6 +340,7 @@ final class Podcast_Prospector {
     public function admin_init(): void {
         // Check for database updates
         $this->maybe_update_database();
+        $this->maybe_update_sponsored_database();
     }
 
     /**
@@ -444,6 +445,20 @@ final class Podcast_Prospector {
         if ( version_compare( $current_version, Podcast_Prospector_Database::DB_VERSION, '<' ) ) {
             $database = Podcast_Prospector_Database::get_instance();
             $database->create_table();
+        }
+    }
+
+    /**
+     * Check and run sponsored listings database updates if needed.
+     *
+     * @return void
+     */
+    private function maybe_update_sponsored_database(): void {
+        $current_version = get_option( 'podcast_prospector_sponsored_db_version', '1.0.0' );
+
+        if ( version_compare( $current_version, Podcast_Prospector_Sponsored_Listings::DB_VERSION, '<' ) ) {
+            $sponsored = Podcast_Prospector_Sponsored_Listings::get_instance();
+            $sponsored->create_tables();
         }
     }
 

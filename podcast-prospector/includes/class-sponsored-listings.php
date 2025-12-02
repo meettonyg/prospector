@@ -38,7 +38,7 @@ class Podcast_Prospector_Sponsored_Listings {
      *
      * @var string
      */
-    const DB_VERSION = '1.0.0';
+    const DB_VERSION = '1.0.1';
 
     /**
      * Singleton instance.
