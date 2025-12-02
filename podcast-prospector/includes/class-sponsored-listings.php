@@ -122,7 +122,7 @@ class Podcast_Prospector_Sponsored_Listings {
 
         // Main sponsored listings table with optimized indexes
         $sql_listings = "CREATE TABLE {$this->table_name} (
-            id BIGINT(20) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             name VARCHAR(255) NOT NULL,
             podcast_title VARCHAR(255) NOT NULL,
             podcast_uuid VARCHAR(255) DEFAULT '',
@@ -143,6 +143,7 @@ class Podcast_Prospector_Sponsored_Listings {
             created_by BIGINT(20) UNSIGNED NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
             KEY idx_status_priority (status, priority DESC),
             KEY idx_active_lookup (status, start_date, end_date, impression_limit, click_limit),
             KEY idx_categories (categories(100)),
@@ -151,12 +152,13 @@ class Podcast_Prospector_Sponsored_Listings {
 
         // Daily stats table for reporting
         $sql_stats = "CREATE TABLE {$this->stats_table_name} (
-            id BIGINT(20) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             sponsored_id BIGINT(20) UNSIGNED NOT NULL,
             stat_date DATE NOT NULL,
             impressions INT(11) DEFAULT 0,
             clicks INT(11) DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
             UNIQUE KEY sponsored_date (sponsored_id, stat_date),
             KEY sponsored_id (sponsored_id),
             KEY stat_date (stat_date)
