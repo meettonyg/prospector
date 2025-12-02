@@ -82,9 +82,9 @@ class Podcast_Prospector_Sponsored_Listings_Admin {
 
         wp_enqueue_style(
             'podcast-prospector-sponsored-admin',
-            INTERVIEW_FINDER_PLUGIN_URL . 'assets/css/sponsored-admin.css',
+            PODCAST_PROSPECTOR_PLUGIN_URL . 'assets/css/sponsored-admin.css',
             [],
-            INTERVIEW_FINDER_VERSION
+            PODCAST_PROSPECTOR_VERSION
         );
     }
 
