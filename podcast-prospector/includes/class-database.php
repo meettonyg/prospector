@@ -31,7 +31,7 @@ class Podcast_Prospector_Database {
      *
      * @var string
      */
-    const DB_VERSION = '2.0.0';
+    const DB_VERSION = '2.0.1';
 
     /**
      * Singleton instance.
@@ -104,7 +104,7 @@ class Podcast_Prospector_Database {
         $charset_collate = $this->wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE {$this->table_name} (
-            id BIGINT(20) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             wp_user_id BIGINT(20) UNSIGNED NOT NULL,
             ghl_id VARCHAR(255) DEFAULT '',
             search_count INT(11) DEFAULT 0,
@@ -112,6 +112,7 @@ class Podcast_Prospector_Database {
             last_searched DATETIME DEFAULT CURRENT_TIMESTAMP,
             last_reset_date DATETIME DEFAULT '0000-00-00 00:00:00',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
             UNIQUE KEY wp_user_id (wp_user_id),
             KEY ghl_id (ghl_id)
         ) $charset_collate;";
