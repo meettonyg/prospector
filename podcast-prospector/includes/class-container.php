@@ -112,20 +112,12 @@ class Podcast_Prospector_Container {
 
         // PodcastIndex API
         $this->singleton( 'api.podcastindex', function ( $c ) {
-            return new Podcast_Prospector_API_PodcastIndex(
-                $c->get( 'settings' ),
-                $c->get( 'logger' ),
-                $c->get( 'rate_limiter' )
-            );
+            return Podcast_Prospector_API_PodcastIndex::get_instance();
         } );
 
         // Taddy API
         $this->singleton( 'api.taddy', function ( $c ) {
-            return new Podcast_Prospector_API_Taddy(
-                $c->get( 'settings' ),
-                $c->get( 'logger' ),
-                $c->get( 'rate_limiter' )
-            );
+            return Podcast_Prospector_API_Taddy::get_instance();
         } );
 
         // Podcast Location Repository
