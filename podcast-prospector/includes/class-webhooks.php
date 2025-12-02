@@ -347,7 +347,7 @@ class Podcast_Prospector_Settings_Export {
      */
     public function export( bool $include_credentials = false ): array {
         $export = [
-            'version'    => INTERVIEW_FINDER_VERSION ?? '2.1.0',
+            'version'    => PODCAST_PROSPECTOR_VERSION ?? '2.1.0',
             'exported'   => current_time( 'c' ),
             'site_url'   => get_site_url(),
             'settings'   => [],

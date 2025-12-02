@@ -156,7 +156,7 @@ class Podcast_Prospector_Shortcode {
 
         // Loading spinner
         $output .= '<div id="loading-spinner" style="display:none;">'
-            . '<img src="' . esc_url( INTERVIEW_FINDER_PLUGIN_URL . 'assets/spinner.gif' ) . '" alt="Loading...">'
+            . '<img src="' . esc_url( PODCAST_PROSPECTOR_PLUGIN_URL . 'assets/spinner.gif' ) . '" alt="Loading...">'
             . '</div>';
 
         // Error message container

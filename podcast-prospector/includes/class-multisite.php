@@ -70,7 +70,7 @@ class Podcast_Prospector_Multisite {
             require_once ABSPATH . '/wp-admin/includes/plugin.php';
         }
 
-        return is_plugin_active_for_network( plugin_basename( INTERVIEW_FINDER_FILE ) );
+        return is_plugin_active_for_network( plugin_basename( PODCAST_PROSPECTOR_FILE ) );
     }
 
     /**
