@@ -208,6 +208,18 @@ main {max-width: 1200px; margin: 0 auto; padding: 20px;}
     border-top: 1px solid #eee; /* Separator line */
 }
 
+/* Ensure hidden attribute works even when display: grid is set */
+#filter-sidebar[hidden] {
+    display: none !important;
+}
+
+/* Also ensure other elements with hidden attribute respect it */
+#basic-block[hidden],
+#advanced-block[hidden],
+#toggle-filters[hidden] {
+    display: none !important;
+}
+
 .filter-group {
     display: flex;
     flex-direction: column;

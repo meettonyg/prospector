@@ -208,6 +208,15 @@ class Podcast_Prospector_Ajax_Handler {
 
             if ( 'byadvancedepisode' === $search_type ) {
                 $taddy_api = Podcast_Prospector_API_Taddy::get_instance();
+                
+                // Check if Taddy API is configured
+                if ( ! $taddy_api->is_configured() ) {
+                    wp_send_json_error( [
+                        'message' => __( 'Taddy API credentials not configured.', 'podcast-prospector' ),
+                        'details' => __( 'Please configure Taddy API Key and User ID in Settings > Interview Finder.', 'podcast-prospector' ),
+                    ] );
+                    return;
+                }
                 $response = $taddy_api->search_episodes( [
                     'search_term'      => $search_term,
                     'language'         => $language,
@@ -229,6 +238,15 @@ class Podcast_Prospector_Ajax_Handler {
 
             } elseif ( 'byadvancedpodcast' === $search_type ) {
                 $taddy_api = Podcast_Prospector_API_Taddy::get_instance();
+                
+                // Check if Taddy API is configured
+                if ( ! $taddy_api->is_configured() ) {
+                    wp_send_json_error( [
+                        'message' => __( 'Taddy API credentials not configured.', 'podcast-prospector' ),
+                        'details' => __( 'Please configure Taddy API Key and User ID in Settings > Interview Finder.', 'podcast-prospector' ),
+                    ] );
+                    return;
+                }
                 $response = $taddy_api->search_podcasts( [
                     'search_term'      => $search_term,
                     'language'         => $language,
@@ -251,6 +269,16 @@ class Podcast_Prospector_Ajax_Handler {
             } else {
                 // PodcastIndex search
                 $pi_api = Podcast_Prospector_API_PodcastIndex::get_instance();
+                
+                // Check if PodcastIndex API is configured
+                if ( ! $pi_api->is_configured() ) {
+                    wp_send_json_error( [
+                        'message' => __( 'PodcastIndex API credentials not configured.', 'podcast-prospector' ),
+                        'details' => __( 'Please configure PodcastIndex API Key and Secret in Settings > Interview Finder.', 'podcast-prospector' ),
+                    ] );
+                    return;
+                }
+                
                 $max_results = $membership->get_podcastindex_max( $user_id );
 
                 if ( 'byperson' === $search_type ) {

@@ -146,8 +146,12 @@
             const searchType = selectedType.value;
             const isBasic = searchType === 'byperson' || searchType === 'bytitle';
 
+            // Hide filter sidebar for basic search types, keep current state for advanced
             if (this.elements.filterSidebar) {
-                this.elements.filterSidebar.hidden = true;
+                if (isBasic) {
+                    this.elements.filterSidebar.hidden = true;
+                }
+                // For advanced tabs, don't auto-show - let user click Filter button
             }
 
             if (this.elements.basicBlock) {
@@ -158,6 +162,7 @@
                 this.elements.advancedBlock.hidden = isBasic;
             }
 
+            // Show/hide Filter button based on search type
             if (this.elements.toggleFilters) {
                 this.elements.toggleFilters.hidden = isBasic;
             }
@@ -200,7 +205,13 @@
                     this.updateUserStats(response.data.user_data);
                     this.announce(`${response.data.count || 0} results found`);
                 } else {
-                    this.showError(response.data?.message || this.i18n.unexpectedResponse);
+                    // Show error message with details if available
+                    let errorMessage = response.data?.message || this.i18n.unexpectedResponse;
+                    if (response.data?.details) {
+                        errorMessage += ` (Details: ${response.data.details})`;
+                    }
+                    console.error('Search error:', response.data);
+                    this.showError(errorMessage);
                 }
             } catch (error) {
                 if (error.name !== 'AbortError') {
@@ -428,7 +439,13 @@
                     // Scroll to top of results
                     this.elements.resultsContainer?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 } else {
-                    this.showError(response.data?.message || this.i18n.unexpectedResponse);
+                    // Show error message with details if available
+                    let errorMessage = response.data?.message || this.i18n.unexpectedResponse;
+                    if (response.data?.details) {
+                        errorMessage += ` (Details: ${response.data.details})`;
+                    }
+                    console.error('Pagination error:', response.data);
+                    this.showError(errorMessage);
                 }
             } catch (error) {
                 if (error.name !== 'AbortError') {
