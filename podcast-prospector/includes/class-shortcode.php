@@ -147,7 +147,7 @@ class Podcast_Prospector_Shortcode {
         $output .= $this->render_tabs( $search_type );
 
         // Search row
-        $output .= $this->render_search_row( $search_term, $settings, $number_of_results, $results_per_page, $sort_order );
+        $output .= $this->render_search_row( $search_term, $settings, $number_of_results, $results_per_page, $sort_order, $search_type );
 
         // Filter sidebar
         $output .= $this->render_filters( $settings, $language, $country, $genre, $after_date, $before_date, $is_safe_mode );
@@ -218,29 +218,35 @@ class Podcast_Prospector_Shortcode {
     /**
      * Render search row.
      *
-     * @param string $search_term      Current search term.
-     * @param array  $settings         Membership settings.
+     * @param string $search_term       Current search term.
+     * @param array  $settings          Membership settings.
      * @param int    $number_of_results Number of results.
-     * @param int    $results_per_page Results per page.
-     * @param string $sort_order       Sort order.
+     * @param int    $results_per_page  Results per page.
+     * @param string $sort_order        Sort order.
+     * @param string $search_type       Search type for determining visibility.
      * @return string HTML.
      */
-    private function render_search_row( string $search_term, array $settings, int $number_of_results, int $results_per_page, string $sort_order ): string {
+    private function render_search_row( string $search_term, array $settings, int $number_of_results, int $results_per_page, string $sort_order, string $search_type = 'byperson' ): string {
         $output = '<div class="search-row" style="display:flex; align-items:center; justify-content:space-between; margin-top:15px;">';
+
+        // Determine if this is a basic search type (byperson or bytitle)
+        $is_basic_search = in_array( $search_type, [ 'byperson', 'bytitle' ], true );
+        $filter_hidden = $is_basic_search ? ' hidden' : '';
 
         // Left group: search input, button, filter toggle
         $output .= '<div class="left-group" style="display:flex; gap:10px; align-items:center;">'
             . '<input type="text" name="search_term" class="search-term" placeholder="' . esc_attr__( 'Enter search term', 'podcast-prospector' ) . '" '
             . 'value="' . esc_attr( $search_term ) . '" required style="min-width:220px;">'
             . '<input type="submit" class="search-btn" value="' . esc_attr__( 'Search', 'podcast-prospector' ) . '">'
-            . '<button id="toggle-filters" class="filter-btn" type="button" style="display:none;">' . esc_html__( 'Filter', 'podcast-prospector' ) . '</button>'
+            . '<button id="toggle-filters" class="filter-btn" type="button"' . $filter_hidden . '>' . esc_html__( 'Filter', 'podcast-prospector' ) . '</button>'
             . '</div>';
 
         // Right group: results dropdowns
         $output .= '<div class="right-group" style="display:flex; align-items:center; gap:10px;">';
 
-        // Basic block (PodcastIndex)
-        $output .= '<div id="basic-block" style="display:none;">'
+        // Basic block (PodcastIndex) - visible for basic searches (byperson, bytitle)
+        $basic_hidden = $is_basic_search ? '' : ' hidden';
+        $output .= '<div id="basic-block"' . $basic_hidden . '>'
             . '<label for="number_of_results" class="results-label">' . esc_html__( 'Number of Results:', 'podcast-prospector' ) . '</label>'
             . '<select name="number_of_results" id="number_of_results" class="results-dropdown">';
 
@@ -254,8 +260,9 @@ class Podcast_Prospector_Shortcode {
         }
         $output .= '</select></div>';
 
-        // Advanced block (Taddy)
-        $output .= '<div id="advanced-block" style="display:none;">';
+        // Advanced block (Taddy) - visible for advanced searches
+        $advanced_hidden = $is_basic_search ? ' hidden' : '';
+        $output .= '<div id="advanced-block"' . $advanced_hidden . '>';
 
         // Results per page
         $output .= '<label for="results_per_page" class="results-label">' . esc_html__( 'Display:', 'podcast-prospector' ) . '</label>'
@@ -309,7 +316,7 @@ class Podcast_Prospector_Shortcode {
      * @return string HTML.
      */
     private function render_filters( array $settings, string $language, string $country, string $genre, string $after_date, string $before_date, bool $is_safe_mode ): string {
-        $output = '<div id="filter-sidebar" style="display:none; margin-top:15px;">';
+        $output = '<div id="filter-sidebar" hidden style="margin-top:15px;">';
 
         // Language
         $output .= $this->render_filter_select(
