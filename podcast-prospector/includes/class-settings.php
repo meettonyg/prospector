@@ -213,11 +213,24 @@ class Podcast_Prospector_Settings {
     /**
      * Check if we should load assets on current page.
      *
+     * Checks if current page is the configured search page OR contains the shortcode.
+     *
      * @return bool
      */
     public function is_search_page(): bool {
+        // Check if explicitly configured search page
         $page_id = (int) $this->get( 'search_page_id' );
-        return $page_id > 0 && is_page( $page_id );
+        if ( $page_id > 0 && is_page( $page_id ) ) {
+            return true;
+        }
+
+        // Check if current post/page contains the shortcode
+        global $post;
+        if ( $post instanceof WP_Post && has_shortcode( $post->post_content, 'podcast_prospector' ) ) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
