@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Podcast Prospector
  * Plugin URI: https://example.com/podcast-prospector
- * Description: Search and display podcast episodes from multiple podcast databases. Import podcasts to Formidable Forms tracker.
- * Version: 2.0.0
+ * Description: Search and display podcast episodes from multiple podcast databases. Import podcasts to Formidable Forms or Guest Intelligence tracker.
+ * Version: 2.2.0
  * Author: Podcast Prospector Team
  * Author URI: https://example.com
  * Text Domain: podcast-prospector
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Plugin version.
  */
-define( 'PODCAST_PROSPECTOR_VERSION', '2.1.0' );
+define( 'PODCAST_PROSPECTOR_VERSION', '2.2.0' );
 
 /**
  * Plugin file path.
@@ -117,6 +117,7 @@ final class Podcast_Prospector {
         require_once $includes_dir . 'class-api-taddy.php';
         require_once $includes_dir . 'class-renderer.php';
         require_once $includes_dir . 'class-form-handler.php';
+        require_once $includes_dir . 'class-guest-intel-import-handler.php';
         require_once $includes_dir . 'class-ajax-handler.php';
         require_once $includes_dir . 'class-shortcode.php';
 
@@ -203,6 +204,11 @@ final class Podcast_Prospector {
         // Register form handler
         $this->container->singleton( Podcast_Prospector_Form_Handler::class, function() {
             return Podcast_Prospector_Form_Handler::get_instance();
+        } );
+
+        // Register Guest Intel import handler
+        $this->container->singleton( Podcast_Prospector_Guest_Intel_Import_Handler::class, function() {
+            return Podcast_Prospector_Guest_Intel_Import_Handler::get_instance();
         } );
 
         // Register REST API

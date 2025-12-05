@@ -62,6 +62,9 @@ class Podcast_Prospector_Settings {
         // Page Configuration
         'search_page_id'          => 0,
 
+        // Import Mode (Feature Flag)
+        'import_mode'             => 'formidable', // 'formidable' or 'guestintel'
+
         // Form Configuration (Formidable Forms)
         'form_id'                 => 518,
         'field_podcast_title'     => 8111,
@@ -283,6 +286,21 @@ class Podcast_Prospector_Settings {
 
         $this->add_settings_field( 'search_page_id', __( 'Search Page ID', 'podcast-prospector' ), 'page_config_section', 'number' );
 
+        // Import Mode Section (Feature Flag)
+        add_settings_section(
+            'import_mode_section',
+            __( 'Import Mode', 'podcast-prospector' ),
+            [ $this, 'render_import_mode_section_description' ],
+            self::PAGE_SLUG
+        );
+
+        $this->add_settings_field( 'import_mode', __( 'Import Target', 'podcast-prospector' ), 'import_mode_section', 'select', [
+            'options' => [
+                'formidable' => __( 'Formidable Forms (Legacy)', 'podcast-prospector' ),
+                'guestintel' => __( 'Guest Intelligence (v4)', 'podcast-prospector' ),
+            ],
+        ] );
+
         // Form Configuration Section
         add_settings_section(
             'form_config_section',
@@ -386,6 +404,21 @@ class Podcast_Prospector_Settings {
      */
     public function render_page_section_description(): void {
         echo '<p>' . esc_html__( 'Configure which page displays the Interview Finder search interface.', 'podcast-prospector' ) . '</p>';
+    }
+
+    /**
+     * Render import mode section description.
+     *
+     * @return void
+     */
+    public function render_import_mode_section_description(): void {
+        echo '<p>' . esc_html__( 'Choose where podcast imports are stored.', 'podcast-prospector' ) . '</p>';
+        echo '<p class="description">';
+        echo '<strong>' . esc_html__( 'Formidable Forms (Legacy):', 'podcast-prospector' ) . '</strong> ';
+        echo esc_html__( 'Imports create Formidable Forms entries. Use this if you need backward compatibility.', 'podcast-prospector' );
+        echo '<br><strong>' . esc_html__( 'Guest Intelligence (v4):', 'podcast-prospector' ) . '</strong> ';
+        echo esc_html__( 'Imports create records in the Guest Intelligence database (pit_* tables). Use this for the new Interview Tracker CRM.', 'podcast-prospector' );
+        echo '</p>';
     }
 
     /**
@@ -549,6 +582,12 @@ class Podcast_Prospector_Settings {
         $sanitized['log_level'] = isset( $input['log_level'] ) && in_array( $input['log_level'], $valid_log_levels, true )
             ? $input['log_level']
             : 'error';
+
+        // Import mode (feature flag)
+        $valid_import_modes = [ 'formidable', 'guestintel' ];
+        $sanitized['import_mode'] = isset( $input['import_mode'] ) && in_array( $input['import_mode'], $valid_import_modes, true )
+            ? $input['import_mode']
+            : 'formidable';
 
         // Location table name (sanitize as table name - alphanumeric and underscores only)
         $sanitized['location_table_name'] = isset( $input['location_table_name'] )

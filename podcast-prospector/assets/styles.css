@@ -529,7 +529,94 @@ main {max-width: 1200px; margin: 0 auto; padding: 20px;}
 .import-message.error .error-details { color: #721c24; }
 .import-message.error .message-actions a { color: #721c24; }
 
-/* (Optional) keep your toggles from wrapping weirdly */
+/* ==============================
+   TOGGLE EXPAND/COLLAPSE SYSTEM
+   (Checkbox hack for episode/podcast descriptions)
+============================== */
+
+/* Hide the actual checkbox input */
+.shared-expand .toggle-checkbox,
+.simple-expand .toggle-checkbox {
+  display: none !important;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Style the toggle label as a clickable link */
+.shared-expand .expand-toggle,
+.simple-expand .expand-toggle {
+  cursor: pointer;
+  color: #007bff;
+  font-size: 0.9em;
+  text-decoration: none;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.shared-expand .expand-toggle:hover,
+.simple-expand .expand-toggle:hover {
+  text-decoration: underline;
+  color: #0056b3;
+}
+
+/* Add visual indicator (chevron/arrow) */
+.shared-expand .expand-toggle::after,
+.simple-expand .expand-toggle::after {
+  content: ' ▶';
+  font-size: 0.7em;
+  display: inline-block;
+  margin-left: 4px;
+  transition: transform 0.2s ease;
+}
+
+/* Rotate chevron when expanded */
+.shared-expand .toggle-checkbox:checked + .expand-toggle::after,
+.simple-expand .toggle-checkbox:checked + .expand-toggle::after {
+  transform: rotate(90deg);
+}
+
+/* Hide expandable content by default */
+.shared-expand .expandcontent,
+.simple-expand .expandcontent {
+  display: none;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  opacity: 0;
+}
+
+/* Show expandable content when checkbox is checked */
+.shared-expand .toggle-checkbox:checked ~ .expandcontent,
+.simple-expand .toggle-checkbox:checked ~ .expandcontent {
+  display: block;
+  max-height: 1000px; /* Large enough for any content */
+  opacity: 1;
+  margin-top: 8px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-left: 3px solid #007bff;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Style the content section inside expandcontent */
+.expandcontent section {
+  line-height: 1.6;
+  color: #333;
+}
+
+.expandcontent section p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Container for expandable sections in details-actions */
+.details-actions .shared-expand,
+.details-actions .simple-expand {
+  margin: 0;
+}
+
+/* Keep toggles from wrapping */
 .details-actions .expand-toggle {
   white-space: nowrap;
 }
@@ -692,17 +779,3 @@ main {max-width: 1200px; margin: 0 auto; padding: 20px;}
 .expandcontent a .search-highlight {
     color: inherit; /* Inherit link color if highlight is inside a link */
 }
-
-
-/* Increase line height for expanded descriptions */
-.expandcontent section {
-    line-height: 1.6; /* Adjust this value - 1.5, 1.7 etc. until it looks right */
-    /* You could also use 'em' units, e.g., line-height: 1.6em; */
-}
-
-/* Optional: If descriptions contain paragraphs (<p>), you might target them directly */
-/*
-.expandcontent section p {
-    line-height: 1.6;
-}
-*/
