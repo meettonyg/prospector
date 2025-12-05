@@ -354,21 +354,9 @@ class Podcast_Prospector_Ajax_Handler {
             return;
         }
 
-        // Check import mode setting (feature flag)
-        $settings = class_exists( 'Podcast_Prospector_Settings' )
-            ? Podcast_Prospector_Settings::get_instance()
-            : null;
-        $import_mode = $settings ? $settings->get( 'import_mode', 'formidable' ) : 'formidable';
-
-        if ( 'guestintel' === $import_mode ) {
-            // New Guest Intelligence import flow
-            $handler = Podcast_Prospector_Guest_Intel_Import_Handler::get_instance();
-            $result = $handler->import_items( $_POST['podcasts'], $_POST );
-        } else {
-            // Legacy Formidable Forms import
-            $form_handler = Podcast_Prospector_Form_Handler::get_instance();
-            $result = $form_handler->create_entries( $_POST['podcasts'], $_POST );
-        }
+        // Import directly to Guest Intelligence database (pit_* tables)
+        $handler = Podcast_Prospector_Guest_Intel_Import_Handler::get_instance();
+        $result = $handler->import_items( $_POST['podcasts'], $_POST );
 
         if ( $result['success_count'] > 0 && $result['fail_count'] === 0 ) {
             wp_send_json_success( [ 'html' => $result['html'] ] );
