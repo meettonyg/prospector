@@ -277,10 +277,14 @@ class Podcast_Prospector_Guest_Intel_Import_Handler {
         global $wpdb;
         $table = $wpdb->prefix . 'pit_opportunities';
 
+        // Get the default pipeline stage (first stage by sort_order)
+        $default_stage = $this->get_default_pipeline_stage( $user_id );
+
         $insert_data = [
             'user_id'     => $user_id,
             'podcast_id'  => $podcast_id,
-            'status'      => 'lead', // Starting pipeline status
+            'status'      => $default_stage['stage_key'], // For backward compatibility
+            'stage_id'    => $default_stage['id'],        // Foreign key reference
             'priority'    => 'medium',
             'source'      => $search_type,
             'notes'       => sprintf(
@@ -304,6 +308,50 @@ class Podcast_Prospector_Guest_Intel_Import_Handler {
         }
 
         return $wpdb->insert_id;
+    }
+
+    /**
+     * Get the default pipeline stage for new opportunities.
+     *
+     * Checks for user-specific stages first, falls back to system defaults.
+     *
+     * @param int $user_id User ID.
+     * @return array{id: int, stage_key: string} Stage ID and key.
+     */
+    private function get_default_pipeline_stage( int $user_id ): array {
+        global $wpdb;
+        $table = $wpdb->prefix . 'pit_pipeline_stages';
+
+        // First try user-specific stage
+        $stage = $wpdb->get_row( $wpdb->prepare(
+            "SELECT id, stage_key FROM $table 
+             WHERE user_id = %d AND is_active = 1 
+             ORDER BY sort_order ASC LIMIT 1",
+            $user_id
+        ), ARRAY_A );
+
+        if ( $stage ) {
+            return $stage;
+        }
+
+        // Fall back to system default (first by sort_order)
+        $stage = $wpdb->get_row(
+            "SELECT id, stage_key FROM $table 
+             WHERE (user_id IS NULL OR is_system = 1) AND is_active = 1 
+             ORDER BY sort_order ASC LIMIT 1",
+            ARRAY_A
+        );
+
+        if ( $stage ) {
+            return $stage;
+        }
+
+        // Ultimate fallback if no stages exist (should never happen)
+        $this->log_warning( 'No pipeline stages found, using hardcoded fallback' );
+        return [
+            'id'        => 1,
+            'stage_key' => 'potential',
+        ];
     }
 
     /**
