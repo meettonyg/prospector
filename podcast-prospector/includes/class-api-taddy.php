@@ -200,58 +200,32 @@ class Podcast_Prospector_API_Taddy {
     }
 
     /**
-     * Build filter string for GraphQL query.
-     *
-     * @param array $filters Filter parameters.
-     * @return string
-     */
-    private function build_filter_string( array $filters ): string {
-        $filter_parts = array_filter( $filters, function( $value ) {
-            return ! empty( $value );
-        } );
-
-        return implode( ', ', $filter_parts );
-    }
-
-    /**
-     * Search for podcast episodes using latest Taddy API.
+     * Search for podcast episodes.
      *
      * @param array $params Search parameters.
      * @return array|WP_Error
      */
     public function search_episodes( array $params ) {
         $search_term = $this->escape_graphql_string( $params['search_term'] ?? '' );
-        $page = max( 1, min( 20, (int) ( $params['page'] ?? 1 ) ) ); // Max page is 20
+        $page = max( 1, min( 20, (int) ( $params['page'] ?? 1 ) ) );
         $results_per_page = max( 5, min( 25, (int) ( $params['results_per_page'] ?? 10 ) ) );
-        $language = $params['language'] ?? 'ALL';
-        $country = $params['country'] ?? 'ALL';
-        $genre = $params['genre'] ?? 'ALL';
-        $after_date = $params['after_date'] ?? '';
-        $before_date = $params['before_date'] ?? '';
-        $is_safe_mode = (bool) ( $params['is_safe_mode'] ?? false );
-        $sort_by = $params['sort_by'] ?? 'EXACTNESS'; // EXACTNESS or POPULARITY
-        $match_by = $params['match_by'] ?? 'MOST_TERMS'; // MOST_TERMS, ALL_TERMS, EXACT_PHRASE
+        $is_safe_mode = (bool) ( $params['is_safe_mode'] ?? true );
+        $sort_order = $params['sort_order'] ?? 'BEST_MATCH';
 
         // Build query parameters
         $query_params = $this->build_search_params( [
-            'term'             => $search_term,
-            'page'             => $page,
-            'limitPerPage'     => $results_per_page,
-            'filterForTypes'   => 'PODCASTEPISODE',
-            'sortBy'           => $sort_by,
-            'matchBy'          => $match_by,
-            'isSafeMode'       => $is_safe_mode,
-            'language'         => $language,
-            'country'          => $country,
-            'genre'            => $genre,
-            'after_date'       => $after_date,
-            'before_date'      => $before_date,
+            'term'           => $search_term,
+            'page'           => $page,
+            'limitPerPage'   => $results_per_page,
+            'filterForTypes' => 'PODCASTEPISODE',
+            'isSafeMode'     => $is_safe_mode,
+            'sortOrder'      => $sort_order,
         ] );
 
-        // Build GraphQL query using latest Taddy API
+        // Build GraphQL query
         $query = <<<GRAPHQL
 {
-    search({$query_params}) {
+    searchForTerm({$query_params}) {
         searchId
         podcastEpisodes {
             uuid
@@ -275,16 +249,6 @@ class Podcast_Prospector_API_Taddy {
                 websiteUrl
             }
         }
-        rankingDetails {
-            id
-            uuid
-            rankingScore
-        }
-        responseDetails {
-            totalResults
-            totalPages
-            currentPage
-        }
     }
 }
 GRAPHQL;
@@ -305,97 +269,48 @@ GRAPHQL;
         $parts[] = sprintf( 'term: "%s"', $params['term'] );
 
         // Pagination
-        $parts[] = sprintf( 'page: %d', $params['page'] );
         $parts[] = sprintf( 'limitPerPage: %d', $params['limitPerPage'] );
+        $parts[] = sprintf( 'page: %d', $params['page'] );
 
         // Filter type
         $parts[] = sprintf( 'filterForTypes: %s', $params['filterForTypes'] );
 
-        // Sorting - EXACTNESS (default) or POPULARITY
-        if ( ! empty( $params['sortBy'] ) && in_array( $params['sortBy'], [ 'EXACTNESS', 'POPULARITY' ], true ) ) {
-            $parts[] = sprintf( 'sortBy: %s', $params['sortBy'] );
-        }
-
-        // Matching - MOST_TERMS (default), ALL_TERMS, EXACT_PHRASE
-        if ( ! empty( $params['matchBy'] ) && in_array( $params['matchBy'], [ 'MOST_TERMS', 'ALL_TERMS', 'EXACT_PHRASE' ], true ) ) {
-            $parts[] = sprintf( 'matchBy: %s', $params['matchBy'] );
-        }
+        // Search operator (AND requires all terms, OR requires any term)
+        $parts[] = 'includeSearchOperator: AND';
 
         // Safe mode
         $parts[] = sprintf( 'isSafeMode: %s', $params['isSafeMode'] ? 'true' : 'false' );
-
-        // Language filter
-        if ( ! empty( $params['language'] ) && 'ALL' !== $params['language'] ) {
-            $parts[] = sprintf( 'filterForLanguages: [%s]', esc_attr( $params['language'] ) );
-        }
-
-        // Country filter
-        if ( ! empty( $params['country'] ) && 'ALL' !== $params['country'] ) {
-            $parts[] = sprintf( 'filterForCountries: [%s]', esc_attr( $params['country'] ) );
-        }
-
-        // Genre filter
-        if ( ! empty( $params['genre'] ) && 'ALL' !== $params['genre'] ) {
-            $parts[] = sprintf( 'filterForGenres: [%s]', esc_attr( $params['genre'] ) );
-        }
-
-        // Date filters
-        if ( ! empty( $params['after_date'] ) ) {
-            $timestamp = strtotime( $params['after_date'] . ' UTC' );
-            if ( $timestamp ) {
-                $parts[] = sprintf( 'filterForPublishedAfter: %d', $timestamp );
-            }
-        }
-
-        if ( ! empty( $params['before_date'] ) ) {
-            $timestamp = strtotime( $params['before_date'] . ' 23:59:59 UTC' );
-            if ( $timestamp ) {
-                $parts[] = sprintf( 'filterForPublishedBefore: %d', $timestamp );
-            }
-        }
 
         return implode( ', ', $parts );
     }
 
     /**
-     * Search for podcast series using latest Taddy API.
+     * Search for podcast series.
      *
      * @param array $params Search parameters.
      * @return array|WP_Error
      */
     public function search_podcasts( array $params ) {
         $search_term = $this->escape_graphql_string( $params['search_term'] ?? '' );
-        $page = max( 1, min( 20, (int) ( $params['page'] ?? 1 ) ) ); // Max page is 20
+        $page = max( 1, min( 20, (int) ( $params['page'] ?? 1 ) ) );
         $results_per_page = max( 5, min( 25, (int) ( $params['results_per_page'] ?? 10 ) ) );
-        $language = $params['language'] ?? 'ALL';
-        $country = $params['country'] ?? 'ALL';
-        $genre = $params['genre'] ?? 'ALL';
-        $after_date = $params['after_date'] ?? '';
-        $before_date = $params['before_date'] ?? '';
-        $is_safe_mode = (bool) ( $params['is_safe_mode'] ?? false );
-        $sort_by = $params['sort_by'] ?? 'EXACTNESS'; // EXACTNESS or POPULARITY
-        $match_by = $params['match_by'] ?? 'MOST_TERMS'; // MOST_TERMS, ALL_TERMS, EXACT_PHRASE
+        $is_safe_mode = (bool) ( $params['is_safe_mode'] ?? true );
+        $sort_order = $params['sort_order'] ?? 'BEST_MATCH';
 
         // Build query parameters
         $query_params = $this->build_search_params( [
-            'term'             => $search_term,
-            'page'             => $page,
-            'limitPerPage'     => $results_per_page,
-            'filterForTypes'   => 'PODCASTSERIES',
-            'sortBy'           => $sort_by,
-            'matchBy'          => $match_by,
-            'isSafeMode'       => $is_safe_mode,
-            'language'         => $language,
-            'country'          => $country,
-            'genre'            => $genre,
-            'after_date'       => $after_date,
-            'before_date'      => $before_date,
+            'term'           => $search_term,
+            'page'           => $page,
+            'limitPerPage'   => $results_per_page,
+            'filterForTypes' => 'PODCASTSERIES',
+            'isSafeMode'     => $is_safe_mode,
+            'sortOrder'      => $sort_order,
         ] );
 
-        // Build GraphQL query using latest Taddy API
+        // Build GraphQL query
         $query = <<<GRAPHQL
 {
-    search({$query_params}) {
+    searchForTerm({$query_params}) {
         searchId
         podcastSeries {
             uuid
@@ -410,16 +325,10 @@ GRAPHQL;
             isExplicitContent
             rssUrl
             websiteUrl
-        }
-        rankingDetails {
-            id
-            uuid
-            rankingScore
-        }
-        responseDetails {
-            totalResults
-            totalPages
-            currentPage
+            episodes(sortOrder: LATEST, limitPerPage: 1) {
+                uuid
+                datePublished
+            }
         }
     }
 }
