@@ -3,7 +3,7 @@
     <!-- Dropdown Button -->
     <button
       @click="toggleDropdown"
-      class="h-12 px-4 bg-white border border-slate-200 rounded-lg flex items-center gap-2 text-slate-800 hover:border-slate-300 transition-colors min-w-[140px]"
+      class="h-11 px-4 bg-white border border-slate-200 rounded-lg flex items-center gap-2 text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors min-w-[140px]"
     >
       <component :is="currentChannel.icon" class="w-4 h-4" :class="currentChannel.iconColor" />
       <span class="text-sm font-medium">{{ currentChannel.label }}</span>
@@ -23,17 +23,17 @@
           class="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 transition-colors text-left"
         >
           <component :is="channel.icon" class="w-4 h-4" :class="channel.iconColor" />
-          <span class="text-sm text-slate-800">{{ channel.label }}</span>
+          <span class="text-sm text-slate-700">{{ channel.label }}</span>
         </button>
         
-        <div class="border-t border-slate-200 my-1"></div>
+        <div class="border-t border-slate-100 my-1"></div>
         
         <button
           @click="selectChannel(allChannelsOption)"
           class="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 transition-colors text-left"
         >
-          <GlobeAltIcon class="w-4 h-4 text-slate-500" />
-          <span class="text-sm text-slate-800">All Channels</span>
+          <GlobeAltIcon class="w-4 h-4 text-slate-400" />
+          <span class="text-sm text-slate-700">All Channels</span>
         </button>
       </div>
     </Transition>
@@ -83,7 +83,7 @@ const channels = [
     value: CHANNELS.PODCASTS, 
     label: 'Podcasts', 
     icon: markRaw(MicrophoneIcon), 
-    iconColor: 'text-primary-500' 
+    iconColor: 'text-[#0ea5e9]' 
   },
   { 
     value: CHANNELS.YOUTUBE, 
@@ -103,7 +103,7 @@ const allChannelsOption = {
   value: 'all',
   label: 'All Channels',
   icon: markRaw(GlobeAltIcon),
-  iconColor: 'text-slate-500'
+  iconColor: 'text-slate-400'
 }
 
 const currentChannel = computed(() => {

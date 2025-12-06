@@ -1,8 +1,8 @@
 <template>
-  <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6 animate-fade-in">
+  <div class="bg-white border border-slate-200 rounded-xl p-6 animate-fade-in">
     <!-- Source Badge -->
     <div class="mb-4 flex justify-end">
-      <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 bg-slate-50 border border-slate-200 px-2 py-1 rounded">
+      <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 bg-slate-50 border border-slate-100 px-2 py-1 rounded">
         Source: {{ apiSourceLabel }}
       </span>
     </div>
@@ -140,7 +140,7 @@
           >
             <div 
               :class="[
-                'bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300',
+                'bg-white w-5 h-5 rounded-full shadow-sm transform transition-transform duration-300',
                 !filterStore.safeMode ? 'translate-x-4' : 'translate-x-0'
               ]"
             ></div>
@@ -153,7 +153,7 @@
     </div>
 
     <!-- Reset Filters -->
-    <div class="mt-4 pt-4 border-t border-slate-200 flex justify-end">
+    <div class="mt-4 pt-4 border-t border-slate-100 flex justify-end">
       <button 
         @click="$emit('reset')"
         class="text-xs text-primary-500 font-medium hover:text-primary-600 flex items-center gap-1 transition-colors border border-primary-200 rounded px-2 py-1 hover:bg-primary-50"
@@ -211,7 +211,7 @@ const selectClasses = (locked) => {
   if (locked) {
     return `${base} ${arrow} bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed`
   }
-  return `${base} ${arrow} bg-white border-slate-200 text-slate-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500`
+  return `${base} ${arrow} bg-white border-slate-200 text-slate-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-100`
 }
 
 const inputClasses = (locked) => {
@@ -220,7 +220,7 @@ const inputClasses = (locked) => {
   if (locked) {
     return `${base} bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed`
   }
-  return `${base} bg-white border-slate-200 text-slate-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500`
+  return `${base} bg-white border-slate-200 text-slate-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-100`
 }
 
 const toggleSafeMode = () => {

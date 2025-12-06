@@ -1,21 +1,21 @@
 <template>
   <div class="space-y-6">
-    <!-- Page Header (no card wrapper) -->
+    <!-- Page Header (no card wrapper, matches mockup) -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div>
-        <h2 class="text-2xl font-semibold text-slate-800 tracking-tight">Prospector</h2>
-        <p class="text-sm text-slate-500 mt-1">Find podcasts, channels, and events for your guests</p>
+        <h2 class="text-2xl font-semibold text-[#1e293b] tracking-tight">Prospector</h2>
+        <p class="text-sm text-[#64748b] mt-1">Find podcasts, channels, and events for your guests</p>
       </div>
       <div class="flex items-center gap-3">
         <SearchCapBadge />
-        <button class="bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-primary-500 hover:border-primary-500 font-medium rounded-lg transition-all duration-200 px-4 py-2 text-sm whitespace-nowrap">
+        <button class="bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-[#0ea5e9] hover:border-[#7dd3fc] font-medium rounded-lg transition-all duration-200 px-4 py-2 text-sm whitespace-nowrap">
           Saved Searches
         </button>
       </div>
     </div>
 
     <!-- Search Card -->
-    <div class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
+    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
       <!-- Search Mode Tabs -->
       <SearchModeTabs
         v-model="searchStore.mode"
@@ -48,10 +48,10 @@
             <button
               @click="toggleFilters"
               :class="[
-                'h-12 px-4 border rounded-lg flex items-center gap-2 transition-colors font-medium',
+                'h-11 px-4 border rounded-lg flex items-center gap-2 transition-colors font-medium text-sm',
                 filtersVisible
-                  ? 'bg-primary-50 border-primary-500 text-primary-600'
-                  : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                  ? 'bg-[#e0f2fe] border-[#7dd3fc] text-[#0ea5e9]'
+                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
               ]"
             >
               <AdjustmentsHorizontalIcon class="w-5 h-5" />
@@ -60,7 +60,7 @@
             <button
               @click="handleSearch"
               :disabled="!searchStore.query.trim() || !userStore.canSearch || searchStore.loading"
-              class="h-12 px-8 bg-primary-500 hover:bg-primary-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors shadow-sm shadow-primary-500/20"
+              class="h-11 px-6 bg-[#0ea5e9] hover:bg-[#0284c7] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors text-sm"
             >
               <span v-if="searchStore.loading">Searching...</span>
               <span v-else>Search</span>
@@ -79,14 +79,14 @@
     />
 
     <!-- Results Card -->
-    <div v-if="hasSearched || searchStore.hasResults" class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
+    <div v-if="hasSearched || searchStore.hasResults" class="bg-white border border-slate-200 rounded-xl overflow-hidden">
       <!-- Results Header -->
-      <div class="px-6 py-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-4">
+      <div class="px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4">
         <p class="text-sm text-slate-500">
           <template v-if="searchStore.hasResults">
-            Showing <strong class="text-slate-700">{{ searchStore.results.length }}</strong> of 
-            <strong class="text-slate-700">{{ searchStore.total }}</strong> results
-            <span v-if="searchStore.query"> for <strong class="text-slate-700">"{{ searchStore.query }}"</strong></span>
+            Showing <span class="font-medium text-slate-700">{{ searchStore.results.length }}</span> of 
+            <span class="font-medium text-slate-700">{{ searchStore.total }}</span> results
+            <span v-if="searchStore.query"> for <span class="font-medium text-slate-700">"{{ searchStore.query }}"</span></span>
           </template>
           <template v-else-if="searchStore.loading">
             Searching...
@@ -103,38 +103,37 @@
             v-if="searchStore.selectedCount > 0"
             @click="handleBulkImport"
             :disabled="bulkImporting"
-            class="flex items-center gap-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium rounded-lg transition-colors"
+            class="flex items-center gap-2 px-4 py-2 bg-[#0ea5e9] hover:bg-[#0284c7] text-white text-sm font-medium rounded-lg transition-colors"
           >
             <ArrowDownTrayIcon class="w-4 h-4" />
             Import {{ searchStore.selectedCount }} Selected
           </button>
 
           <!-- View Toggle -->
-          <div class="flex border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+          <div class="flex rounded-lg overflow-hidden">
             <button
               @click="searchStore.setViewMode('grid')"
               :class="[
                 'p-2 transition-colors',
                 searchStore.viewMode === 'grid'
-                  ? 'bg-primary-50 text-primary-600'
-                  : 'bg-white text-slate-400 hover:bg-slate-50'
+                  ? 'bg-white text-[#0ea5e9]'
+                  : 'bg-transparent text-slate-400 hover:text-slate-600'
               ]"
               title="Grid View"
             >
-              <Squares2X2Icon class="w-4 h-4" />
+              <Squares2X2Icon class="w-5 h-5" />
             </button>
-            <div class="w-px bg-slate-200"></div>
             <button
               @click="searchStore.setViewMode('table')"
               :class="[
                 'p-2 transition-colors',
                 searchStore.viewMode === 'table'
-                  ? 'bg-primary-50 text-primary-600'
-                  : 'bg-white text-slate-400 hover:bg-slate-50'
+                  ? 'bg-white text-[#0ea5e9]'
+                  : 'bg-transparent text-slate-400 hover:text-slate-600'
               ]"
               title="Table View"
             >
-              <ListBulletIcon class="w-4 h-4" />
+              <ListBulletIcon class="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -160,7 +159,7 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="searchStore.hasResults && searchStore.total > searchStore.perPage" class="px-6 py-4 border-t border-slate-200">
+      <div v-if="searchStore.hasResults && searchStore.total > searchStore.perPage" class="px-6 py-4 border-t border-slate-100">
         <Pagination
           :current-page="searchStore.page"
           :per-page="searchStore.perPage"
@@ -171,10 +170,11 @@
     </div>
 
     <!-- Empty State (before any search) -->
-    <div v-else class="bg-white border border-slate-200 shadow-sm rounded-xl p-12">
+    <div v-else class="bg-white border border-slate-200 rounded-xl">
       <EmptyState
         :channel="searchStore.channel"
         :search-mode="searchStore.mode"
+        @search="handleExampleSearch"
       />
     </div>
   </div>
@@ -252,6 +252,14 @@ const handleSearch = async () => {
 
   // Update user stats after search
   userStore.decrementSearchCount()
+}
+
+const handleExampleSearch = ({ query, mode }) => {
+  searchStore.setQuery(query)
+  if (mode) {
+    searchStore.setMode(mode)
+  }
+  handleSearch()
 }
 
 const handleChannelChange = (channel) => {

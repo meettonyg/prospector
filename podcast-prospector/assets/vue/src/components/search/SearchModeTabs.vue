@@ -1,15 +1,15 @@
 <template>
-  <div class="border-b border-slate-200 px-4 md:px-6 flex gap-0 overflow-x-auto scrollbar-hide">
+  <div class="border-b border-slate-200 px-4 md:px-6 flex gap-0 overflow-x-auto scrollbar-hide bg-white">
     <button
       v-for="mode in availableModes"
       :key="mode.value"
       @click="selectMode(mode)"
       :disabled="mode.disabled"
       :class="[
-        'py-4 px-4 text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px',
+        'py-3.5 px-4 text-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px',
         modelValue === mode.value
-          ? 'border-primary-500 text-primary-500'
-          : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300',
+          ? 'border-[#0ea5e9] text-[#0ea5e9] bg-[#e0f2fe]/30'
+          : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50',
         mode.disabled && 'opacity-50 cursor-not-allowed'
       ]"
     >
