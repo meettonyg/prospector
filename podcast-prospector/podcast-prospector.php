@@ -353,66 +353,14 @@ final class Podcast_Prospector {
     /**
      * Enqueue frontend scripts and styles.
      *
+     * Vue assets are loaded via the shortcode (class-vue-assets.php).
+     * This hook is kept for potential future use or extensions.
+     *
      * @return void
      */
     public function enqueue_scripts(): void {
-        // Check if we should load assets
-        if ( ! $this->settings->is_search_page() ) {
-            return;
-        }
-
-        // Styles
-        wp_enqueue_style(
-            'podcast-prospector-styles',
-            PODCAST_PROSPECTOR_PLUGIN_URL . 'assets/styles.css',
-            [],
-            PODCAST_PROSPECTOR_VERSION
-        );
-
-        // Determine which JavaScript to use (modern or legacy)
-        $use_modern_js = apply_filters( 'podcast_prospector_use_modern_js', true );
-
-        if ( $use_modern_js ) {
-            // Modern ES6+ JavaScript (no jQuery dependency)
-            wp_enqueue_script(
-                'podcast-prospector-scripts',
-                PODCAST_PROSPECTOR_PLUGIN_URL . 'assets/js/podcast-prospector.js',
-                [],
-                PODCAST_PROSPECTOR_VERSION,
-                true
-            );
-        } else {
-            // Legacy jQuery-based JavaScript
-            wp_enqueue_script( 'jquery' );
-            wp_enqueue_script(
-                'podcast-prospector-scripts',
-                PODCAST_PROSPECTOR_PLUGIN_URL . 'assets/podcast-selection.js',
-                [ 'jquery' ],
-                PODCAST_PROSPECTOR_VERSION,
-                true
-            );
-        }
-
-        // Localize script with AJAX data and nonces
-        wp_localize_script( 'podcast-prospector-scripts', 'interviewFinderData', [
-            'ajaxurl'      => admin_url( 'admin-ajax.php' ),
-            'restUrl'      => rest_url( 'podcast-prospector/v1' ),
-            'searchNonce'  => Podcast_Prospector_Ajax_Handler::create_search_nonce(),
-            'importNonce'  => Podcast_Prospector_Ajax_Handler::create_import_nonce(),
-            'restNonce'    => wp_create_nonce( 'wp_rest' ),
-            'i18n'         => [
-                'selectAtLeastOne'   => __( 'Please select at least one podcast/episode using the checkboxes.', 'podcast-prospector' ),
-                'importing'          => __( 'Importing...', 'podcast-prospector' ),
-                'imported'           => __( 'Imported!', 'podcast-prospector' ),
-                'importSelected'     => __( 'Import Selected', 'podcast-prospector' ),
-                'importToTracker'    => __( 'Import to Tracker', 'podcast-prospector' ),
-                'invalidData'        => __( 'Error: Invalid data format received for this item.', 'podcast-prospector' ),
-                'communicationError' => __( 'A communication error occurred. Please try again.', 'podcast-prospector' ),
-                'unexpectedResponse' => __( 'Received an unexpected response from the server.', 'podcast-prospector' ),
-                'searching'          => __( 'Searching...', 'podcast-prospector' ),
-                'noResults'          => __( 'No results found.', 'podcast-prospector' ),
-            ],
-        ] );
+        // Vue assets are enqueued by the shortcode via Podcast_Prospector_Vue_Assets
+        // No legacy assets needed - Vue handles all frontend rendering
     }
 
     /**

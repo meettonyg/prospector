@@ -46,6 +46,28 @@ class Podcast_Prospector_Vue_Assets {
         if (class_exists('Podcast_Prospector_Settings')) {
             $this->settings = Podcast_Prospector_Settings::get_instance();
         }
+
+        // Hook into wp_enqueue_scripts to load assets early (before head closes)
+        add_action('wp_enqueue_scripts', [$this, 'maybe_enqueue_assets']);
+    }
+
+    /**
+     * Conditionally enqueue assets on pages with our shortcode
+     */
+    public function maybe_enqueue_assets(): void {
+        // Check if this is a prospector page
+        if ($this->settings && method_exists($this->settings, 'is_search_page')) {
+            if ($this->settings->is_search_page()) {
+                $this->enqueue_vue_app();
+            }
+            return;
+        }
+
+        // Fallback: check for shortcode in current post
+        global $post;
+        if ($post instanceof WP_Post && has_shortcode($post->post_content, 'podcast_prospector')) {
+            $this->enqueue_vue_app();
+        }
     }
 
     /**
@@ -63,7 +85,6 @@ class Podcast_Prospector_Vue_Assets {
         // Development mode: Load from Vite dev server
         if (defined('PROSPECTOR_DEV_MODE') && PROSPECTOR_DEV_MODE) {
             $this->enqueue_dev_assets();
-            $this->localize_config();
             $this->enqueued = true;
             return;
         }
@@ -77,7 +98,6 @@ class Podcast_Prospector_Vue_Assets {
         }
 
         $this->enqueue_production_assets($manifest_path);
-        $this->localize_config();
         $this->enqueued = true;
     }
 
@@ -147,42 +167,11 @@ class Podcast_Prospector_Vue_Assets {
      * Add type="module" to script tags
      */
     public function add_module_type(string $tag, string $handle, string $src): string {
-        if (strpos($handle, 'prospector-vue') !== false || $handle === 'vite-client') {
-            return '<script type="module" src="' . esc_url($src) . '"></script>';
+        if ($handle === 'prospector-vue-app' || $handle === 'vite-client') {
+            // Return proper module script tag with crossorigin for ES modules
+            return '<script type="module" crossorigin src="' . esc_url($src) . '"></script>' . "\n";
         }
         return $tag;
-    }
-
-    /**
-     * Localize WordPress config for Vue app
-     */
-    private function localize_config(): void {
-        $user_id = get_current_user_id();
-        $membership_data = $this->get_membership_data($user_id);
-
-        wp_localize_script('prospector-vue-app', 'PROSPECTOR_CONFIG', [
-            'apiBase' => rest_url('podcast-prospector/v1'),
-            'nonce' => wp_create_nonce('wp_rest'),
-            'userId' => $user_id,
-            'guestIntelActive' => class_exists('PIT_Podcast_Repository'),
-            'membership' => $membership_data,
-            'features' => [
-                'chat' => (bool) get_option('prospector_enable_chat', false),
-                'youtube' => (bool) get_option('prospector_enable_youtube', true),
-                'summits' => (bool) get_option('prospector_enable_summits', false),
-                'chatGpt' => (bool) get_option('prospector_enable_chatgpt', false),
-            ],
-            'i18n' => [
-                'searchPlaceholder' => __('Search for podcasts...', 'podcast-prospector'),
-                'importSuccess' => __('Added to pipeline!', 'podcast-prospector'),
-                'importError' => __('Import failed', 'podcast-prospector'),
-                'alreadyTracked' => __('In Pipeline', 'podcast-prospector'),
-                'noResults' => __('No results found', 'podcast-prospector'),
-                'loading' => __('Loading...', 'podcast-prospector'),
-                'searchesRemaining' => __('searches remaining', 'podcast-prospector'),
-                'loginRequired' => __('Please log in to use the Interview Finder.', 'podcast-prospector'),
-            ]
-        ]);
     }
 
     /**
@@ -228,7 +217,38 @@ class Podcast_Prospector_Vue_Assets {
     public function render_vue_container(): string {
         $this->enqueue_vue_app();
 
-        return '<div id="prospector-app" class="prospector-vue-app">
+        // Build config for inline script (ensures it's available before module loads)
+        $user_id = get_current_user_id();
+        $membership_data = $this->get_membership_data($user_id);
+
+        $config = [
+            'apiBase' => rest_url('podcast-prospector/v1'),
+            'nonce' => wp_create_nonce('wp_rest'),
+            'userId' => $user_id,
+            'guestIntelActive' => class_exists('PIT_Podcast_Repository'),
+            'membership' => $membership_data,
+            'features' => [
+                'chat' => (bool) get_option('prospector_enable_chat', false),
+                'youtube' => (bool) get_option('prospector_enable_youtube', true),
+                'summits' => (bool) get_option('prospector_enable_summits', false),
+                'chatGpt' => (bool) get_option('prospector_enable_chatgpt', false),
+            ],
+            'i18n' => [
+                'searchPlaceholder' => __('Search for podcasts...', 'podcast-prospector'),
+                'importSuccess' => __('Added to pipeline!', 'podcast-prospector'),
+                'importError' => __('Import failed', 'podcast-prospector'),
+                'alreadyTracked' => __('In Pipeline', 'podcast-prospector'),
+                'noResults' => __('No results found', 'podcast-prospector'),
+                'loading' => __('Loading...', 'podcast-prospector'),
+                'searchesRemaining' => __('searches remaining', 'podcast-prospector'),
+                'loginRequired' => __('Please log in to use the Interview Finder.', 'podcast-prospector'),
+            ]
+        ];
+
+        $config_script = '<script>window.PROSPECTOR_CONFIG = ' . wp_json_encode($config) . ';</script>';
+
+        return $config_script . '
+        <div id="prospector-app" class="prospector-vue-app">
             <div class="prospector-loading" style="padding: 40px; text-align: center;">
                 <p>' . esc_html__('Loading Podcast Prospector...', 'podcast-prospector') . '</p>
             </div>
