@@ -7,9 +7,13 @@ export const useFilterStore = defineStore('filters', {
     country: null,
     genre: null,
     safeMode: true,
-    dateRange: null, // { start, end }
     sortBy: 'BEST_MATCH', // BEST_MATCH | LATEST | OLDEST | POPULARITY
     matchBy: 'MOST_TERMS', // MOST_TERMS | ALL_TERMS | EXACT_PHRASE
+    perPage: 25,
+
+    // Date filters
+    dateFrom: null,
+    dateTo: null,
 
     // Location filters
     locationCity: null,
@@ -36,7 +40,8 @@ export const useFilterStore = defineStore('filters', {
         state.language ||
         state.country ||
         state.genre ||
-        state.dateRange ||
+        state.dateFrom ||
+        state.dateTo ||
         state.locationCity ||
         state.locationState ||
         state.locationCountry
@@ -51,7 +56,8 @@ export const useFilterStore = defineStore('filters', {
       if (state.language) count++
       if (state.country) count++
       if (state.genre) count++
-      if (state.dateRange) count++
+      if (state.dateFrom) count++
+      if (state.dateTo) count++
       if (state.locationCity) count++
       if (state.locationState) count++
       if (state.locationCountry) count++
@@ -70,17 +76,16 @@ export const useFilterStore = defineStore('filters', {
       if (state.safeMode) params.safe_mode = '1'
       if (state.sortBy) params.sort_order = state.sortBy
       if (state.matchBy) params.match_by = state.matchBy
+      if (state.perPage) params.per_page = state.perPage
 
       // Location filters
       if (state.locationCity) params.location_city = state.locationCity
       if (state.locationState) params.location_state = state.locationState
       if (state.locationCountry) params.location_country = state.locationCountry
 
-      // Date range
-      if (state.dateRange) {
-        if (state.dateRange.start) params.date_from = state.dateRange.start
-        if (state.dateRange.end) params.date_to = state.dateRange.end
-      }
+      // Date filters
+      if (state.dateFrom) params.date_from = state.dateFrom
+      if (state.dateTo) params.date_to = state.dateTo
 
       return params
     },
@@ -99,6 +104,12 @@ export const useFilterStore = defineStore('filters', {
       }
       if (state.genre) {
         filters.push({ key: 'genre', label: 'Genre', value: state.genre })
+      }
+      if (state.dateFrom) {
+        filters.push({ key: 'dateFrom', label: 'After', value: state.dateFrom })
+      }
+      if (state.dateTo) {
+        filters.push({ key: 'dateTo', label: 'Before', value: state.dateTo })
       }
       if (state.locationCity) {
         filters.push({ key: 'locationCity', label: 'City', value: state.locationCity })
@@ -140,12 +151,14 @@ export const useFilterStore = defineStore('filters', {
       this.language = null
       this.country = null
       this.genre = null
-      this.dateRange = null
+      this.dateFrom = null
+      this.dateTo = null
       this.locationCity = null
       this.locationState = null
       this.locationCountry = null
       this.sortBy = 'BEST_MATCH'
       this.matchBy = 'MOST_TERMS'
+      this.perPage = 25
     },
 
     /**

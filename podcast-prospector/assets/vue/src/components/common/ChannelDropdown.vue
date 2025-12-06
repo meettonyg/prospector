@@ -1,45 +1,39 @@
 <template>
   <div class="relative" ref="dropdownRef">
+    <!-- Dropdown Button -->
     <button
-      @click="isOpen = !isOpen"
-      :disabled="disabled"
-      class="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-lg
-             hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      @click="toggleDropdown"
+      class="h-12 px-4 bg-white border border-slate-200 rounded-lg flex items-center gap-2 text-slate-800 hover:border-slate-300 transition-colors min-w-[150px]"
     >
-      <component :is="currentChannelIcon" class="w-5 h-5 text-slate-600" />
-      <span class="font-medium text-slate-700">{{ currentChannelLabel }}</span>
-      <ChevronDownIcon
-        class="w-4 h-4 text-slate-400 transition-transform"
-        :class="{ 'rotate-180': isOpen }"
-      />
+      <component :is="currentChannel.icon" class="w-4 h-4" :class="currentChannel.iconColor" />
+      <span class="text-sm font-medium">{{ currentChannel.label }}</span>
+      <ChevronDownIcon class="w-4 h-4 text-slate-400 ml-auto" />
     </button>
 
-    <!-- Dropdown menu -->
-    <Transition name="fade">
+    <!-- Dropdown Menu -->
+    <Transition name="dropdown">
       <div
         v-if="isOpen"
-        class="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200
-               rounded-xl shadow-lg py-1 z-20"
+        class="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-50 py-1 overflow-hidden"
       >
         <button
-          v-for="channel in availableChannels"
+          v-for="channel in channels"
           :key="channel.value"
-          @click="selectChannel(channel.value)"
-          :disabled="channel.disabled"
-          :class="[
-            'w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors',
-            modelValue === channel.value
-              ? 'bg-primary-50 text-primary-700'
-              : 'hover:bg-slate-50 text-slate-700',
-            channel.disabled && 'opacity-50 cursor-not-allowed'
-          ]"
+          @click="selectChannel(channel)"
+          class="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 transition-colors text-left"
         >
-          <component :is="channelIcons[channel.value]" class="w-5 h-5" />
-          <span class="font-medium">{{ channel.label }}</span>
-          <LockClosedIcon
-            v-if="channel.disabled"
-            class="w-4 h-4 ml-auto text-slate-400"
-          />
+          <component :is="channel.icon" class="w-4 h-4" :class="channel.iconColor" />
+          <span class="text-sm text-slate-800">{{ channel.label }}</span>
+        </button>
+        
+        <div class="border-t border-slate-200 my-1"></div>
+        
+        <button
+          @click="selectChannel(allChannelsOption)"
+          class="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 transition-colors text-left"
+        >
+          <GlobeAltIcon class="w-4 h-4 text-slate-500" />
+          <span class="text-sm text-slate-800">All Channels</span>
         </button>
       </div>
     </Transition>
@@ -51,69 +45,72 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
   ChevronDownIcon,
   MicrophoneIcon,
-  PlayIcon,
-  UsersIcon,
-  LockClosedIcon
+  GlobeAltIcon,
+  PresentationChartBarIcon
 } from '@heroicons/vue/24/outline'
-import { useUserStore } from '../../stores/userStore'
 import { CHANNELS } from '../../utils/constants'
+
+// YouTube icon component (Heroicons doesn't have YouTube)
+const YouTubeIcon = {
+  template: `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+      <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+    </svg>
+  `
+}
 
 const props = defineProps({
   modelValue: {
     type: String,
     default: CHANNELS.PODCASTS
-  },
-  disabled: {
-    type: Boolean,
-    default: false
   }
 })
 
 const emit = defineEmits(['update:modelValue'])
 
-const userStore = useUserStore()
-const isOpen = ref(false)
 const dropdownRef = ref(null)
+const isOpen = ref(false)
 
-const channelIcons = {
-  [CHANNELS.PODCASTS]: MicrophoneIcon,
-  [CHANNELS.YOUTUBE]: PlayIcon,
-  [CHANNELS.SUMMITS]: UsersIcon
+const channels = [
+  { 
+    value: CHANNELS.PODCASTS, 
+    label: 'Podcasts', 
+    icon: MicrophoneIcon, 
+    iconColor: 'text-primary-500' 
+  },
+  { 
+    value: CHANNELS.YOUTUBE, 
+    label: 'YouTube', 
+    icon: YouTubeIcon, 
+    iconColor: 'text-red-500' 
+  },
+  { 
+    value: CHANNELS.SUMMITS, 
+    label: 'Summits', 
+    icon: PresentationChartBarIcon, 
+    iconColor: 'text-orange-500' 
+  }
+]
+
+const allChannelsOption = {
+  value: 'all',
+  label: 'All Channels',
+  icon: GlobeAltIcon,
+  iconColor: 'text-slate-500'
 }
 
-const availableChannels = computed(() => [
-  {
-    value: CHANNELS.PODCASTS,
-    label: 'Podcasts',
-    disabled: false
-  },
-  {
-    value: CHANNELS.YOUTUBE,
-    label: 'YouTube',
-    disabled: !userStore.youtubeEnabled
-  },
-  {
-    value: CHANNELS.SUMMITS,
-    label: 'Summits',
-    disabled: !userStore.summitsEnabled
-  }
-])
-
-const currentChannelLabel = computed(() => {
-  const channel = availableChannels.value.find(c => c.value === props.modelValue)
-  return channel?.label || 'Podcasts'
+const currentChannel = computed(() => {
+  if (props.modelValue === 'all') return allChannelsOption
+  return channels.find(c => c.value === props.modelValue) || channels[0]
 })
 
-const currentChannelIcon = computed(() => {
-  return channelIcons[props.modelValue] || MicrophoneIcon
-})
+const toggleDropdown = () => {
+  isOpen.value = !isOpen.value
+}
 
-const selectChannel = (value) => {
-  const channel = availableChannels.value.find(c => c.value === value)
-  if (channel && !channel.disabled) {
-    emit('update:modelValue', value)
-    isOpen.value = false
-  }
+const selectChannel = (channel) => {
+  emit('update:modelValue', channel.value)
+  isOpen.value = false
 }
 
 // Close dropdown when clicking outside
@@ -133,13 +130,13 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: all 0.15s ease;
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.2s ease;
 }
 
-.fade-enter-from,
-.fade-leave-to {
+.dropdown-enter-from,
+.dropdown-leave-to {
   opacity: 0;
   transform: translateY(-4px);
 }

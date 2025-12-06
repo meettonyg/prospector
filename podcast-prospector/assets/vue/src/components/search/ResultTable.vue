@@ -1,33 +1,29 @@
 <template>
-  <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
-    <table class="w-full">
-      <thead class="bg-slate-50 border-b border-slate-200">
+  <div class="overflow-x-auto animate-fade-in">
+    <table class="w-full text-sm text-left">
+      <thead class="text-xs text-slate-500 uppercase bg-slate-50">
         <tr>
-          <th class="w-12 px-4 py-3">
-            <span class="sr-only">Select</span>
+          <th class="px-4 py-3 font-semibold border-b border-slate-200 w-10">
+            <input
+              type="checkbox"
+              :checked="allSelected"
+              @change="toggleSelectAll"
+              class="w-4 h-4 rounded border-slate-300 text-primary-500 focus:ring-primary-500 cursor-pointer"
+            />
           </th>
-          <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-            Podcast
-          </th>
-          <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-            Episodes
-          </th>
-          <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-            Status
-          </th>
-          <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
-            Actions
-          </th>
+          <th class="px-4 py-3 font-semibold border-b border-slate-200 w-16">Cover</th>
+          <th class="px-4 py-3 font-semibold border-b border-slate-200">Show Name</th>
+          <th class="px-4 py-3 font-semibold border-b border-slate-200">Host</th>
+          <th class="px-4 py-3 font-semibold border-b border-slate-200 w-24">Type</th>
+          <th class="px-4 py-3 font-semibold border-b border-slate-200 w-32">Category</th>
+          <th class="px-4 py-3 font-semibold border-b border-slate-200 text-right w-24">Action</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-slate-100">
+      <tbody class="divide-y divide-slate-200">
         <tr
           v-for="(result, index) in results"
           :key="result.id || index"
-          :class="[
-            'hover:bg-slate-50 transition-colors',
-            result._selected && 'bg-primary-50'
-          ]"
+          class="hover:bg-slate-50 group transition-colors"
         >
           <!-- Checkbox -->
           <td class="px-4 py-3">
@@ -35,81 +31,79 @@
               type="checkbox"
               :checked="result._selected"
               @change="$emit('toggle-select', index)"
-              :disabled="hydrationMap[index]?.tracked"
-              class="w-4 h-4 rounded border-slate-300 text-primary-500 focus:ring-primary-500"
+              :disabled="isTracked(index)"
+              class="w-4 h-4 rounded border-slate-300 text-primary-500 focus:ring-primary-500 cursor-pointer disabled:opacity-50"
             />
           </td>
 
-          <!-- Podcast info -->
+          <!-- Cover -->
           <td class="px-4 py-3">
-            <div class="flex items-center gap-3">
-              <img
-                v-if="getArtwork(result)"
-                :src="getArtwork(result)"
-                :alt="getTitle(result)"
-                class="w-10 h-10 rounded-lg object-cover bg-slate-100"
-                loading="lazy"
-              />
-              <div
-                v-else
-                class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center"
+            <img
+              :src="result.image || result.artwork || '/wp-content/plugins/podcast-prospector/assets/placeholder.png'"
+              :alt="result.title"
+              class="w-10 h-10 rounded object-cover border border-slate-200"
+              @error="handleImageError"
+            />
+          </td>
+
+          <!-- Title -->
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-2">
+              <span class="font-medium text-slate-800 group-hover:text-primary-500 transition-colors">
+                {{ result.title }}
+              </span>
+              <span 
+                v-if="isTracked(index)" 
+                class="text-[10px] uppercase font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded whitespace-nowrap"
               >
-                <MicrophoneIcon class="w-5 h-5 text-slate-400" />
-              </div>
-              <div class="min-w-0">
-                <p class="font-medium text-slate-800 truncate">{{ getTitle(result) }}</p>
-                <p class="text-sm text-slate-500 truncate">{{ getAuthor(result) }}</p>
-              </div>
+                In Pipeline
+              </span>
             </div>
           </td>
 
-          <!-- Episode count -->
-          <td class="px-4 py-3 text-sm text-slate-600">
-            {{ getEpisodeCount(result) || '—' }}
+          <!-- Host -->
+          <td class="px-4 py-3 text-slate-500">
+            {{ result.author || result.host || result.ownerName || 'Unknown' }}
           </td>
 
-          <!-- Status -->
+          <!-- Type -->
           <td class="px-4 py-3">
-            <span
-              v-if="hydrationMap[index]?.hasOpportunity"
-              class="badge-success"
+            <div class="flex items-center gap-2 text-slate-500">
+              <component :is="getTypeIcon(result)" class="w-4 h-4" :class="getTypeColor(result)" />
+              <span class="text-xs capitalize">{{ getTypeLabel(result) }}</span>
+            </div>
+          </td>
+
+          <!-- Category -->
+          <td class="px-4 py-3">
+            <span 
+              v-if="result.category || result.genre"
+              class="bg-primary-50 text-primary-600 text-[11px] font-semibold px-2 py-0.5 rounded"
             >
-              In Pipeline
-            </span>
-            <span
-              v-else-if="hydrationMap[index]?.tracked"
-              class="badge-neutral"
-            >
-              Tracked
-            </span>
-            <span v-else class="badge-primary">
-              New
+              {{ result.category || result.genre }}
             </span>
           </td>
 
-          <!-- Actions -->
+          <!-- Action -->
           <td class="px-4 py-3 text-right">
-            <div class="flex items-center justify-end gap-2">
-              <a
-                v-if="getWebsiteUrl(result)"
-                :href="getWebsiteUrl(result)"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-                title="Visit website"
-              >
-                <GlobeAltIcon class="w-4 h-4" />
-              </a>
-
-              <ImportButton
-                :is-tracked="hydrationMap[index]?.tracked"
-                :has-opportunity="hydrationMap[index]?.hasOpportunity"
-                :crm-url="hydrationMap[index]?.crm_url"
-                :importing="importingIndices.includes(index)"
-                :disabled="!canImport"
-                @import="$emit('import', { result, index })"
-              />
-            </div>
+            <button
+              v-if="!isTracked(index)"
+              @click="$emit('import', { result, index })"
+              :disabled="isImporting(index)"
+              class="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-primary-500 hover:border-primary-500 font-medium rounded-lg transition-all duration-200 px-3 py-1.5 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ArrowDownTrayIcon v-if="!isImporting(index)" class="w-3.5 h-3.5" />
+              <LoadingSpinner v-else size="xs" />
+              <span>Import</span>
+            </button>
+            <a
+              v-else
+              :href="getHydration(index)?.crm_url"
+              class="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-primary-500 hover:border-primary-500 font-medium rounded-lg transition-all duration-200 px-3 py-1.5 text-xs"
+            >
+              <EyeIcon class="w-3.5 h-3.5" />
+              <span>View</span>
+            </a>
           </td>
         </tr>
       </tbody>
@@ -118,14 +112,24 @@
 </template>
 
 <script setup>
-import { computed, inject } from 'vue'
-import { MicrophoneIcon, GlobeAltIcon } from '@heroicons/vue/24/outline'
-import ImportButton from '../common/ImportButton.vue'
+import { computed } from 'vue'
+import { 
+  ArrowDownTrayIcon, 
+  EyeIcon,
+  MicrophoneIcon,
+  PresentationChartBarIcon
+} from '@heroicons/vue/24/outline'
+import LoadingSpinner from '../common/LoadingSpinner.vue'
 
-defineProps({
+// YouTube icon
+const YouTubeIcon = {
+  template: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>`
+}
+
+const props = defineProps({
   results: {
     type: Array,
-    required: true
+    default: () => []
   },
   hydrationMap: {
     type: Object,
@@ -141,15 +145,62 @@ defineProps({
   }
 })
 
-defineEmits(['result-click', 'toggle-select', 'import'])
+const emit = defineEmits(['result-click', 'toggle-select', 'import'])
 
-const config = inject('config', {})
-const canImport = computed(() => config.guestIntelActive !== false)
+const getHydration = (index) => props.hydrationMap[index]
+const isTracked = (index) => props.hydrationMap[index]?.tracked
+const isImporting = (index) => props.importingIndices.includes(index)
 
-// Helper functions
-const getTitle = (result) => result.title || result.name || result.feedTitle || 'Untitled'
-const getAuthor = (result) => result.author || result.publisher || result.ownerName || ''
-const getArtwork = (result) => result.artwork || result.image || result.imageUrl || result.feedImage || ''
-const getWebsiteUrl = (result) => result.link || result.websiteUrl || result.website || ''
-const getEpisodeCount = (result) => result.episodeCount || result.totalEpisodeCount || null
+const allSelected = computed(() => {
+  const selectableResults = props.results.filter((_, i) => !isTracked(i))
+  if (selectableResults.length === 0) return false
+  return selectableResults.every(r => r._selected)
+})
+
+const toggleSelectAll = () => {
+  if (allSelected.value) {
+    // Deselect all
+    props.results.forEach((_, i) => {
+      if (!isTracked(i)) emit('toggle-select', i)
+    })
+  } else {
+    // Select all non-tracked
+    props.results.forEach((result, i) => {
+      if (!isTracked(i) && !result._selected) emit('toggle-select', i)
+    })
+  }
+}
+
+const getTypeIcon = (result) => {
+  if (result.type === 'youtube' || result.channel === 'youtube') return YouTubeIcon
+  if (result.type === 'summit' || result.channel === 'summits') return PresentationChartBarIcon
+  return MicrophoneIcon
+}
+
+const getTypeColor = (result) => {
+  if (result.type === 'youtube' || result.channel === 'youtube') return 'text-red-500'
+  if (result.type === 'summit' || result.channel === 'summits') return 'text-orange-500'
+  return 'text-purple-500'
+}
+
+const getTypeLabel = (result) => {
+  if (result.type === 'youtube' || result.channel === 'youtube') return 'YouTube'
+  if (result.type === 'summit' || result.channel === 'summits') return 'Summit'
+  if (props.searchMode.includes('episode')) return 'Episode'
+  return 'Podcast'
+}
+
+const handleImageError = (e) => {
+  e.target.src = '/wp-content/plugins/podcast-prospector/assets/placeholder.png'
+}
 </script>
+
+<style scoped>
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+</style>

@@ -32,7 +32,7 @@ const props = defineProps({
   size: {
     type: String,
     default: 'md',
-    validator: (v) => ['sm', 'md', 'lg', 'xl'].includes(v)
+    validator: (v) => ['xs', 'sm', 'md', 'lg', 'xl'].includes(v)
   },
   label: {
     type: String,
@@ -46,6 +46,7 @@ const props = defineProps({
 
 const sizeClass = computed(() => {
   const sizes = {
+    xs: 'w-3 h-3',
     sm: 'w-4 h-4',
     md: 'w-6 h-6',
     lg: 'w-8 h-8',
@@ -56,6 +57,7 @@ const sizeClass = computed(() => {
 
 const labelClass = computed(() => {
   const sizes = {
+    xs: 'text-[10px]',
     sm: 'text-xs',
     md: 'text-sm',
     lg: 'text-base',
