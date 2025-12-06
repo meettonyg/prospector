@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import api from '../api/prospectorApi'
-import { extractIdentifiers } from '../utils/dataNormalizer'
 
 export const useSearchStore = defineStore('search', {
   state: () => ({
@@ -113,23 +112,74 @@ export const useSearchStore = defineStore('search', {
         ...params
       }
 
+      console.log('[SearchStore] Sending search params:', searchParams)
+
       try {
         const response = await api.search(searchParams)
+        
+        console.log('[SearchStore] Raw API response:', response)
 
         // Handle different response formats
+        // response = { success, data: {...}, count, from_cache, ... }
+        // response.data contains the actual API results in different formats
         let results = []
-        if (response.data?.data?.search?.podcastSeries) {
-          results = response.data.data.search.podcastSeries
-        } else if (response.data?.data?.search?.podcastEpisodes) {
-          results = response.data.data.search.podcastEpisodes
-        } else if (response.data?.data?.searchForTerm?.podcastSeries) {
+        
+        // =====================================================
+        // TADDY API - Uses "searchForTerm" in GraphQL response
+        // =====================================================
+        
+        // Taddy - Podcast Series (byadvancedpodcast)
+        if (response.data?.data?.searchForTerm?.podcastSeries) {
           results = response.data.data.searchForTerm.podcastSeries
-        } else if (response.data?.feeds) {
+          console.log('[SearchStore] Found Taddy podcastSeries:', results.length)
+        }
+        // Taddy - Podcast Episodes (byadvancedepisode)
+        else if (response.data?.data?.searchForTerm?.podcastEpisodes) {
+          results = response.data.data.searchForTerm.podcastEpisodes
+          console.log('[SearchStore] Found Taddy podcastEpisodes:', results.length)
+        }
+        
+        // =====================================================
+        // PODCASTINDEX API
+        // =====================================================
+        
+        // PodcastIndex - search by person (returns items array)
+        else if (response.data?.items) {
+          results = response.data.items
+          console.log('[SearchStore] Found PodcastIndex items (byperson):', results.length)
+        }
+        // PodcastIndex - search by term/title (returns feeds array)
+        else if (response.data?.feeds) {
           results = response.data.feeds
-        } else if (response.data?.results) {
+          console.log('[SearchStore] Found PodcastIndex feeds (bytitle):', results.length)
+        }
+        
+        // =====================================================
+        // YOUTUBE API
+        // =====================================================
+        
+        // YouTube - returns data.items
+        else if (response.data?.data?.items) {
+          results = response.data.data.items
+          console.log('[SearchStore] Found YouTube items:', results.length)
+        }
+        
+        // =====================================================
+        // GENERIC FALLBACKS
+        // =====================================================
+        
+        // Generic results array
+        else if (response.data?.results) {
           results = response.data.results
-        } else if (Array.isArray(response.data)) {
+          console.log('[SearchStore] Found generic results:', results.length)
+        } 
+        // Direct array
+        else if (Array.isArray(response.data)) {
           results = response.data
+          console.log('[SearchStore] Found direct array:', results.length)
+        }
+        else {
+          console.warn('[SearchStore] Unknown response format:', response)
         }
 
         this.results = results.map(r => ({ ...r, _selected: false }))
@@ -137,6 +187,8 @@ export const useSearchStore = defineStore('search', {
         this.hasMore = results.length === this.perPage
         this.lastSearchParams = searchParams
         this.cachedAt = response.from_cache ? new Date().toISOString() : null
+
+        console.log('[SearchStore] Processed results:', this.results.length, 'Total:', this.total)
 
         // Auto-hydrate results
         if (this.results.length > 0) {
@@ -146,7 +198,7 @@ export const useSearchStore = defineStore('search', {
       } catch (err) {
         this.error = err.response?.data?.message || err.message || 'Search failed'
         this.results = []
-        console.error('Search error:', err)
+        console.error('[SearchStore] Search error:', err)
       } finally {
         this.loading = false
       }
@@ -167,10 +219,11 @@ export const useSearchStore = defineStore('search', {
       const identifiers = this.results.map(result => {
         // Handle different API response formats
         if (this.mode === 'byadvancedpodcast' || this.mode === 'byadvancedepisode') {
-          // Taddy format
+          // Taddy format - note: for episodes, the podcast info is nested in podcastSeries
+          const podcast = result.podcastSeries || result
           return {
-            itunes_id: result.itunesId || null,
-            rss_url: result.rssUrl || null,
+            itunes_id: podcast.itunesId || null,
+            rss_url: podcast.rssUrl || null,
             podcast_index_id: null
           }
         } else {
@@ -187,7 +240,7 @@ export const useSearchStore = defineStore('search', {
         const response = await api.hydrate(identifiers)
         this.hydrationMap = response.results || {}
       } catch (err) {
-        console.warn('Hydration failed:', err)
+        console.warn('[SearchStore] Hydration failed:', err)
         // Don't block the UI if hydration fails
         this.hydrationMap = {}
       } finally {
