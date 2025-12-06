@@ -1,5 +1,5 @@
 <template>
-  <div id="prospector-app" class="prospector-root font-sans">
+  <div class="prospector-root font-sans">
     <!-- Guest Intel Check -->
     <div v-if="!guestIntelActive" class="p-6 bg-amber-50 border border-amber-200 rounded-xl mb-6">
       <div class="flex items-start gap-3">

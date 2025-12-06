@@ -2,11 +2,11 @@
 export default {
   content: ['./src/**/*.{vue,js}'],
 
-  // CRITICAL: Scope all styles to prevent WP Admin conflicts
-  important: '#prospector-app',
+  // Use !important to override WordPress theme styles
+  important: true,
 
   corePlugins: {
-    // CRITICAL: Disable CSS reset to prevent WordPress Admin style conflicts
+    // Disable CSS reset to prevent WordPress style conflicts
     preflight: false,
   },
 
