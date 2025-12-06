@@ -1,5 +1,5 @@
 <template>
-  <div class="border-b border-slate-200 px-2 md:px-6 flex gap-1 overflow-x-auto scrollbar-hide">
+  <div class="border-b border-slate-200 px-4 md:px-6 flex gap-0 overflow-x-auto scrollbar-hide">
     <button
       v-for="mode in availableModes"
       :key="mode.value"
@@ -9,7 +9,7 @@
         'py-4 px-4 text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px',
         modelValue === mode.value
           ? 'border-primary-500 text-primary-500'
-          : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300',
+          : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300',
         mode.disabled && 'opacity-50 cursor-not-allowed'
       ]"
     >
@@ -17,14 +17,14 @@
       <span>{{ mode.label }}</span>
       <LockClosedIcon
         v-if="mode.premium && !canUseAdvanced"
-        class="w-3.5 h-3.5 text-amber-500"
+        class="w-3 h-3 text-amber-500 ml-0.5"
       />
     </button>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, markRaw } from 'vue'
 import { 
   LockClosedIcon,
   UserIcon,
@@ -54,16 +54,16 @@ const canUseAdvanced = computed(() => userStore.canUseAdvancedFilters)
 // Define modes with icons based on channel
 const SEARCH_MODES_CONFIG = {
   [CHANNELS.PODCASTS]: [
-    { value: 'byperson', label: 'Episodes by Person', icon: UserIcon, premium: false },
-    { value: 'bytitle', label: 'Podcasts by Title', icon: MicrophoneIcon, premium: false },
-    { value: 'byadvancedpodcast', label: 'Adv. Podcasts', icon: RadioIcon, premium: true },
-    { value: 'byadvancedepisode', label: 'Adv. Episodes', icon: SignalIcon, premium: true }
+    { value: 'byperson', label: 'Episodes by Person', icon: markRaw(UserIcon), premium: false },
+    { value: 'bytitle', label: 'Podcasts by Title', icon: markRaw(MicrophoneIcon), premium: false },
+    { value: 'byadvancedpodcast', label: 'Adv. Podcasts', icon: markRaw(RadioIcon), premium: true },
+    { value: 'byadvancedepisode', label: 'Adv. Episodes', icon: markRaw(SignalIcon), premium: true }
   ],
   [CHANNELS.YOUTUBE]: [
-    { value: 'byyoutube', label: 'YouTube Channels', icon: RadioIcon, premium: false }
+    { value: 'byyoutube', label: 'YouTube Channels', icon: markRaw(RadioIcon), premium: false }
   ],
   [CHANNELS.SUMMITS]: [
-    { value: 'bysummit', label: 'Virtual Summits', icon: SignalIcon, premium: false }
+    { value: 'bysummit', label: 'Virtual Summits', icon: markRaw(SignalIcon), premium: false }
   ]
 }
 

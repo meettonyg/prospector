@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
-    <!-- Page Header Card -->
-    <div class="bg-white border border-slate-200 shadow-sm rounded-xl p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <!-- Page Header (no card wrapper) -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div>
         <h2 class="text-2xl font-semibold text-slate-800 tracking-tight">Prospector</h2>
         <p class="text-sm text-slate-500 mt-1">Find podcasts, channels, and events for your guests</p>
@@ -26,7 +26,7 @@
       <!-- Search Controls -->
       <div class="p-6">
         <!-- Search Input Row -->
-        <div class="flex flex-col md:flex-row gap-3 mb-4">
+        <div class="flex flex-col md:flex-row gap-3">
           <!-- Channel Dropdown -->
           <ChannelDropdown
             v-model="searchStore.channel"
@@ -55,28 +55,28 @@
               ]"
             >
               <AdjustmentsHorizontalIcon class="w-5 h-5" />
-              <span class="hidden sm:inline">Filters</span>
+              <span>Filters</span>
             </button>
             <button
               @click="handleSearch"
               :disabled="!searchStore.query.trim() || !userStore.canSearch || searchStore.loading"
-              class="h-12 px-8 bg-primary-500 hover:bg-primary-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors shadow-sm shadow-primary-500/20 active:scale-[0.98] transform"
+              class="h-12 px-8 bg-primary-500 hover:bg-primary-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors shadow-sm shadow-primary-500/20"
             >
               <span v-if="searchStore.loading">Searching...</span>
               <span v-else>Search</span>
             </button>
           </div>
         </div>
-
-        <!-- Filters Panel -->
-        <FilterPanel
-          v-if="filtersVisible"
-          :search-mode="searchStore.mode"
-          @apply="handleSearch"
-          @reset="handleClearFilters"
-        />
       </div>
     </div>
+
+    <!-- Filters Panel (separate from search card) -->
+    <FilterPanel
+      v-if="filtersVisible"
+      :search-mode="searchStore.mode"
+      @apply="handleSearch"
+      @reset="handleClearFilters"
+    />
 
     <!-- Results Card -->
     <div v-if="hasSearched || searchStore.hasResults" class="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
@@ -212,7 +212,7 @@ const { success, error: showError } = useToast()
 
 // Local state
 const hasSearched = ref(false)
-const filtersVisible = ref(true)
+const filtersVisible = ref(false) // CLOSED by default
 const importingIndices = ref([])
 const bulkImporting = ref(false)
 
