@@ -139,6 +139,7 @@ final class Podcast_Prospector {
         require_once $includes_dir . 'class-sponsored-listings.php';
         require_once $includes_dir . 'class-sponsored-listings-admin.php';
         require_once $includes_dir . 'class-impression-queue.php';
+        require_once $includes_dir . 'class-vue-assets.php';
 
         // Initialize core instances
         $this->settings = Podcast_Prospector_Settings::get_instance();

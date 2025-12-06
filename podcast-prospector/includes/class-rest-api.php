@@ -133,6 +133,20 @@ class Podcast_Prospector_REST_API {
             'permission_callback' => [ $this, 'check_admin_permission' ],
         ] );
 
+        // Hydration endpoint - check if podcasts exist in Guest Intel CRM
+        register_rest_route( self::NAMESPACE, '/hydrate', [
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => [ $this, 'handle_hydration' ],
+            'permission_callback' => [ $this, 'check_search_permission' ],
+            'args'                => [
+                'identifiers' => [
+                    'required'    => true,
+                    'type'        => 'array',
+                    'description' => __( 'Array of identifier objects with itunes_id, rss_url, or podcast_index_id', 'podcast-prospector' ),
+                ],
+            ],
+        ] );
+
         // Location autocomplete endpoints
         register_rest_route( self::NAMESPACE, '/locations/cities', [
             'methods'             => WP_REST_Server::READABLE,
@@ -350,6 +364,125 @@ class Podcast_Prospector_REST_API {
             'success'        => true,
             'search_cleared' => $search_cleared,
             'rss_cleared'    => $rss_cleared,
+        ], 200 );
+    }
+
+    /**
+     * Handle hydration request.
+     *
+     * Checks if podcasts exist in Guest Intel CRM and returns tracking status.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response
+     */
+    public function handle_hydration( WP_REST_Request $request ): WP_REST_Response {
+        global $wpdb;
+
+        // Check if Guest Intel tables exist
+        $podcasts_table = $wpdb->prefix . 'pit_podcasts';
+        $opps_table = $wpdb->prefix . 'pit_opportunities';
+
+        // Verify Guest Intel is active
+        $table_exists = $wpdb->get_var(
+            $wpdb->prepare( "SHOW TABLES LIKE %s", $podcasts_table )
+        );
+
+        if ( ! $table_exists ) {
+            return new WP_REST_Response( [
+                'success'            => false,
+                'error'              => 'guest_intel_not_active',
+                'message'            => __( 'Guest Intel plugin tables not found.', 'podcast-prospector' ),
+                'guest_intel_active' => false,
+                'results'            => [],
+            ], 200 );
+        }
+
+        $identifiers = $request->get_param( 'identifiers' ) ?? [];
+        $user_id = get_current_user_id();
+        $results = [];
+
+        foreach ( $identifiers as $index => $item ) {
+            $podcast = null;
+            $match_key = null;
+
+            // Priority 1: iTunes ID (most stable)
+            if ( ! empty( $item['itunes_id'] ) ) {
+                $podcast = $wpdb->get_row( $wpdb->prepare(
+                    "SELECT id, title, slug FROM $podcasts_table WHERE itunes_id = %s",
+                    sanitize_text_field( $item['itunes_id'] )
+                ) );
+                if ( $podcast ) {
+                    $match_key = 'itunes_id';
+                }
+            }
+
+            // Priority 2: RSS URL
+            if ( ! $podcast && ! empty( $item['rss_url'] ) ) {
+                $podcast = $wpdb->get_row( $wpdb->prepare(
+                    "SELECT id, title, slug FROM $podcasts_table WHERE rss_feed_url = %s",
+                    esc_url_raw( $item['rss_url'] )
+                ) );
+                if ( $podcast ) {
+                    $match_key = 'rss_url';
+                }
+            }
+
+            // Priority 3: Podcast Index ID
+            if ( ! $podcast && ! empty( $item['podcast_index_id'] ) ) {
+                $podcast = $wpdb->get_row( $wpdb->prepare(
+                    "SELECT id, title, slug FROM $podcasts_table WHERE podcast_index_id = %d",
+                    intval( $item['podcast_index_id'] )
+                ) );
+                if ( $podcast ) {
+                    $match_key = 'podcast_index_id';
+                }
+            }
+
+            if ( $podcast ) {
+                // Check for active opportunity
+                $opportunity = $wpdb->get_row( $wpdb->prepare(
+                    "SELECT id, status, priority FROM $opps_table
+                     WHERE podcast_id = %d AND user_id = %d",
+                    $podcast->id,
+                    $user_id
+                ) );
+
+                $results[ $index ] = [
+                    'tracked'            => true,
+                    'podcast_id'         => (int) $podcast->id,
+                    'podcast_slug'       => $podcast->slug,
+                    'podcast_title'      => $podcast->title,
+                    'match_key'          => $match_key,
+                    'has_opportunity'    => (bool) $opportunity,
+                    'opportunity_id'     => $opportunity ? (int) $opportunity->id : null,
+                    'opportunity_status' => $opportunity ? $opportunity->status : null,
+                    'crm_url'            => $opportunity
+                        ? home_url( "/app/interview/{$opportunity->id}/" )
+                        : home_url( "/app/podcasts/{$podcast->slug}/" ),
+                ];
+            } else {
+                $results[ $index ] = [
+                    'tracked'            => false,
+                    'podcast_id'         => null,
+                    'podcast_slug'       => null,
+                    'podcast_title'      => null,
+                    'match_key'          => null,
+                    'has_opportunity'    => false,
+                    'opportunity_id'     => null,
+                    'opportunity_status' => null,
+                    'crm_url'            => null,
+                ];
+            }
+        }
+
+        $tracked_count = count( array_filter( $results, fn( $r ) => $r['tracked'] ) );
+
+        return new WP_REST_Response( [
+            'success'            => true,
+            'guest_intel_active' => true,
+            'results'            => $results,
+            'total_tracked'      => $tracked_count,
+            'total_checked'      => count( $results ),
         ], 200 );
     }
 
