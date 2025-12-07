@@ -74,7 +74,10 @@ class Podcast_Prospector_Settings {
         'youtube_features_enabled'  => false,
         'youtube_api_key'           => '',
 
-        // ChatGPT/OpenAI Features
+        // Chat Features
+        'chat_enabled'              => false,
+
+        // ChatGPT/AI Features (Phase 7)
         'chatgpt_enabled'           => false,
         'openai_api_key'            => '',
         'chatgpt_model'             => 'gpt-4o-mini',
@@ -291,10 +294,20 @@ class Podcast_Prospector_Settings {
         $this->add_settings_field( 'youtube_features_enabled', __( 'Enable YouTube Search', 'podcast-prospector' ), 'youtube_section', 'checkbox' );
         $this->add_settings_field( 'youtube_api_key', __( 'YouTube API Key', 'podcast-prospector' ), 'youtube_section', 'password' );
 
-        // ChatGPT/OpenAI Section
+        // Chat Features Section
+        add_settings_section(
+            'chat_section',
+            __( 'Chat Features', 'podcast-prospector' ),
+            [ $this, 'render_chat_section_description' ],
+            self::PAGE_SLUG
+        );
+
+        $this->add_settings_field( 'chat_enabled', __( 'Enable Chat Interface', 'podcast-prospector' ), 'chat_section', 'checkbox' );
+
+        // ChatGPT/AI Features Section (Phase 7)
         add_settings_section(
             'chatgpt_section',
-            __( 'AI Chat Features', 'podcast-prospector' ),
+            __( 'AI-Powered Chat (ChatGPT)', 'podcast-prospector' ),
             [ $this, 'render_chatgpt_section_description' ],
             self::PAGE_SLUG
         );
@@ -303,7 +316,7 @@ class Podcast_Prospector_Settings {
         $this->add_settings_field( 'openai_api_key', __( 'OpenAI API Key', 'podcast-prospector' ), 'chatgpt_section', 'password' );
         $this->add_settings_field( 'chatgpt_model', __( 'ChatGPT Model', 'podcast-prospector' ), 'chatgpt_section', 'select', [
             'options' => [
-                'gpt-4o-mini' => __( 'GPT-4o Mini (Recommended - Cost Effective)', 'podcast-prospector' ),
+                'gpt-4o-mini' => __( 'GPT-4o Mini (Recommended - Fast & Affordable)', 'podcast-prospector' ),
                 'gpt-4o'      => __( 'GPT-4o (Most Capable)', 'podcast-prospector' ),
                 'gpt-4-turbo' => __( 'GPT-4 Turbo', 'podcast-prospector' ),
             ],
@@ -405,30 +418,23 @@ class Podcast_Prospector_Settings {
     }
 
     /**
+     * Render chat section description.
+     *
+     * @return void
+     */
+    public function render_chat_section_description(): void {
+        echo '<p>' . esc_html__( 'Enable the conversational chat interface for natural language podcast search. Users can switch between traditional search and chat modes.', 'podcast-prospector' ) . '</p>';
+    }
+
+    /**
      * Render ChatGPT section description.
      *
      * @return void
      */
     public function render_chatgpt_section_description(): void {
-        echo '<p>' . esc_html__( 'Enable AI-powered conversational search using OpenAI\'s ChatGPT. This provides intelligent intent detection and natural language processing for the chat interface.', 'podcast-prospector' ) . '</p>';
+        echo '<p>' . esc_html__( 'Enable AI-powered intent detection using OpenAI\'s ChatGPT. This enhances the chat interface with smarter query understanding.', 'podcast-prospector' ) . '</p>';
         echo '<p><a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">' . esc_html__( 'Get OpenAI API Key', 'podcast-prospector' ) . '</a></p>';
-        echo '<p class="description">' . esc_html__( 'Estimated cost: GPT-4o-mini ~$0.15-0.60 per 1M tokens. Typical usage: <$1/month for light use.', 'podcast-prospector' ) . '</p>';
-
-        // Show usage stats if available
-        if ( class_exists( 'Podcast_Prospector_OpenAI_Service' ) ) {
-            $service = Podcast_Prospector_OpenAI_Service::get_instance();
-            $stats = $service->get_usage_stats();
-
-            if ( $stats['monthly_tokens'] > 0 ) {
-                printf(
-                    '<p><strong>%s</strong> %s | <strong>%s</strong> $%s</p>',
-                    esc_html__( 'Tokens this month:', 'podcast-prospector' ),
-                    esc_html( number_format( $stats['monthly_tokens'] ) ),
-                    esc_html__( 'Est. cost:', 'podcast-prospector' ),
-                    esc_html( number_format( $stats['estimated_cost_usd'], 4 ) )
-                );
-            }
-        }
+        echo '<p class="description">' . esc_html__( 'Note: This feature requires an OpenAI API key and incurs usage costs. GPT-4o Mini is recommended for cost-effective operation (~$0.0001 per query).', 'podcast-prospector' ) . '</p>';
     }
 
     /**
@@ -520,6 +526,8 @@ class Podcast_Prospector_Settings {
         $sanitized['debug_logging_enabled'] = ! empty( $input['debug_logging_enabled'] );
         $sanitized['location_features_enabled'] = ! empty( $input['location_features_enabled'] );
         $sanitized['youtube_features_enabled'] = ! empty( $input['youtube_features_enabled'] );
+        $sanitized['chat_enabled'] = ! empty( $input['chat_enabled'] );
+        $sanitized['chatgpt_enabled'] = ! empty( $input['chatgpt_enabled'] );
 
         // Select fields
         $valid_log_levels = [ 'error', 'warning', 'info', 'debug' ];
@@ -537,8 +545,7 @@ class Podcast_Prospector_Settings {
             ? sanitize_text_field( $input['youtube_api_key'] )
             : '';
 
-        // ChatGPT settings
-        $sanitized['chatgpt_enabled'] = ! empty( $input['chatgpt_enabled'] );
+        // OpenAI API key
         $sanitized['openai_api_key'] = isset( $input['openai_api_key'] )
             ? sanitize_text_field( $input['openai_api_key'] )
             : '';

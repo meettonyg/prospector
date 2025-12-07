@@ -227,12 +227,7 @@ class Podcast_Prospector_Vue_Assets {
             'userId' => $user_id,
             'guestIntelActive' => class_exists('PIT_Podcast_Repository'),
             'membership' => $membership_data,
-            'features' => [
-                'chat' => (bool) get_option('prospector_enable_chat', false),
-                'youtube' => (bool) get_option('prospector_enable_youtube', true),
-                'summits' => (bool) get_option('prospector_enable_summits', false),
-                'chatGpt' => (bool) get_option('prospector_enable_chatgpt', false),
-            ],
+            'features' => $this->get_feature_flags(),
             'i18n' => [
                 'searchPlaceholder' => __('Search for podcasts...', 'podcast-prospector'),
                 'importSuccess' => __('Added to pipeline!', 'podcast-prospector'),
@@ -260,5 +255,37 @@ class Podcast_Prospector_Vue_Assets {
      */
     public function is_enqueued(): bool {
         return $this->enqueued;
+    }
+
+    /**
+     * Get feature flags from settings
+     *
+     * @return array Feature flags for Vue app
+     */
+    private function get_feature_flags(): array {
+        // Use settings class if available
+        if ($this->settings) {
+            $chatgpt_enabled = (bool) $this->settings->get('chatgpt_enabled', false);
+            $chat_enabled = (bool) $this->settings->get('chat_enabled', false);
+
+            return [
+                // Chat is enabled if either chat_enabled OR chatgpt_enabled is on
+                'chat'    => $chat_enabled || $chatgpt_enabled,
+                'youtube' => (bool) $this->settings->get('youtube_features_enabled', true),
+                'summits' => (bool) get_option('prospector_enable_summits', false),
+                'chatGpt' => $chatgpt_enabled,
+            ];
+        }
+
+        // Fallback to direct option reading
+        $chatgpt_enabled = (bool) get_option('prospector_enable_chatgpt', false);
+        $chat_enabled = (bool) get_option('prospector_enable_chat', false);
+
+        return [
+            'chat'    => $chat_enabled || $chatgpt_enabled,
+            'youtube' => (bool) get_option('prospector_enable_youtube', true),
+            'summits' => (bool) get_option('prospector_enable_summits', false),
+            'chatGpt' => $chatgpt_enabled,
+        ];
     }
 }
