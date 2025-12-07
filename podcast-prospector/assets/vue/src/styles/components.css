@@ -311,20 +311,21 @@
   gap: var(--prospector-space-sm);
   height: 2.75rem;
   padding: 0 var(--prospector-space-md);
-  color: var(--prospector-slate-500);
+  color: var(--prospector-primary-500);
   background: white;
-  border-color: var(--prospector-slate-200);
+  border: 1px solid var(--prospector-primary-500);
 }
 
 .prospector-btn--filter:hover:not(:disabled) {
-  border-color: var(--prospector-slate-300);
-  background: var(--prospector-slate-50);
+  background: var(--prospector-primary-50);
+  border-color: var(--prospector-primary-600);
+  color: var(--prospector-primary-600);
 }
 
 .prospector-btn--filter.is-active {
-  color: var(--prospector-primary-500);
+  color: var(--prospector-primary-600);
   background: var(--prospector-primary-50);
-  border-color: var(--prospector-primary-300);
+  border-color: var(--prospector-primary-500);
 }
 
 /* ==============================================

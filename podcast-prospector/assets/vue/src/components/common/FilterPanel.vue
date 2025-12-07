@@ -1,12 +1,5 @@
 <template>
   <div class="prospector-filter-panel">
-    <!-- Source Badge -->
-    <div class="prospector-filter-panel__source">
-      <span class="prospector-filter-panel__source-badge">
-        Source: {{ apiSourceLabel }}
-      </span>
-    </div>
-
     <!-- Filters Grid -->
     <div class="prospector-filter-panel__grid">
       <!-- 1. Language -->
@@ -198,13 +191,6 @@ const userStore = useUserStore()
 const canUseAdvanced = computed(() => userStore.canUseAdvancedFilters)
 const isPremiumMode = computed(() => props.searchMode.includes('advanced'))
 
-const apiSourceLabel = computed(() => {
-  if (props.searchMode.includes('advanced')) {
-    return 'Premium (Taddy)'
-  }
-  return 'Free (Podcast Index)'
-})
-
 // Determine if a filter is locked based on mode and user permissions
 const isFilterLocked = (filterName) => {
   // For free modes (byperson, bytitle), lock advanced filters
@@ -257,29 +243,11 @@ const GENRES = [
 
 <style scoped>
 .prospector-filter-panel {
-  background: white;
+  background: #f7fafc;
   border: 1px solid var(--prospector-slate-200);
   border-radius: var(--prospector-radius-xl);
   padding: var(--prospector-space-lg);
   animation: prospectorFadeIn 0.2s ease-out forwards;
-}
-
-.prospector-filter-panel__source {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: var(--prospector-space-md);
-}
-
-.prospector-filter-panel__source-badge {
-  font-size: 0.625rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--prospector-slate-400);
-  background: var(--prospector-slate-50);
-  border: 1px solid var(--prospector-slate-100);
-  padding: var(--prospector-space-xs) var(--prospector-space-sm);
-  border-radius: var(--prospector-radius-sm);
 }
 
 .prospector-filter-panel__grid {
