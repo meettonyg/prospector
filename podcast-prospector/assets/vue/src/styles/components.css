@@ -291,17 +291,19 @@
   height: 2.75rem;
   padding: 0 1.5rem;
   color: white;
-  background: var(--prospector-primary-500);
-  border-color: var(--prospector-primary-500);
+  background: #0ea5e9;
+  border: 1px solid #0ea5e9;
+  border-radius: var(--prospector-radius-md);
 }
 
 .prospector-btn--search:hover:not(:disabled) {
-  background: var(--prospector-primary-600);
+  background: #0284c7;
+  border-color: #0284c7;
 }
 
 .prospector-btn--search:disabled {
-  background: var(--prospector-slate-300);
-  border-color: var(--prospector-slate-300);
+  background: #94a3b8;
+  border-color: #94a3b8;
 }
 
 /* Filter Button */

@@ -16,25 +16,14 @@
       <div class="prospector-card__body">
         <!-- Search Input Row -->
         <div class="prospector-search-row">
-          <!-- Channel Dropdown -->
-          <div class="prospector-search-row__channel">
-            <div class="prospector-channel-select">
-              <MicrophoneIcon class="prospector-channel-select__icon" />
-              <select
-                v-model="selectedChannel"
-                class="prospector-channel-select__native"
-              >
-                <option value="podcasts">Podcasts</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Search Input -->
+          <!-- Search Input with integrated channel dropdown -->
           <div class="prospector-search-row__input">
             <SearchInput
               v-model="searchStore.query"
               :placeholder="searchPlaceholder"
               :disabled="!userStore.canSearch"
+              :channel="selectedChannel"
+              @update:channel="selectedChannel = $event"
               @search="handleSearch"
             />
           </div>
@@ -64,6 +53,9 @@
           </div>
         </div>
       </div>
+
+      <!-- Divider before filters -->
+      <div v-if="filtersVisible" class="prospector-card__divider"></div>
 
       <!-- Filters Panel -->
       <FilterPanel
@@ -181,8 +173,7 @@ import {
   AdjustmentsHorizontalIcon,
   Squares2X2Icon,
   ListBulletIcon,
-  ArrowDownTrayIcon,
-  MicrophoneIcon
+  ArrowDownTrayIcon
 } from '@heroicons/vue/24/outline'
 import { useSearchStore } from '../../stores/searchStore'
 import { useUserStore } from '../../stores/userStore'
@@ -348,10 +339,6 @@ watch(() => searchStore.channel, () => {
   }
 }
 
-.prospector-search-row__channel {
-  flex-shrink: 0;
-}
-
 .prospector-search-row__input {
   flex: 1;
 }
@@ -361,59 +348,17 @@ watch(() => searchStore.channel, () => {
   gap: var(--prospector-space-sm);
 }
 
-/* Channel Select Dropdown */
-.prospector-channel-select {
-  position: relative;
-  display: flex;
-  align-items: center;
-  height: 2.75rem;
-  padding-left: var(--prospector-space-sm);
-  background-color: white;
-  border: 1px solid var(--prospector-slate-200);
-  border-radius: var(--prospector-radius-md);
-  cursor: pointer;
-  transition: all var(--prospector-transition-fast);
-}
-
-.prospector-channel-select:hover {
-  border-color: var(--prospector-slate-300);
-  background-color: var(--prospector-slate-50);
-}
-
-.prospector-channel-select:focus-within {
-  border-color: var(--prospector-primary-400);
-  box-shadow: 0 0 0 1px var(--prospector-primary-100);
-}
-
-.prospector-channel-select__icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  color: var(--prospector-slate-400);
-  flex-shrink: 0;
-}
-
-.prospector-channel-select__native {
-  appearance: none;
-  border: none;
-  background-color: transparent;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 0.5rem center;
-  background-size: 1rem;
-  padding: 0 2rem 0 var(--prospector-space-sm);
-  height: 100%;
-  font-family: var(--prospector-font-family);
-  font-size: var(--prospector-font-size-sm);
-  font-weight: 500;
-  color: var(--prospector-slate-700);
-  cursor: pointer;
-  outline: none;
-}
-
 /* Button icon sizing */
 .prospector-btn__icon {
   width: 1.25rem;
   height: 1.25rem;
+}
+
+/* Card divider */
+.prospector-card__divider {
+  height: 1px;
+  background: var(--prospector-slate-200);
+  margin: 0 var(--prospector-space-lg);
 }
 
 /* Card spacing modifiers */
