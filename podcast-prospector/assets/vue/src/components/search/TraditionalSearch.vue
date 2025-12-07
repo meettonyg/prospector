@@ -15,15 +15,9 @@
       <!-- Search Controls -->
       <div class="prospector-card__body">
         <!-- Search Input Row -->
-        <div class="flex flex-col md:flex-row gap-3">
-          <!-- Channel Dropdown -->
-          <ChannelDropdown
-            v-model="searchStore.channel"
-            @update:model-value="handleChannelChange"
-          />
-
+        <div class="prospector-search-row">
           <!-- Search Input -->
-          <div class="flex-1">
+          <div class="prospector-search-row__input">
             <SearchInput
               v-model="searchStore.query"
               :placeholder="searchPlaceholder"
@@ -33,7 +27,7 @@
           </div>
 
           <!-- Filters & Search Buttons -->
-          <div class="flex gap-2">
+          <div class="prospector-search-row__actions">
             <button
               type="button"
               @click="toggleFilters"
@@ -42,7 +36,7 @@
                 filtersVisible && 'is-active'
               ]"
             >
-              <AdjustmentsHorizontalIcon class="w-5 h-5" />
+              <AdjustmentsHorizontalIcon class="prospector-btn__icon" />
               <span>Filters</span>
             </button>
             <button
@@ -68,7 +62,7 @@
     </div>
 
     <!-- Results Section -->
-    <div v-if="hasSearched || searchStore.hasResults" class="prospector-card mt-6">
+    <div v-if="hasSearched || searchStore.hasResults" class="prospector-card prospector-card--results">
       <!-- Results Toolbar -->
       <div class="prospector-results-toolbar">
         <p class="prospector-results-toolbar__info">
@@ -95,7 +89,7 @@
             :disabled="bulkImporting"
             class="prospector-btn prospector-btn--primary"
           >
-            <ArrowDownTrayIcon class="w-4 h-4" />
+            <ArrowDownTrayIcon class="prospector-btn__icon" />
             Import {{ searchStore.selectedCount }} Selected
           </button>
 
@@ -128,7 +122,7 @@
       </div>
 
       <!-- Results Content -->
-      <div class="prospector-card__body min-h-[300px]">
+      <div class="prospector-card__body prospector-card__body--results">
         <ResultsContainer
           :results="searchStore.results"
           :hydration-map="searchStore.hydrationMap"
@@ -158,7 +152,7 @@
     </div>
 
     <!-- Empty State (before any search) -->
-    <div v-else class="prospector-card mt-6">
+    <div v-else class="prospector-card prospector-card--empty">
       <EmptyState
         :channel="searchStore.channel"
         :search-mode="searchStore.mode"
@@ -184,7 +178,6 @@ import api from '../../api/prospectorApi'
 
 // Components
 import AppHeader from '../common/AppHeader.vue'
-import ChannelDropdown from '../common/ChannelDropdown.vue'
 import SearchInput from '../common/SearchInput.vue'
 import SearchModeTabs from './SearchModeTabs.vue'
 import FilterPanel from '../common/FilterPanel.vue'
@@ -250,12 +243,6 @@ const handleExampleSearch = ({ query, mode }) => {
     searchStore.setMode(mode)
   }
   handleSearch()
-}
-
-const handleChannelChange = (channel) => {
-  searchStore.setChannel(channel)
-  filterStore.clearFilters()
-  hasSearched.value = false
 }
 
 const handleModeChange = (mode) => {
@@ -330,3 +317,47 @@ watch(() => searchStore.channel, () => {
   hasSearched.value = false
 })
 </script>
+
+<style scoped>
+/* Search Row Layout */
+.prospector-search-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--prospector-space-md);
+}
+
+@media (min-width: 768px) {
+  .prospector-search-row {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.prospector-search-row__input {
+  flex: 1;
+}
+
+.prospector-search-row__actions {
+  display: flex;
+  gap: var(--prospector-space-sm);
+}
+
+/* Button icon sizing */
+.prospector-btn__icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Card spacing modifiers */
+.prospector-card--results {
+  margin-top: var(--prospector-space-lg);
+}
+
+.prospector-card--empty {
+  margin-top: var(--prospector-space-lg);
+}
+
+.prospector-card__body--results {
+  min-height: 300px;
+}
+</style>

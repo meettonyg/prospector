@@ -85,8 +85,9 @@ const selectMode = (mode) => {
 .prospector-tabs {
   display: flex;
   gap: 0;
-  padding: 0 var(--prospector-space-md);
+  padding: 0 1.5rem;
   border-bottom: 1px solid var(--prospector-slate-200);
+  background: white;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -100,16 +101,15 @@ const selectMode = (mode) => {
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--prospector-space-sm);
-  padding: 0.875rem var(--prospector-space-md);
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
   font-family: var(--prospector-font-family);
-  font-size: var(--prospector-font-size-sm);
+  font-size: 0.875rem;
   font-weight: 500;
   color: var(--prospector-slate-500);
   background: transparent;
-  border: 2px solid transparent;
-  border-bottom: none;
-  border-radius: var(--prospector-radius-md) var(--prospector-radius-md) 0 0;
+  border: none;
+  border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   white-space: nowrap;
   cursor: pointer;
@@ -122,21 +122,7 @@ const selectMode = (mode) => {
 
 .prospector-tabs__item--active {
   color: var(--prospector-primary-500);
-  background: white;
-  border-top-color: var(--prospector-primary-500);
-  border-left-color: var(--prospector-primary-500);
-  border-right-color: var(--prospector-primary-500);
-}
-
-/* Cover the container's bottom border */
-.prospector-tabs__item--active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: white;
+  border-bottom-color: var(--prospector-primary-500);
 }
 
 .prospector-tabs__item--disabled {
@@ -150,7 +136,7 @@ const selectMode = (mode) => {
 }
 
 .prospector-tabs__item-text {
-  /* Text styles inherited from parent */
+  /* Text inherits from parent */
 }
 
 .prospector-tabs__item-lock {
@@ -158,11 +144,5 @@ const selectMode = (mode) => {
   height: 0.75rem;
   color: var(--prospector-warning-500);
   margin-left: 0.125rem;
-}
-
-@media (min-width: 768px) {
-  .prospector-tabs {
-    padding: 0 var(--prospector-space-lg);
-  }
 }
 </style>

@@ -25,28 +25,27 @@ defineEmits(['openSavedSearches'])
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 1.5rem 1.5rem 1.25rem;
   background: white;
 }
 
 .prospector-header__content {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: 0.25rem;
 }
 
 .prospector-header__title {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--prospector-slate-800);
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 .prospector-header__subtitle {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--prospector-slate-500);
   margin: 0;
   line-height: 1.4;
 }
@@ -62,17 +61,18 @@ defineEmits(['openSavedSearches'])
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
+  font-family: var(--prospector-font-family);
   font-size: 0.875rem;
   font-weight: 500;
-  color: #0ea5e9;
+  color: var(--prospector-primary-500);
   background: transparent;
-  border: 1px solid #0ea5e9;
-  border-radius: 0.375rem;
+  border: 1px solid var(--prospector-primary-500);
+  border-radius: var(--prospector-radius-md);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--prospector-transition-fast);
 }
 
 .prospector-header__btn:hover {
-  background: #f0f9ff;
+  background: var(--prospector-primary-50);
 }
 </style>

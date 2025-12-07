@@ -69,7 +69,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, watch } from 'vue'
+import { ref, computed, nextTick, watch, inject } from 'vue'
 import { ChatBubbleLeftRightIcon } from '@heroicons/vue/24/outline'
 import { useChatStore } from '../../stores/chatStore'
 import { useSearchStore } from '../../stores/searchStore'
@@ -82,6 +82,9 @@ import {
   getSuggestedActions
 } from '../../utils/intentDetector'
 import api from '../../api/prospectorApi'
+
+// Get config for feature flags
+const config = inject('config', {})
 
 import ChatEmptyState from './ChatEmptyState.vue'
 import ChatMessage from './ChatMessage.vue'
@@ -97,11 +100,16 @@ const messagesContainer = ref(null)
 const inputText = ref('')
 const suggestedActions = ref([])
 
+// ChatGPT feature flag
+const chatGptEnabled = computed(() => config.features?.chatGpt === true)
+
 const inputPlaceholder = computed(() => {
   if (!userStore.canSearch) {
     return 'Search limit reached'
   }
-  return 'Ask me to find podcasts...'
+  return chatGptEnabled.value 
+    ? 'Ask me anything about podcasts...' 
+    : 'Ask me to find podcasts...'
 })
 
 // Scroll to bottom when messages change

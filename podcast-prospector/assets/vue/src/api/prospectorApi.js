@@ -105,5 +105,108 @@ export default {
   async clearCache() {
     const response = await api.delete('/cache/clear')
     return response.data
+  },
+
+  // ========================================
+  // ChatGPT Integration (Feature Flagged)
+  // ========================================
+
+  /**
+   * Detect intent using ChatGPT AI
+   * Requires chatGpt feature flag to be enabled
+   * @param {string} message - User's message
+   * @param {Array} context - Previous conversation context (optional)
+   * @returns {Promise<Object>} Intent detection result
+   */
+  async detectIntentWithAI(message, context = []) {
+    const response = await api.post('/chat/intent', {
+      message,
+      context
+    })
+    return response.data
+  },
+
+  /**
+   * Get streaming ChatGPT response (returns EventSource URL)
+   * Requires chatGpt feature flag to be enabled
+   * @param {string} message - User's message
+   * @param {Array} context - Previous conversation context (optional)
+   * @returns {Promise<Object>} Stream configuration
+   */
+  async getChatStreamConfig(message, context = []) {
+    // Return the endpoint URL and payload for EventSource
+    return {
+      url: `${config.apiBase || '/wp-json/podcast-prospector/v1'}/chat/stream`,
+      payload: {
+        message,
+        context
+      },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-WP-Nonce': config.nonce || ''
+      }
+    }
+  },
+
+  /**
+   * Stream ChatGPT response using fetch with ReadableStream
+   * @param {string} message - User's message
+   * @param {Array} context - Previous conversation context
+   * @param {Function} onChunk - Callback for each streamed chunk
+   * @param {Function} onComplete - Callback when stream completes
+   * @param {Function} onError - Callback for errors
+   * @returns {Promise<void>}
+   */
+  async streamChatResponse(message, context = [], { onChunk, onComplete, onError }) {
+    try {
+      const response = await fetch(
+        `${config.apiBase || '/wp-json/podcast-prospector/v1'}/chat/stream`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-WP-Nonce': config.nonce || ''
+          },
+          body: JSON.stringify({ message, context })
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error(`Stream request failed: ${response.status}`)
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value, { stream: true })
+        const lines = chunk.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim()
+            if (data === '[DONE]') {
+              onComplete?.()
+              return
+            }
+            try {
+              const parsed = JSON.parse(data)
+              if (parsed.content) {
+                onChunk?.(parsed.content)
+              }
+            } catch (e) {
+              // Ignore JSON parse errors for partial chunks
+            }
+          }
+        }
+      }
+
+      onComplete?.()
+    } catch (error) {
+      onError?.(error)
+    }
   }
 }

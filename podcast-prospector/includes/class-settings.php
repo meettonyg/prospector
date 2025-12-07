@@ -73,6 +73,11 @@ class Podcast_Prospector_Settings {
         // YouTube Features
         'youtube_features_enabled'  => false,
         'youtube_api_key'           => '',
+
+        // ChatGPT/OpenAI Features
+        'chatgpt_enabled'           => false,
+        'openai_api_key'            => '',
+        'chatgpt_model'             => 'gpt-4o-mini',
     ];
 
     /**
@@ -285,6 +290,24 @@ class Podcast_Prospector_Settings {
 
         $this->add_settings_field( 'youtube_features_enabled', __( 'Enable YouTube Search', 'podcast-prospector' ), 'youtube_section', 'checkbox' );
         $this->add_settings_field( 'youtube_api_key', __( 'YouTube API Key', 'podcast-prospector' ), 'youtube_section', 'password' );
+
+        // ChatGPT/OpenAI Section
+        add_settings_section(
+            'chatgpt_section',
+            __( 'AI Chat Features', 'podcast-prospector' ),
+            [ $this, 'render_chatgpt_section_description' ],
+            self::PAGE_SLUG
+        );
+
+        $this->add_settings_field( 'chatgpt_enabled', __( 'Enable AI-Powered Chat', 'podcast-prospector' ), 'chatgpt_section', 'checkbox' );
+        $this->add_settings_field( 'openai_api_key', __( 'OpenAI API Key', 'podcast-prospector' ), 'chatgpt_section', 'password' );
+        $this->add_settings_field( 'chatgpt_model', __( 'ChatGPT Model', 'podcast-prospector' ), 'chatgpt_section', 'select', [
+            'options' => [
+                'gpt-4o-mini' => __( 'GPT-4o Mini (Recommended - Cost Effective)', 'podcast-prospector' ),
+                'gpt-4o'      => __( 'GPT-4o (Most Capable)', 'podcast-prospector' ),
+                'gpt-4-turbo' => __( 'GPT-4 Turbo', 'podcast-prospector' ),
+            ],
+        ] );
     }
 
     /**
@@ -379,6 +402,33 @@ class Podcast_Prospector_Settings {
         echo '<p>' . esc_html__( 'Configure YouTube video search. Requires a YouTube Data API v3 key from Google Cloud Console.', 'podcast-prospector' ) . '</p>';
         echo '<p><a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener">' . esc_html__( 'Get YouTube API Key', 'podcast-prospector' ) . '</a></p>';
         echo '<p class="description">' . esc_html__( 'Free quota: ~100 searches/day. Request increase in Google Cloud Console for more.', 'podcast-prospector' ) . '</p>';
+    }
+
+    /**
+     * Render ChatGPT section description.
+     *
+     * @return void
+     */
+    public function render_chatgpt_section_description(): void {
+        echo '<p>' . esc_html__( 'Enable AI-powered conversational search using OpenAI\'s ChatGPT. This provides intelligent intent detection and natural language processing for the chat interface.', 'podcast-prospector' ) . '</p>';
+        echo '<p><a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">' . esc_html__( 'Get OpenAI API Key', 'podcast-prospector' ) . '</a></p>';
+        echo '<p class="description">' . esc_html__( 'Estimated cost: GPT-4o-mini ~$0.15-0.60 per 1M tokens. Typical usage: <$1/month for light use.', 'podcast-prospector' ) . '</p>';
+
+        // Show usage stats if available
+        if ( class_exists( 'Podcast_Prospector_OpenAI_Service' ) ) {
+            $service = Podcast_Prospector_OpenAI_Service::get_instance();
+            $stats = $service->get_usage_stats();
+
+            if ( $stats['monthly_tokens'] > 0 ) {
+                printf(
+                    '<p><strong>%s</strong> %s | <strong>%s</strong> $%s</p>',
+                    esc_html__( 'Tokens this month:', 'podcast-prospector' ),
+                    esc_html( number_format( $stats['monthly_tokens'] ) ),
+                    esc_html__( 'Est. cost:', 'podcast-prospector' ),
+                    esc_html( number_format( $stats['estimated_cost_usd'], 4 ) )
+                );
+            }
+        }
     }
 
     /**
@@ -486,6 +536,18 @@ class Podcast_Prospector_Settings {
         $sanitized['youtube_api_key'] = isset( $input['youtube_api_key'] )
             ? sanitize_text_field( $input['youtube_api_key'] )
             : '';
+
+        // ChatGPT settings
+        $sanitized['chatgpt_enabled'] = ! empty( $input['chatgpt_enabled'] );
+        $sanitized['openai_api_key'] = isset( $input['openai_api_key'] )
+            ? sanitize_text_field( $input['openai_api_key'] )
+            : '';
+
+        // ChatGPT model selection
+        $valid_models = [ 'gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo' ];
+        $sanitized['chatgpt_model'] = isset( $input['chatgpt_model'] ) && in_array( $input['chatgpt_model'], $valid_models, true )
+            ? $input['chatgpt_model']
+            : 'gpt-4o-mini';
 
         return $sanitized;
     }
