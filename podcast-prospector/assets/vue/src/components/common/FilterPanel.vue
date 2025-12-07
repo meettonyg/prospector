@@ -244,9 +244,10 @@ const GENRES = [
 <style scoped>
 .prospector-filter-panel {
   background: #f7fafc;
-  border: none;
-  border-radius: 0;
+  border: 1px solid var(--prospector-slate-200);
+  border-radius: var(--prospector-radius-xl);
   padding: var(--prospector-space-lg);
+  margin: var(--prospector-space-md) var(--prospector-space-lg);
   animation: prospectorFadeIn 0.2s ease-out forwards;
 }
 
