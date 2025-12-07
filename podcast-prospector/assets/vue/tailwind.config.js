@@ -2,11 +2,12 @@
 export default {
   content: ['./src/**/*.{vue,js}'],
 
-  // Use !important to override WordPress theme styles
-  important: true,
+  // ⚠️ CRITICAL: Scope all styles to #prospector-app container
+  // This prevents Tailwind from affecting WordPress Admin styles
+  important: '#prospector-app',
 
   corePlugins: {
-    // Disable CSS reset to prevent WordPress style conflicts
+    // ⚠️ CRITICAL: Disable CSS reset to prevent WordPress style conflicts
     preflight: false,
   },
 
