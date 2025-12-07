@@ -1,82 +1,78 @@
 <template>
-  <div class="flex items-center justify-between px-4 py-3 bg-white border-t border-slate-200">
+  <div class="prospector-pagination-wrapper">
     <!-- Mobile view -->
-    <div class="flex flex-1 justify-between sm:hidden">
+    <div class="prospector-pagination__mobile">
       <button
         @click="goToPage(currentPage - 1)"
         :disabled="currentPage === 1"
-        class="btn-secondary"
+        class="prospector-btn prospector-btn--secondary"
       >
         Previous
       </button>
       <button
         @click="goToPage(currentPage + 1)"
         :disabled="currentPage === totalPages"
-        class="btn-secondary"
+        class="prospector-btn prospector-btn--secondary"
       >
         Next
       </button>
     </div>
 
     <!-- Desktop view -->
-    <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-      <div>
-        <p class="text-sm text-slate-600">
+    <div class="prospector-pagination__desktop">
+      <div class="prospector-pagination__info">
+        <p class="prospector-pagination__info-text">
           Showing
-          <span class="font-medium">{{ startItem }}</span>
+          <span class="prospector-pagination__info-highlight">{{ startItem }}</span>
           to
-          <span class="font-medium">{{ endItem }}</span>
+          <span class="prospector-pagination__info-highlight">{{ endItem }}</span>
           of
-          <span class="font-medium">{{ total }}</span>
+          <span class="prospector-pagination__info-highlight">{{ total }}</span>
           results
         </p>
       </div>
 
-      <div>
-        <nav class="flex items-center gap-1" aria-label="Pagination">
-          <!-- Previous button -->
-          <button
-            @click="goToPage(currentPage - 1)"
-            :disabled="currentPage === 1"
-            class="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            aria-label="Previous page"
-          >
-            <ChevronLeftIcon class="w-5 h-5 text-slate-600" />
-          </button>
+      <nav class="prospector-pagination" aria-label="Pagination">
+        <!-- Previous button -->
+        <button
+          @click="goToPage(currentPage - 1)"
+          :disabled="currentPage === 1"
+          class="prospector-pagination__btn prospector-pagination__btn--nav"
+          aria-label="Previous page"
+        >
+          <ChevronLeftIcon class="prospector-pagination__btn-icon" />
+        </button>
 
-          <!-- Page numbers -->
-          <template v-for="page in visiblePages" :key="page">
-            <span
-              v-if="page === '...'"
-              class="px-3 py-2 text-slate-400"
-            >
-              ...
-            </span>
-            <button
-              v-else
-              @click="goToPage(page)"
-              :class="[
-                'min-w-[40px] px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                page === currentPage
-                  ? 'bg-primary-500 text-white'
-                  : 'hover:bg-slate-100 text-slate-600'
-              ]"
-            >
-              {{ page }}
-            </button>
-          </template>
-
-          <!-- Next button -->
-          <button
-            @click="goToPage(currentPage + 1)"
-            :disabled="currentPage === totalPages"
-            class="p-2 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            aria-label="Next page"
+        <!-- Page numbers -->
+        <template v-for="page in visiblePages" :key="page">
+          <span
+            v-if="page === '...'"
+            class="prospector-pagination__ellipsis"
           >
-            <ChevronRightIcon class="w-5 h-5 text-slate-600" />
+            ...
+          </span>
+          <button
+            v-else
+            @click="goToPage(page)"
+            :class="[
+              'prospector-pagination__btn',
+              page === currentPage && 'prospector-pagination__btn--active'
+            ]"
+          >
+            {{ page }}
           </button>
-        </nav>
-      </div>
+        </template>
+
+        <!-- Next button -->
+        <button
+          @click="goToPage(currentPage + 1)"
+          :disabled="currentPage === totalPages"
+          class="prospector-pagination__btn prospector-pagination__btn--nav"
+          aria-label="Next page"
+        >
+          <ChevronRightIcon class="prospector-pagination__btn-icon" />
+        </button>
+      </nav>
     </div>
   </div>
 </template>
@@ -155,3 +151,111 @@ const goToPage = (page) => {
   }
 }
 </script>
+
+<style scoped>
+.prospector-pagination-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--prospector-space-md) var(--prospector-space-lg);
+  background: white;
+  border-top: 1px solid var(--prospector-slate-200);
+}
+
+/* Mobile view */
+.prospector-pagination__mobile {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+}
+
+@media (min-width: 640px) {
+  .prospector-pagination__mobile {
+    display: none;
+  }
+}
+
+/* Desktop view */
+.prospector-pagination__desktop {
+  display: none;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@media (min-width: 640px) {
+  .prospector-pagination__desktop {
+    display: flex;
+  }
+}
+
+.prospector-pagination__info {
+  /* wrapper for info text */
+}
+
+.prospector-pagination__info-text {
+  font-size: var(--prospector-font-size-sm);
+  color: var(--prospector-slate-600);
+  margin: 0;
+}
+
+.prospector-pagination__info-highlight {
+  font-weight: 500;
+}
+
+.prospector-pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--prospector-space-xs);
+}
+
+.prospector-pagination__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  padding: 0 var(--prospector-space-md);
+  font-family: var(--prospector-font-family);
+  font-size: var(--prospector-font-size-sm);
+  font-weight: 500;
+  color: var(--prospector-slate-600);
+  background: transparent;
+  border: none;
+  border-radius: var(--prospector-radius-lg);
+  cursor: pointer;
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-pagination__btn:hover:not(:disabled) {
+  background: var(--prospector-slate-100);
+}
+
+.prospector-pagination__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prospector-pagination__btn--active {
+  color: white;
+  background: var(--prospector-primary-500);
+}
+
+.prospector-pagination__btn--active:hover:not(:disabled) {
+  background: var(--prospector-primary-600);
+}
+
+.prospector-pagination__btn--nav {
+  padding: var(--prospector-space-sm);
+}
+
+.prospector-pagination__btn-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.prospector-pagination__ellipsis {
+  padding: 0 var(--prospector-space-xs);
+  color: var(--prospector-slate-400);
+}
+</style>

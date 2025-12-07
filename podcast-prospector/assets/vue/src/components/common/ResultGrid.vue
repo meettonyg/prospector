@@ -1,19 +1,19 @@
 <template>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
+  <div class="prospector-result-grid">
     <div
       v-for="(result, index) in results"
       :key="result.id || index"
-      class="border border-slate-200 rounded-lg p-4 hover:shadow-md hover:border-slate-300 transition-all flex items-start gap-4 cursor-pointer group bg-white"
+      class="prospector-result-grid__item"
       @click="$emit('result-click', { result, index })"
     >
       <!-- Checkbox for selection -->
-      <div class="flex-shrink-0 pt-1">
+      <div class="prospector-result-grid__checkbox-wrapper">
         <input
           type="checkbox"
           :checked="result._selected"
           @click.stop="$emit('toggle-select', index)"
           @change.stop
-          class="w-4 h-4 rounded border-slate-300 text-primary-500 focus:ring-primary-500 cursor-pointer"
+          class="prospector-result-grid__checkbox"
           :disabled="isTracked(index)"
         />
       </div>
@@ -22,66 +22,66 @@
       <img
         :src="result.image || result.artwork || '/wp-content/plugins/podcast-prospector/assets/placeholder.png'"
         :alt="result.title"
-        class="w-16 h-16 rounded-lg object-cover bg-slate-100 border border-slate-200 flex-shrink-0"
+        class="prospector-result-grid__image"
         @error="handleImageError"
       />
 
       <!-- Content -->
-      <div class="flex-1 min-w-0">
+      <div class="prospector-result-grid__content">
         <!-- Type Badge -->
-        <div class="flex items-center gap-1.5 mb-1.5">
-          <component :is="getTypeIcon(result)" class="w-3.5 h-3.5" :class="getTypeColor(result)" />
-          <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wide">
+        <div class="prospector-result-grid__type">
+          <component :is="getTypeIcon(result)" class="prospector-result-grid__type-icon" :class="getTypeColor(result)" />
+          <span class="prospector-result-grid__type-label">
             {{ getTypeLabel(result) }}
           </span>
           <!-- Tracked Badge -->
           <span 
             v-if="isTracked(index)" 
-            class="ml-auto text-[10px] uppercase font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded"
+            class="prospector-result-grid__tracked-badge"
           >
             In Pipeline
           </span>
         </div>
 
         <!-- Title -->
-        <h4 class="font-semibold text-sm text-slate-800 group-hover:text-primary-500 transition-colors line-clamp-2 leading-tight">
+        <h4 class="prospector-result-grid__title">
           {{ result.title }}
         </h4>
 
         <!-- Author/Host -->
-        <p class="text-xs text-slate-500 mt-1 line-clamp-1">
+        <p class="prospector-result-grid__author">
           {{ result.author || result.host || result.ownerName || 'Unknown' }}
         </p>
 
         <!-- Category/Genre Badge -->
         <span 
           v-if="result.category || result.genre"
-          class="inline-block mt-3 bg-primary-50 text-primary-600 text-[11px] font-semibold px-2 py-0.5 rounded"
+          class="prospector-result-grid__category"
         >
           {{ result.category || result.genre }}
         </span>
       </div>
 
       <!-- Import Button -->
-      <div class="flex-shrink-0">
+      <div class="prospector-result-grid__action">
         <button
           v-if="!isTracked(index)"
           @click.stop="$emit('import', { result, index })"
           :disabled="isImporting(index)"
-          class="p-2 rounded-lg bg-white border border-slate-200 text-slate-400 hover:bg-primary-50 hover:border-primary-500 hover:text-primary-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          class="prospector-result-grid__import-btn"
           title="Add to Pipeline"
         >
-          <ArrowDownTrayIcon v-if="!isImporting(index)" class="w-4 h-4" />
+          <ArrowDownTrayIcon v-if="!isImporting(index)" class="prospector-result-grid__import-icon" />
           <LoadingSpinner v-else size="sm" />
         </button>
         <a
           v-else
           :href="getHydration(index)?.crm_url"
           @click.stop
-          class="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 hover:bg-emerald-100 transition-all inline-flex"
+          class="prospector-result-grid__view-btn"
           title="View in Pipeline"
         >
-          <EyeIcon class="w-4 h-4" />
+          <EyeIcon class="prospector-result-grid__view-icon" />
         </a>
       </div>
     </div>
@@ -134,9 +134,9 @@ const getTypeIcon = (result) => {
 }
 
 const getTypeColor = (result) => {
-  if (result.type === 'youtube' || result.channel === 'youtube') return 'text-red-500'
-  if (result.type === 'summit' || result.channel === 'summits') return 'text-orange-500'
-  return 'text-purple-500'
+  if (result.type === 'youtube' || result.channel === 'youtube') return 'prospector-result-grid__type-icon--youtube'
+  if (result.type === 'summit' || result.channel === 'summits') return 'prospector-result-grid__type-icon--summit'
+  return 'prospector-result-grid__type-icon--podcast'
 }
 
 const getTypeLabel = (result) => {
@@ -152,23 +152,218 @@ const handleImageError = (e) => {
 </script>
 
 <style scoped>
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+.prospector-result-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: var(--prospector-space-md);
+  animation: prospectorFadeIn 0.3s ease-out forwards;
 }
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out forwards;
+
+@media (min-width: 768px) {
+  .prospector-result-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
-.line-clamp-1 {
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+
+@media (min-width: 1024px) {
+  .prospector-result-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
-.line-clamp-2 {
+
+.prospector-result-grid__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--prospector-space-md);
+  background: white;
+  border: 1px solid var(--prospector-slate-200);
+  border-radius: var(--prospector-radius-lg);
+  padding: var(--prospector-space-md);
+  cursor: pointer;
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-result-grid__item:hover {
+  border-color: var(--prospector-slate-300);
+  box-shadow: var(--prospector-shadow-md);
+}
+
+.prospector-result-grid__checkbox-wrapper {
+  flex-shrink: 0;
+  padding-top: var(--prospector-space-xs);
+}
+
+.prospector-result-grid__checkbox {
+  width: 1rem;
+  height: 1rem;
+  border-radius: var(--prospector-radius-sm);
+  border: 1px solid var(--prospector-slate-300);
+  accent-color: var(--prospector-primary-500);
+  cursor: pointer;
+}
+
+.prospector-result-grid__checkbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prospector-result-grid__image {
+  width: 4rem;
+  height: 4rem;
+  border-radius: var(--prospector-radius-lg);
+  object-fit: cover;
+  background: var(--prospector-slate-100);
+  border: 1px solid var(--prospector-slate-200);
+  flex-shrink: 0;
+}
+
+.prospector-result-grid__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.prospector-result-grid__type {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.375rem;
+}
+
+.prospector-result-grid__type-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.prospector-result-grid__type-icon--podcast {
+  color: #a855f7;
+}
+
+.prospector-result-grid__type-icon--youtube {
+  color: #ef4444;
+}
+
+.prospector-result-grid__type-icon--summit {
+  color: #f97316;
+}
+
+.prospector-result-grid__type-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--prospector-slate-500);
+}
+
+.prospector-result-grid__tracked-badge {
+  margin-left: auto;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: var(--prospector-success-100);
+  color: var(--prospector-success-700);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--prospector-radius-sm);
+}
+
+.prospector-result-grid__title {
+  font-weight: 600;
+  font-size: var(--prospector-font-size-sm);
+  color: var(--prospector-slate-800);
+  margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  line-height: 1.4;
+  transition: color var(--prospector-transition-fast);
+}
+
+.prospector-result-grid__item:hover .prospector-result-grid__title {
+  color: var(--prospector-primary-500);
+}
+
+.prospector-result-grid__author {
+  font-size: var(--prospector-font-size-xs);
+  color: var(--prospector-slate-500);
+  margin: var(--prospector-space-xs) 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prospector-result-grid__category {
+  display: inline-block;
+  margin-top: var(--prospector-space-md);
+  background: var(--prospector-primary-50);
+  color: var(--prospector-primary-600);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--prospector-radius-sm);
+}
+
+.prospector-result-grid__action {
+  flex-shrink: 0;
+}
+
+.prospector-result-grid__import-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--prospector-space-sm);
+  background: white;
+  border: 1px solid var(--prospector-slate-200);
+  border-radius: var(--prospector-radius-lg);
+  color: var(--prospector-slate-400);
+  cursor: pointer;
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-result-grid__import-btn:hover:not(:disabled) {
+  background: var(--prospector-primary-50);
+  border-color: var(--prospector-primary-500);
+  color: var(--prospector-primary-500);
+}
+
+.prospector-result-grid__import-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prospector-result-grid__import-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.prospector-result-grid__view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--prospector-space-sm);
+  background: var(--prospector-success-50);
+  border: 1px solid var(--prospector-success-200);
+  border-radius: var(--prospector-radius-lg);
+  color: var(--prospector-success-600);
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-result-grid__view-btn:hover {
+  background: var(--prospector-success-100);
+}
+
+.prospector-result-grid__view-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+@keyframes prospectorFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

@@ -1,39 +1,39 @@
 <template>
-  <div class="relative" ref="dropdownRef">
+  <div class="prospector-select" ref="dropdownRef">
     <!-- Dropdown Button -->
     <button
       @click="toggleDropdown"
-      class="h-11 px-4 bg-white border border-slate-200 rounded-lg flex items-center gap-2 text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors min-w-[140px]"
+      class="prospector-select__trigger"
     >
-      <component :is="currentChannel.icon" class="w-4 h-4" :class="currentChannel.iconColor" />
-      <span class="text-sm font-medium">{{ currentChannel.label }}</span>
-      <ChevronDownIcon class="w-4 h-4 text-slate-400 ml-auto" />
+      <component :is="currentChannel.icon" class="prospector-select__trigger-icon" :class="currentChannel.iconColor" />
+      <span>{{ currentChannel.label }}</span>
+      <ChevronDownIcon class="prospector-select__trigger-arrow" />
     </button>
 
     <!-- Dropdown Menu -->
-    <Transition name="dropdown">
+    <Transition name="prospector-dropdown">
       <div
         v-if="isOpen"
-        class="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-50 py-1 overflow-hidden"
+        class="prospector-select__menu"
       >
         <button
           v-for="channel in channels"
           :key="channel.value"
           @click="selectChannel(channel)"
-          class="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 transition-colors text-left"
+          class="prospector-select__option"
         >
-          <component :is="channel.icon" class="w-4 h-4" :class="channel.iconColor" />
-          <span class="text-sm text-slate-700">{{ channel.label }}</span>
+          <component :is="channel.icon" class="prospector-select__option-icon" :class="channel.iconColor" />
+          <span>{{ channel.label }}</span>
         </button>
         
-        <div class="border-t border-slate-100 my-1"></div>
+        <div class="prospector-select__divider"></div>
         
         <button
           @click="selectChannel(allChannelsOption)"
-          class="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 transition-colors text-left"
+          class="prospector-select__option"
         >
-          <GlobeAltIcon class="w-4 h-4 text-slate-400" />
-          <span class="text-sm text-slate-700">All Channels</span>
+          <GlobeAltIcon class="prospector-select__option-icon text-slate-400" />
+          <span>All Channels</span>
         </button>
       </div>
     </Transition>
@@ -135,16 +135,3 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 </script>
-
-<style scoped>
-.dropdown-enter-active,
-.dropdown-leave-active {
-  transition: all 0.15s ease;
-}
-
-.dropdown-enter-from,
-.dropdown-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
-}
-</style>

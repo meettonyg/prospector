@@ -1,10 +1,12 @@
 <template>
   <div 
-    class="flex items-center gap-1.5 text-sm font-medium"
-    :class="textClasses"
+    :class="[
+      'prospector-search-cap',
+      colorClass
+    ]"
   >
-    <ClockIcon class="w-4 h-4" />
-    <span>{{ searchesRemaining }} searches left</span>
+    <ClockIcon class="prospector-search-cap__icon" />
+    <span class="prospector-search-cap__text">{{ searchesRemaining }} searches left</span>
   </div>
 </template>
 
@@ -17,13 +19,44 @@ const userStore = useUserStore()
 
 const searchesRemaining = computed(() => userStore.searchesRemaining)
 
-const textClasses = computed(() => {
+const colorClass = computed(() => {
   if (searchesRemaining.value <= 0) {
-    return 'text-red-500'
+    return 'prospector-search-cap--danger'
   } else if (searchesRemaining.value <= 10) {
-    return 'text-amber-500'
+    return 'prospector-search-cap--warning'
   } else {
-    return 'text-emerald-500'
+    return 'prospector-search-cap--success'
   }
 })
 </script>
+
+<style scoped>
+.prospector-search-cap {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: var(--prospector-font-size-sm);
+  font-weight: 500;
+}
+
+.prospector-search-cap--success {
+  color: var(--prospector-success-500);
+}
+
+.prospector-search-cap--warning {
+  color: var(--prospector-warning-500);
+}
+
+.prospector-search-cap--danger {
+  color: var(--prospector-error-500);
+}
+
+.prospector-search-cap__icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.prospector-search-cap__text {
+  white-space: nowrap;
+}
+</style>

@@ -1,38 +1,32 @@
 <template>
-  <div class="border-t border-slate-200 p-4 bg-white">
-    <div class="flex items-end gap-2">
-      <div class="flex-1 relative">
-        <textarea
-          ref="textareaRef"
-          :value="modelValue"
-          @input="handleInput"
-          @keydown="handleKeydown"
-          :placeholder="placeholder"
-          :disabled="disabled"
-          rows="1"
-          class="w-full px-4 py-3 border border-slate-200 rounded-xl resize-none
-                 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
-                 placeholder:text-slate-400 disabled:bg-slate-50 disabled:cursor-not-allowed"
-          :style="{ height: textareaHeight }"
-        />
-      </div>
-
-      <button
-        @click="handleSend"
-        :disabled="disabled || !modelValue.trim()"
-        class="flex-shrink-0 p-3 bg-primary-500 text-white rounded-xl
-               hover:bg-primary-600 disabled:bg-slate-300 disabled:cursor-not-allowed
-               transition-colors"
-        aria-label="Send message"
-      >
-        <PaperAirplaneIcon class="w-5 h-5" />
-      </button>
+  <div class="prospector-chat-input">
+    <div class="prospector-chat-input__wrapper">
+      <textarea
+        ref="textareaRef"
+        :value="modelValue"
+        @input="handleInput"
+        @keydown="handleKeydown"
+        :placeholder="placeholder"
+        :disabled="disabled"
+        rows="1"
+        class="prospector-chat-input__field"
+        :style="{ height: textareaHeight }"
+      />
     </div>
 
-    <p v-if="!disabled" class="mt-2 text-xs text-slate-400 text-center">
-      Press Enter to send, Shift+Enter for new line
-    </p>
+    <button
+      @click="handleSend"
+      :disabled="disabled || !modelValue.trim()"
+      class="prospector-chat-input__send"
+      aria-label="Send message"
+    >
+      <PaperAirplaneIcon class="prospector-chat-input__send-icon" />
+    </button>
   </div>
+
+  <p v-if="!disabled" class="prospector-chat-input__hint">
+    Press Enter to send, Shift+Enter for new line
+  </p>
 </template>
 
 <script setup>
@@ -100,3 +94,84 @@ defineExpose({
   focus: () => textareaRef.value?.focus()
 })
 </script>
+
+<style scoped>
+.prospector-chat-input {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--prospector-space-sm);
+  padding: var(--prospector-space-md);
+  border-top: 1px solid var(--prospector-slate-200);
+  background: white;
+}
+
+.prospector-chat-input__wrapper {
+  flex: 1;
+  position: relative;
+}
+
+.prospector-chat-input__field {
+  width: 100%;
+  padding: var(--prospector-space-md);
+  font-family: var(--prospector-font-family);
+  font-size: var(--prospector-font-size-sm);
+  color: var(--prospector-slate-800);
+  background: white;
+  border: 1px solid var(--prospector-slate-200);
+  border-radius: var(--prospector-radius-xl);
+  outline: none;
+  resize: none;
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-chat-input__field::placeholder {
+  color: var(--prospector-slate-400);
+}
+
+.prospector-chat-input__field:focus {
+  border-color: var(--prospector-primary-500);
+  box-shadow: 0 0 0 2px var(--prospector-primary-100);
+}
+
+.prospector-chat-input__field:disabled {
+  background: var(--prospector-slate-50);
+  cursor: not-allowed;
+}
+
+.prospector-chat-input__send {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  color: white;
+  background: var(--prospector-primary-500);
+  border: none;
+  border-radius: var(--prospector-radius-xl);
+  cursor: pointer;
+  transition: background var(--prospector-transition-fast);
+}
+
+.prospector-chat-input__send:hover:not(:disabled) {
+  background: var(--prospector-primary-600);
+}
+
+.prospector-chat-input__send:disabled {
+  background: var(--prospector-slate-300);
+  cursor: not-allowed;
+}
+
+.prospector-chat-input__send-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.prospector-chat-input__hint {
+  margin: var(--prospector-space-sm) 0 0;
+  padding: 0 var(--prospector-space-md);
+  font-size: var(--prospector-font-size-xs);
+  color: var(--prospector-slate-400);
+  text-align: center;
+}
+</style>

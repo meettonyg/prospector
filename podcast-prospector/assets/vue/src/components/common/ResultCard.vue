@@ -1,81 +1,81 @@
 <template>
   <div
     :class="[
-      'card p-4 cursor-pointer',
-      isSelected && 'ring-2 ring-primary-500 border-primary-300',
-      hydration?.tracked && 'bg-slate-50'
+      'prospector-result-card',
+      isSelected && 'prospector-result-card--selected',
+      hydration?.tracked && 'prospector-result-card--tracked'
     ]"
     @click="$emit('click')"
   >
     <!-- Header -->
-    <div class="flex gap-4">
+    <div class="prospector-result-card__header">
       <!-- Artwork -->
-      <div class="flex-shrink-0">
+      <div class="prospector-result-card__artwork-container">
         <img
           v-if="artwork"
           :src="artwork"
           :alt="title"
-          class="w-16 h-16 rounded-lg object-cover bg-slate-100"
+          class="prospector-result-card__artwork"
           loading="lazy"
           @error="$event.target.src = '/wp-content/plugins/podcast-prospector/assets/placeholder-podcast.png'"
         />
         <div
           v-else
-          class="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center"
+          class="prospector-result-card__artwork-placeholder"
         >
-          <MicrophoneIcon class="w-8 h-8 text-slate-400" />
+          <MicrophoneIcon class="prospector-result-card__artwork-icon" />
         </div>
       </div>
 
       <!-- Content -->
-      <div class="flex-1 min-w-0">
-        <div class="flex items-start justify-between gap-2">
-          <div class="min-w-0">
-            <h3 class="font-semibold text-slate-800 truncate">{{ title }}</h3>
-            <p v-if="author" class="text-sm text-slate-500 truncate">{{ author }}</p>
+      <div class="prospector-result-card__content">
+        <div class="prospector-result-card__title-row">
+          <div class="prospector-result-card__title-content">
+            <h3 class="prospector-result-card__title">{{ title }}</h3>
+            <p v-if="author" class="prospector-result-card__author">{{ author }}</p>
           </div>
 
           <!-- Selection checkbox -->
-          <div v-if="selectable" class="flex-shrink-0" @click.stop>
+          <div v-if="selectable" class="prospector-result-card__checkbox-wrapper" @click.stop>
             <input
               type="checkbox"
               :checked="isSelected"
               @change="$emit('select')"
               :disabled="hydration?.tracked"
-              class="w-4 h-4 rounded border-slate-300 text-primary-500 focus:ring-primary-500"
+              class="prospector-result-card__checkbox"
             />
           </div>
         </div>
 
         <!-- Description -->
-        <p v-if="description" class="mt-2 text-sm text-slate-600 line-clamp-2">
+        <p v-if="description" class="prospector-result-card__description">
           {{ truncatedDescription }}
         </p>
 
         <!-- Meta info -->
-        <div class="mt-3 flex flex-wrap items-center gap-2">
+        <div class="prospector-result-card__meta">
           <!-- Hydration badge -->
           <span
             v-if="hydration?.hasOpportunity"
-            class="badge-success"
+            class="prospector-badge prospector-badge--success"
           >
-            <CheckCircleIcon class="w-3.5 h-3.5 mr-1" />
+            <CheckCircleIcon class="prospector-badge__icon" />
             In Pipeline
           </span>
           <span
             v-else-if="hydration?.tracked"
-            class="badge-neutral"
+            class="prospector-badge prospector-badge--neutral"
           >
             Tracked
           </span>
 
           <!-- Episode count -->
-          <span v-if="episodeCount" class="badge-neutral">
+          <span v-if="episodeCount" class="prospector-badge prospector-badge--neutral">
             {{ episodeCount }} episodes
           </span>
 
           <!-- Language -->
-          <span v-if="language && language !== 'en'" class="badge-neutral">
+          <span v-if="language && language !== 'en'" class="prospector-badge prospector-badge--neutral">
             {{ language.toUpperCase() }}
           </span>
 
@@ -83,7 +83,7 @@
           <span
             v-for="category in displayCategories"
             :key="category"
-            class="badge-primary"
+            class="prospector-badge prospector-badge--primary"
           >
             {{ category }}
           </span>
@@ -92,8 +92,8 @@
     </div>
 
     <!-- Actions -->
-    <div class="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-      <div class="flex items-center gap-2">
+    <div class="prospector-result-card__footer">
+      <div class="prospector-result-card__links">
         <!-- Website link -->
         <a
           v-if="websiteUrl"
@@ -101,10 +101,10 @@
           target="_blank"
           rel="noopener noreferrer"
           @click.stop
-          class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+          class="prospector-result-card__link"
           title="Visit website"
         >
-          <GlobeAltIcon class="w-5 h-5" />
+          <GlobeAltIcon class="prospector-result-card__link-icon" />
         </a>
 
         <!-- RSS link -->
@@ -114,10 +114,10 @@
           target="_blank"
           rel="noopener noreferrer"
           @click.stop
-          class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+          class="prospector-result-card__link"
           title="RSS Feed"
         >
-          <RssIcon class="w-5 h-5" />
+          <RssIcon class="prospector-result-card__link-icon" />
         </a>
       </div>
 
@@ -219,10 +219,195 @@ const displayCategories = computed(() => {
 </script>
 
 <style scoped>
-.line-clamp-2 {
+.prospector-result-card {
+  background: white;
+  border: 1px solid var(--prospector-slate-200);
+  border-radius: var(--prospector-radius-xl);
+  padding: var(--prospector-space-md);
+  cursor: pointer;
+  transition: all var(--prospector-transition-base);
+}
+
+.prospector-result-card:hover {
+  border-color: var(--prospector-primary-300);
+  box-shadow: var(--prospector-shadow-md);
+}
+
+.prospector-result-card--selected {
+  border-color: var(--prospector-primary-500);
+  box-shadow: 0 0 0 2px var(--prospector-primary-100);
+}
+
+.prospector-result-card--tracked {
+  background: var(--prospector-slate-50);
+}
+
+.prospector-result-card__header {
+  display: flex;
+  gap: var(--prospector-space-md);
+}
+
+.prospector-result-card__artwork-container {
+  flex-shrink: 0;
+}
+
+.prospector-result-card__artwork {
+  width: 4rem;
+  height: 4rem;
+  border-radius: var(--prospector-radius-lg);
+  object-fit: cover;
+  background: var(--prospector-slate-100);
+}
+
+.prospector-result-card__artwork-placeholder {
+  width: 4rem;
+  height: 4rem;
+  border-radius: var(--prospector-radius-lg);
+  background: var(--prospector-slate-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prospector-result-card__artwork-icon {
+  width: 2rem;
+  height: 2rem;
+  color: var(--prospector-slate-400);
+}
+
+.prospector-result-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.prospector-result-card__title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--prospector-space-sm);
+}
+
+.prospector-result-card__title-content {
+  min-width: 0;
+}
+
+.prospector-result-card__title {
+  font-weight: 600;
+  font-size: var(--prospector-font-size-base);
+  color: var(--prospector-slate-800);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prospector-result-card__author {
+  font-size: var(--prospector-font-size-sm);
+  color: var(--prospector-slate-500);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prospector-result-card__checkbox-wrapper {
+  flex-shrink: 0;
+}
+
+.prospector-result-card__checkbox {
+  width: 1rem;
+  height: 1rem;
+  border-radius: var(--prospector-radius-sm);
+  border: 1px solid var(--prospector-slate-300);
+  accent-color: var(--prospector-primary-500);
+  cursor: pointer;
+}
+
+.prospector-result-card__description {
+  margin: var(--prospector-space-sm) 0 0;
+  font-size: var(--prospector-font-size-sm);
+  color: var(--prospector-slate-600);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.prospector-result-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--prospector-space-sm);
+  margin-top: var(--prospector-space-md);
+}
+
+.prospector-result-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--prospector-space-md);
+  padding-top: var(--prospector-space-md);
+  border-top: 1px solid var(--prospector-slate-100);
+}
+
+.prospector-result-card__links {
+  display: flex;
+  align-items: center;
+  gap: var(--prospector-space-sm);
+}
+
+.prospector-result-card__link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem;
+  color: var(--prospector-slate-400);
+  background: transparent;
+  border: none;
+  border-radius: var(--prospector-radius-md);
+  cursor: pointer;
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-result-card__link:hover {
+  color: var(--prospector-slate-600);
+  background: var(--prospector-slate-100);
+}
+
+.prospector-result-card__link-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Badge styles used within this component */
+.prospector-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.625rem;
+  font-size: var(--prospector-font-size-xs);
+  font-weight: 500;
+  line-height: 1.5;
+  border-radius: var(--prospector-radius-full);
+}
+
+.prospector-badge--primary {
+  color: var(--prospector-primary-700);
+  background: var(--prospector-primary-100);
+}
+
+.prospector-badge--success {
+  color: var(--prospector-success-700);
+  background: var(--prospector-success-100);
+}
+
+.prospector-badge--neutral {
+  color: var(--prospector-slate-700);
+  background: var(--prospector-slate-100);
+}
+
+.prospector-badge__icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-right: var(--prospector-space-xs);
 }
 </style>

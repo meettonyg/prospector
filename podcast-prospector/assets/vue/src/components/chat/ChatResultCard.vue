@@ -1,40 +1,40 @@
 <template>
-  <div class="bg-white rounded-lg border border-slate-200 p-3 hover:border-primary-300 transition-colors">
-    <div class="flex items-start gap-3">
+  <div class="prospector-chat-result-card">
+    <div class="prospector-chat-result-card__inner">
       <!-- Artwork -->
       <img
         v-if="artwork"
         :src="artwork"
         :alt="title"
-        class="w-12 h-12 rounded-lg object-cover bg-slate-100 flex-shrink-0"
+        class="prospector-chat-result-card__artwork"
         loading="lazy"
       />
       <div
         v-else
-        class="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0"
+        class="prospector-chat-result-card__artwork-placeholder"
       >
-        <MicrophoneIcon class="w-6 h-6 text-slate-400" />
+        <MicrophoneIcon class="prospector-chat-result-card__artwork-icon" />
       </div>
 
       <!-- Content -->
-      <div class="flex-1 min-w-0">
-        <h4 class="font-medium text-slate-800 text-sm truncate">{{ title }}</h4>
-        <p v-if="author" class="text-xs text-slate-500 truncate">{{ author }}</p>
+      <div class="prospector-chat-result-card__content">
+        <h4 class="prospector-chat-result-card__title">{{ title }}</h4>
+        <p v-if="author" class="prospector-chat-result-card__author">{{ author }}</p>
 
-        <div class="mt-2 flex items-center gap-2">
+        <div class="prospector-chat-result-card__actions">
           <a
             v-if="websiteUrl"
             :href="websiteUrl"
             target="_blank"
             rel="noopener noreferrer"
-            class="text-xs text-primary-600 hover:text-primary-700 hover:underline"
+            class="prospector-chat-result-card__link"
           >
             Visit Website
           </a>
 
           <button
             @click="$emit('import')"
-            class="text-xs font-medium text-primary-600 hover:text-primary-700"
+            class="prospector-chat-result-card__import-btn"
           >
             + Add to Pipeline
           </button>
@@ -73,3 +73,107 @@ const websiteUrl = computed(() => {
   return props.result.link || props.result.websiteUrl || props.result.website || ''
 })
 </script>
+
+<style scoped>
+.prospector-chat-result-card {
+  background: white;
+  border: 1px solid var(--prospector-slate-200);
+  border-radius: var(--prospector-radius-lg);
+  padding: var(--prospector-space-md);
+  transition: border-color var(--prospector-transition-fast);
+}
+
+.prospector-chat-result-card:hover {
+  border-color: var(--prospector-primary-300);
+}
+
+.prospector-chat-result-card__inner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--prospector-space-md);
+}
+
+.prospector-chat-result-card__artwork {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--prospector-radius-lg);
+  object-fit: cover;
+  background: var(--prospector-slate-100);
+  flex-shrink: 0;
+}
+
+.prospector-chat-result-card__artwork-placeholder {
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--prospector-radius-lg);
+  background: var(--prospector-slate-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.prospector-chat-result-card__artwork-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--prospector-slate-400);
+}
+
+.prospector-chat-result-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.prospector-chat-result-card__title {
+  font-weight: 500;
+  font-size: var(--prospector-font-size-sm);
+  color: var(--prospector-slate-800);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prospector-chat-result-card__author {
+  font-size: var(--prospector-font-size-xs);
+  color: var(--prospector-slate-500);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prospector-chat-result-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--prospector-space-sm);
+  margin-top: var(--prospector-space-sm);
+}
+
+.prospector-chat-result-card__link {
+  font-size: var(--prospector-font-size-xs);
+  color: var(--prospector-primary-600);
+  text-decoration: none;
+  transition: color var(--prospector-transition-fast);
+}
+
+.prospector-chat-result-card__link:hover {
+  color: var(--prospector-primary-700);
+  text-decoration: underline;
+}
+
+.prospector-chat-result-card__import-btn {
+  font-size: var(--prospector-font-size-xs);
+  font-weight: 500;
+  color: var(--prospector-primary-600);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color var(--prospector-transition-fast);
+}
+
+.prospector-chat-result-card__import-btn:hover {
+  color: var(--prospector-primary-700);
+}
+</style>

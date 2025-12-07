@@ -1,23 +1,22 @@
 <template>
-  <div class="border-b border-slate-200 px-4 md:px-6 flex gap-0 overflow-x-auto scrollbar-hide bg-white">
+  <div class="prospector-tabs">
     <button
       v-for="mode in availableModes"
       :key="mode.value"
+      type="button"
       @click="selectMode(mode)"
       :disabled="mode.disabled"
       :class="[
-        'py-3.5 px-4 text-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px',
-        modelValue === mode.value
-          ? 'border-[#0ea5e9] text-[#0ea5e9] bg-[#e0f2fe]/30'
-          : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50',
-        mode.disabled && 'opacity-50 cursor-not-allowed'
+        'prospector-tabs__item',
+        modelValue === mode.value && 'prospector-tabs__item--active',
+        mode.disabled && 'prospector-tabs__item--disabled'
       ]"
     >
-      <component :is="mode.icon" class="w-4 h-4" />
-      <span>{{ mode.label }}</span>
+      <component :is="mode.icon" class="prospector-tabs__item-icon" />
+      <span class="prospector-tabs__item-text">{{ mode.label }}</span>
       <LockClosedIcon
         v-if="mode.premium && !canUseAdvanced"
-        class="w-3 h-3 text-amber-500 ml-0.5"
+        class="prospector-tabs__item-lock"
       />
     </button>
   </div>
@@ -83,12 +82,87 @@ const selectMode = (mode) => {
 </script>
 
 <style scoped>
-/* Hide scrollbar but allow scrolling */
-.scrollbar-hide::-webkit-scrollbar {
+.prospector-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 var(--prospector-space-md);
+  border-bottom: 1px solid var(--prospector-slate-200);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.prospector-tabs::-webkit-scrollbar {
   display: none;
 }
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+
+.prospector-tabs__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--prospector-space-sm);
+  padding: 0.875rem var(--prospector-space-md);
+  font-family: var(--prospector-font-family);
+  font-size: var(--prospector-font-size-sm);
+  font-weight: 500;
+  color: var(--prospector-slate-500);
+  background: transparent;
+  border: 2px solid transparent;
+  border-bottom: none;
+  border-radius: var(--prospector-radius-md) var(--prospector-radius-md) 0 0;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-tabs__item:hover:not(:disabled) {
+  color: var(--prospector-slate-700);
+}
+
+.prospector-tabs__item--active {
+  color: var(--prospector-primary-500);
+  background: white;
+  border-top-color: var(--prospector-primary-500);
+  border-left-color: var(--prospector-primary-500);
+  border-right-color: var(--prospector-primary-500);
+}
+
+/* Cover the container's bottom border */
+.prospector-tabs__item--active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: white;
+}
+
+.prospector-tabs__item--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prospector-tabs__item-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.prospector-tabs__item-text {
+  /* Text styles inherited from parent */
+}
+
+.prospector-tabs__item-lock {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: var(--prospector-warning-500);
+  margin-left: 0.125rem;
+}
+
+@media (min-width: 768px) {
+  .prospector-tabs {
+    padding: 0 var(--prospector-space-lg);
+  }
 }
 </style>

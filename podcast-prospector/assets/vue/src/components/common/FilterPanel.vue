@@ -1,25 +1,28 @@
 <template>
-  <div class="bg-white border border-slate-200 rounded-xl p-6 animate-fade-in">
+  <div class="prospector-filter-panel">
     <!-- Source Badge -->
-    <div class="mb-4 flex justify-end">
-      <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 bg-slate-50 border border-slate-100 px-2 py-1 rounded">
+    <div class="prospector-filter-panel__source">
+      <span class="prospector-filter-panel__source-badge">
         Source: {{ apiSourceLabel }}
       </span>
     </div>
 
     <!-- Filters Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
+    <div class="prospector-filter-panel__grid">
       <!-- 1. Language -->
-      <div class="relative">
-        <div class="flex justify-between">
-          <label class="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Language</label>
-          <LockClosedIcon v-if="isFilterLocked('language')" class="w-3 h-3 text-amber-500" />
+      <div class="prospector-filter-panel__field">
+        <div class="prospector-filter-panel__label">
+          <label class="prospector-filter-panel__label-text">Language</label>
+          <LockClosedIcon v-if="isFilterLocked('language')" class="prospector-filter-panel__lock-icon" />
         </div>
         <select
           :value="filterStore.language"
           @change="filterStore.setFilter('language', $event.target.value || null)"
           :disabled="isFilterLocked('language')"
-          :class="selectClasses(isFilterLocked('language'))"
+          :class="[
+            'prospector-select--native',
+            isFilterLocked('language') && 'prospector-select--native-disabled'
+          ]"
         >
           <option value="">All Languages</option>
           <option v-for="lang in LANGUAGES" :key="lang.value" :value="lang.value">
@@ -29,16 +32,19 @@
       </div>
 
       <!-- 2. Country -->
-      <div class="relative">
-        <div class="flex justify-between">
-          <label class="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Country</label>
-          <LockClosedIcon v-if="isFilterLocked('country')" class="w-3 h-3 text-amber-500" />
+      <div class="prospector-filter-panel__field">
+        <div class="prospector-filter-panel__label">
+          <label class="prospector-filter-panel__label-text">Country</label>
+          <LockClosedIcon v-if="isFilterLocked('country')" class="prospector-filter-panel__lock-icon" />
         </div>
         <select
           :value="filterStore.country"
           @change="filterStore.setFilter('country', $event.target.value || null)"
           :disabled="isFilterLocked('country')"
-          :class="selectClasses(isFilterLocked('country'))"
+          :class="[
+            'prospector-select--native',
+            isFilterLocked('country') && 'prospector-select--native-disabled'
+          ]"
         >
           <option value="">All Countries</option>
           <option v-for="country in COUNTRIES" :key="country.value" :value="country.value">
@@ -48,16 +54,19 @@
       </div>
 
       <!-- 3. Genre -->
-      <div class="relative">
-        <div class="flex justify-between">
-          <label class="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Genre</label>
-          <LockClosedIcon v-if="isFilterLocked('genre')" class="w-3 h-3 text-amber-500" />
+      <div class="prospector-filter-panel__field">
+        <div class="prospector-filter-panel__label">
+          <label class="prospector-filter-panel__label-text">Genre</label>
+          <LockClosedIcon v-if="isFilterLocked('genre')" class="prospector-filter-panel__lock-icon" />
         </div>
         <select
           :value="filterStore.genre"
           @change="filterStore.setFilter('genre', $event.target.value || null)"
           :disabled="isFilterLocked('genre')"
-          :class="selectClasses(isFilterLocked('genre'))"
+          :class="[
+            'prospector-select--native',
+            isFilterLocked('genre') && 'prospector-select--native-disabled'
+          ]"
         >
           <option value="">All Genres</option>
           <option v-for="genre in GENRES" :key="genre.value" :value="genre.value">
@@ -67,12 +76,14 @@
       </div>
 
       <!-- 4. Results Per Page -->
-      <div class="relative">
-        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Results Per Page</label>
+      <div class="prospector-filter-panel__field">
+        <div class="prospector-filter-panel__label">
+          <label class="prospector-filter-panel__label-text">Results Per Page</label>
+        </div>
         <select
           :value="filterStore.perPage"
           @change="filterStore.setFilter('perPage', parseInt($event.target.value))"
-          :class="selectClasses(false)"
+          class="prospector-select--native"
         >
           <option :value="10">10</option>
           <option :value="25">25</option>
@@ -81,44 +92,50 @@
       </div>
 
       <!-- 5. Published After -->
-      <div class="relative">
-        <div class="flex justify-between">
-          <label class="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Published After</label>
-          <LockClosedIcon v-if="isFilterLocked('dateFrom')" class="w-3 h-3 text-amber-500" />
+      <div class="prospector-filter-panel__field">
+        <div class="prospector-filter-panel__label">
+          <label class="prospector-filter-panel__label-text">Published After</label>
+          <LockClosedIcon v-if="isFilterLocked('dateFrom')" class="prospector-filter-panel__lock-icon" />
         </div>
         <input
           type="date"
           :value="filterStore.dateFrom"
           @change="filterStore.setFilter('dateFrom', $event.target.value || null)"
           :disabled="isFilterLocked('dateFrom')"
-          :placeholder="'mm/dd/yyyy'"
-          :class="inputClasses(isFilterLocked('dateFrom'))"
+          :class="[
+            'prospector-input',
+            isFilterLocked('dateFrom') && 'prospector-input--disabled'
+          ]"
         />
       </div>
 
       <!-- 6. Published Before -->
-      <div class="relative">
-        <div class="flex justify-between">
-          <label class="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Published Before</label>
-          <LockClosedIcon v-if="isFilterLocked('dateTo')" class="w-3 h-3 text-amber-500" />
+      <div class="prospector-filter-panel__field">
+        <div class="prospector-filter-panel__label">
+          <label class="prospector-filter-panel__label-text">Published Before</label>
+          <LockClosedIcon v-if="isFilterLocked('dateTo')" class="prospector-filter-panel__lock-icon" />
         </div>
         <input
           type="date"
           :value="filterStore.dateTo"
           @change="filterStore.setFilter('dateTo', $event.target.value || null)"
           :disabled="isFilterLocked('dateTo')"
-          :placeholder="'mm/dd/yyyy'"
-          :class="inputClasses(isFilterLocked('dateTo'))"
+          :class="[
+            'prospector-input',
+            isFilterLocked('dateTo') && 'prospector-input--disabled'
+          ]"
         />
       </div>
 
       <!-- 7. Sort By -->
-      <div class="relative">
-        <label class="block text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Sort By</label>
+      <div class="prospector-filter-panel__field">
+        <div class="prospector-filter-panel__label">
+          <label class="prospector-filter-panel__label-text">Sort By</label>
+        </div>
         <select
           :value="filterStore.sortBy"
           @change="filterStore.setFilter('sortBy', $event.target.value)"
-          :class="selectClasses(false)"
+          class="prospector-select--native"
         >
           <option value="BEST_MATCH">Best Match</option>
           <option value="LATEST">Latest</option>
@@ -127,25 +144,20 @@
       </div>
 
       <!-- 8. Explicit Toggle -->
-      <div class="flex flex-col justify-end pb-1">
+      <div class="prospector-filter-panel__field prospector-filter-panel__field--toggle">
         <div 
-          class="flex items-center gap-3 cursor-pointer group"
+          class="prospector-toggle"
           @click="toggleSafeMode"
         >
           <div 
             :class="[
-              'w-10 h-6 flex items-center rounded-full p-0.5 transition-colors duration-300',
-              !filterStore.safeMode ? 'bg-primary-500' : 'bg-slate-200'
+              'prospector-toggle__track',
+              !filterStore.safeMode && 'prospector-toggle__track--active'
             ]"
           >
-            <div 
-              :class="[
-                'bg-white w-5 h-5 rounded-full shadow-sm transform transition-transform duration-300',
-                !filterStore.safeMode ? 'translate-x-4' : 'translate-x-0'
-              ]"
-            ></div>
+            <div class="prospector-toggle__thumb"></div>
           </div>
-          <span class="text-sm text-slate-600 group-hover:text-slate-800 transition-colors select-none">
+          <span class="prospector-toggle__label">
             Explicit Content
           </span>
         </div>
@@ -153,13 +165,13 @@
     </div>
 
     <!-- Reset Filters -->
-    <div class="mt-4 pt-4 border-t border-slate-100 flex justify-end">
+    <div class="prospector-filter-panel__footer">
       <button 
         @click="$emit('reset')"
-        class="text-xs text-primary-500 font-medium hover:text-primary-600 flex items-center gap-1 transition-colors border border-primary-200 rounded px-2 py-1 hover:bg-primary-50"
+        class="prospector-btn prospector-btn--outline-primary prospector-btn--sm"
       >
         Reset Filters
-        <XMarkIcon class="w-3 h-3" />
+        <XMarkIcon class="prospector-filter-panel__reset-icon" />
       </button>
     </div>
   </div>
@@ -204,25 +216,6 @@ const isFilterLocked = (filterName) => {
   return !canUseAdvanced.value
 }
 
-const selectClasses = (locked) => {
-  const base = 'w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none appearance-none bg-no-repeat bg-right pr-8'
-  const arrow = "bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%2394a3b8%27 stroke-width=%272%27%3e%3cpath d=%27M6 9l6 6 6-6%27/%3e%3c/svg%3e')] bg-[length:1.25rem]"
-  
-  if (locked) {
-    return `${base} ${arrow} bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed`
-  }
-  return `${base} ${arrow} bg-white border-slate-200 text-slate-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-100`
-}
-
-const inputClasses = (locked) => {
-  const base = 'w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none'
-  
-  if (locked) {
-    return `${base} bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed`
-  }
-  return `${base} bg-white border-slate-200 text-slate-700 focus:border-primary-400 focus:ring-1 focus:ring-primary-100`
-}
-
 const toggleSafeMode = () => {
   filterStore.setFilter('safeMode', !filterStore.safeMode)
 }
@@ -263,11 +256,207 @@ const GENRES = [
 </script>
 
 <style scoped>
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
+.prospector-filter-panel {
+  background: white;
+  border: 1px solid var(--prospector-slate-200);
+  border-radius: var(--prospector-radius-xl);
+  padding: var(--prospector-space-lg);
+  animation: prospectorFadeIn 0.2s ease-out forwards;
 }
-.animate-fade-in {
-  animation: fadeIn 0.2s ease-out forwards;
+
+.prospector-filter-panel__source {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--prospector-space-md);
+}
+
+.prospector-filter-panel__source-badge {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--prospector-slate-400);
+  background: var(--prospector-slate-50);
+  border: 1px solid var(--prospector-slate-100);
+  padding: var(--prospector-space-xs) var(--prospector-space-sm);
+  border-radius: var(--prospector-radius-sm);
+}
+
+.prospector-filter-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: var(--prospector-space-md) var(--prospector-space-lg);
+}
+
+@media (min-width: 768px) {
+  .prospector-filter-panel__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .prospector-filter-panel__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.prospector-filter-panel__field {
+  position: relative;
+}
+
+.prospector-filter-panel__field--toggle {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: var(--prospector-space-xs);
+}
+
+.prospector-filter-panel__label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.375rem;
+}
+
+.prospector-filter-panel__label-text {
+  font-size: var(--prospector-font-size-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--prospector-slate-500);
+}
+
+.prospector-filter-panel__lock-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: var(--prospector-warning-500);
+}
+
+.prospector-filter-panel__footer {
+  margin-top: var(--prospector-space-md);
+  padding-top: var(--prospector-space-md);
+  border-top: 1px solid var(--prospector-slate-100);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.prospector-filter-panel__reset-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+/* Native select overrides for this component */
+.prospector-select--native {
+  width: 100%;
+  appearance: none;
+  padding: 0.625rem 2.5rem 0.625rem var(--prospector-space-md);
+  font-family: var(--prospector-font-family);
+  font-size: var(--prospector-font-size-sm);
+  color: var(--prospector-slate-700);
+  background-color: white;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.25rem;
+  border: 1px solid var(--prospector-slate-200);
+  border-radius: var(--prospector-radius-lg);
+  cursor: pointer;
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-select--native:focus {
+  border-color: var(--prospector-primary-400);
+  box-shadow: 0 0 0 1px var(--prospector-primary-100);
+  outline: none;
+}
+
+.prospector-select--native-disabled,
+.prospector-select--native:disabled {
+  background-color: var(--prospector-slate-50);
+  color: var(--prospector-slate-400);
+  cursor: not-allowed;
+}
+
+/* Input overrides */
+.prospector-input {
+  width: 100%;
+  padding: 0.625rem var(--prospector-space-md);
+  font-family: var(--prospector-font-family);
+  font-size: var(--prospector-font-size-sm);
+  color: var(--prospector-slate-700);
+  background: white;
+  border: 1px solid var(--prospector-slate-200);
+  border-radius: var(--prospector-radius-lg);
+  outline: none;
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-input:focus {
+  border-color: var(--prospector-primary-400);
+  box-shadow: 0 0 0 1px var(--prospector-primary-100);
+}
+
+.prospector-input--disabled,
+.prospector-input:disabled {
+  background: var(--prospector-slate-50);
+  color: var(--prospector-slate-400);
+  cursor: not-allowed;
+}
+
+/* Toggle styles */
+.prospector-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--prospector-space-md);
+  cursor: pointer;
+}
+
+.prospector-toggle__track {
+  position: relative;
+  width: 2.5rem;
+  height: 1.5rem;
+  background: var(--prospector-slate-200);
+  border-radius: var(--prospector-radius-full);
+  padding: 0.125rem;
+  transition: background var(--prospector-transition-base);
+}
+
+.prospector-toggle__track--active {
+  background: var(--prospector-primary-500);
+}
+
+.prospector-toggle__thumb {
+  width: 1.25rem;
+  height: 1.25rem;
+  background: white;
+  border-radius: var(--prospector-radius-full);
+  box-shadow: var(--prospector-shadow-sm);
+  transition: transform var(--prospector-transition-base);
+}
+
+.prospector-toggle__track--active .prospector-toggle__thumb {
+  transform: translateX(1rem);
+}
+
+.prospector-toggle__label {
+  font-size: var(--prospector-font-size-sm);
+  color: var(--prospector-slate-600);
+  transition: color var(--prospector-transition-fast);
+  user-select: none;
+}
+
+.prospector-toggle:hover .prospector-toggle__label {
+  color: var(--prospector-slate-800);
+}
+
+@keyframes prospectorFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

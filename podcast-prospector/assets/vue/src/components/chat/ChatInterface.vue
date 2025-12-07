@@ -1,15 +1,15 @@
 <template>
-  <div class="flex flex-col h-[600px] bg-white border border-slate-200 rounded-xl overflow-hidden">
+  <div class="prospector-chat">
     <!-- Chat header -->
-    <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">
-      <div class="flex items-center gap-2">
-        <ChatBubbleLeftRightIcon class="w-5 h-5 text-primary-500" />
-        <h3 class="font-medium text-slate-800">Podcast Discovery Assistant</h3>
+    <div class="prospector-chat__header">
+      <div class="prospector-chat__header-title">
+        <ChatBubbleLeftRightIcon class="prospector-chat__header-icon" />
+        <h3 class="prospector-chat__header-text">Podcast Discovery Assistant</h3>
       </div>
       <button
         v-if="chatStore.hasMessages"
         @click="startNewChat"
-        class="text-sm text-slate-500 hover:text-slate-700"
+        class="prospector-chat__header-action"
       >
         New Chat
       </button>
@@ -18,7 +18,7 @@
     <!-- Messages area -->
     <div
       ref="messagesContainer"
-      class="flex-1 overflow-y-auto p-4 space-y-4"
+      class="prospector-chat__messages"
     >
       <!-- Empty state -->
       <ChatEmptyState
@@ -27,24 +27,26 @@
       />
 
       <!-- Messages -->
-      <ChatMessage
-        v-for="message in chatStore.allMessages"
-        :key="message.id"
-        :message="message"
-        @import="handleImport"
-      />
+      <div class="prospector-chat__messages-list">
+        <ChatMessage
+          v-for="message in chatStore.allMessages"
+          :key="message.id"
+          :message="message"
+          @import="handleImport"
+        />
+      </div>
 
       <!-- Typing indicator -->
       <div
         v-if="chatStore.isTyping"
-        class="flex items-center gap-2 text-slate-500"
+        class="prospector-chat__typing"
       >
-        <div class="flex gap-1">
-          <span class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
-          <span class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
-          <span class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+        <div class="prospector-chat__typing-dots">
+          <span class="prospector-chat__typing-dot"></span>
+          <span class="prospector-chat__typing-dot"></span>
+          <span class="prospector-chat__typing-dot"></span>
         </div>
-        <span class="text-sm">Searching...</span>
+        <span class="prospector-chat__typing-text">Searching...</span>
       </div>
     </div>
 
@@ -53,7 +55,7 @@
       v-if="suggestedActions.length > 0"
       :actions="suggestedActions"
       @action="handleQuickAction"
-      class="px-4 pb-2"
+      class="prospector-chat__quick-actions"
     />
 
     <!-- Input area -->
@@ -234,3 +236,118 @@ const startNewChat = () => {
   suggestedActions.value = []
 }
 </script>
+
+<style scoped>
+.prospector-chat {
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+  background: white;
+  border: 1px solid var(--prospector-slate-200);
+  border-radius: var(--prospector-radius-xl);
+  overflow: hidden;
+}
+
+.prospector-chat__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--prospector-space-md);
+  border-bottom: 1px solid var(--prospector-slate-200);
+  background: var(--prospector-slate-50);
+}
+
+.prospector-chat__header-title {
+  display: flex;
+  align-items: center;
+  gap: var(--prospector-space-sm);
+}
+
+.prospector-chat__header-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--prospector-primary-500);
+}
+
+.prospector-chat__header-text {
+  font-weight: 500;
+  font-size: var(--prospector-font-size-base);
+  color: var(--prospector-slate-800);
+  margin: 0;
+}
+
+.prospector-chat__header-action {
+  font-size: var(--prospector-font-size-sm);
+  color: var(--prospector-slate-500);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color var(--prospector-transition-fast);
+}
+
+.prospector-chat__header-action:hover {
+  color: var(--prospector-slate-700);
+}
+
+.prospector-chat__messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--prospector-space-md);
+}
+
+.prospector-chat__messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--prospector-space-md);
+}
+
+.prospector-chat__typing {
+  display: flex;
+  align-items: center;
+  gap: var(--prospector-space-sm);
+  color: var(--prospector-slate-500);
+  margin-top: var(--prospector-space-md);
+}
+
+.prospector-chat__typing-dots {
+  display: flex;
+  gap: var(--prospector-space-xs);
+}
+
+.prospector-chat__typing-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--prospector-slate-400);
+  border-radius: 50%;
+  animation: prospectorBounce 1.4s infinite ease-in-out both;
+}
+
+.prospector-chat__typing-dot:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.prospector-chat__typing-dot:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.prospector-chat__typing-dot:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+.prospector-chat__typing-text {
+  font-size: var(--prospector-font-size-sm);
+}
+
+.prospector-chat__quick-actions {
+  padding: 0 var(--prospector-space-md) var(--prospector-space-sm);
+}
+
+@keyframes prospectorBounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+</style>

@@ -3,13 +3,17 @@
     @click="handleImport"
     :disabled="disabled || importing || isTracked"
     :class="[
-      'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
-      buttonClass
+      'prospector-import-btn',
+      hasOpportunity && 'prospector-import-btn--has-opportunity',
+      isTracked && !hasOpportunity && 'prospector-import-btn--tracked',
+      importing && 'prospector-import-btn--loading',
+      disabled && 'prospector-import-btn--disabled',
+      size === 'sm' && 'prospector-import-btn--sm'
     ]"
     :title="buttonTitle"
   >
     <LoadingSpinner v-if="importing" size="sm" />
-    <component v-else :is="buttonIcon" class="w-4 h-4" />
+    <component v-else :is="buttonIcon" class="prospector-import-btn__icon" />
     <span>{{ buttonText }}</span>
   </button>
 </template>
@@ -65,19 +69,6 @@ const buttonIcon = computed(() => {
   return PlusIcon
 })
 
-const buttonClass = computed(() => {
-  if (props.hasOpportunity) {
-    return 'bg-emerald-100 text-emerald-700 cursor-default'
-  }
-  if (props.isTracked) {
-    return 'bg-slate-100 text-slate-600 cursor-default'
-  }
-  if (props.disabled) {
-    return 'bg-slate-100 text-slate-400 cursor-not-allowed'
-  }
-  return 'bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700'
-})
-
 const buttonTitle = computed(() => {
   if (props.hasOpportunity) return 'Already in your pipeline'
   if (props.isTracked) return 'Already tracked in Guest Intel'
@@ -93,3 +84,80 @@ const handleImport = () => {
   }
 }
 </script>
+
+<style scoped>
+.prospector-import-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--prospector-space-sm);
+  padding: var(--prospector-space-sm) var(--prospector-space-md);
+  font-family: var(--prospector-font-family);
+  font-size: var(--prospector-font-size-sm);
+  font-weight: 500;
+  color: white;
+  background: var(--prospector-primary-500);
+  border: none;
+  border-radius: var(--prospector-radius-lg);
+  cursor: pointer;
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-import-btn:hover:not(:disabled) {
+  background: var(--prospector-primary-600);
+}
+
+.prospector-import-btn:active:not(:disabled) {
+  background: var(--prospector-primary-700);
+}
+
+.prospector-import-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prospector-import-btn--has-opportunity {
+  color: var(--prospector-success-700);
+  background: var(--prospector-success-100);
+  cursor: default;
+}
+
+.prospector-import-btn--has-opportunity:hover:not(:disabled) {
+  background: var(--prospector-success-100);
+}
+
+.prospector-import-btn--tracked {
+  color: var(--prospector-slate-600);
+  background: var(--prospector-slate-100);
+  cursor: default;
+}
+
+.prospector-import-btn--tracked:hover:not(:disabled) {
+  background: var(--prospector-slate-100);
+}
+
+.prospector-import-btn--loading {
+  color: var(--prospector-slate-500);
+  background: var(--prospector-slate-50);
+  cursor: wait;
+}
+
+.prospector-import-btn--disabled {
+  color: var(--prospector-slate-400);
+  background: var(--prospector-slate-100);
+}
+
+.prospector-import-btn--sm {
+  padding: 0.375rem 0.75rem;
+  font-size: var(--prospector-font-size-xs);
+}
+
+.prospector-import-btn__icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.prospector-import-btn--sm .prospector-import-btn__icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+</style>

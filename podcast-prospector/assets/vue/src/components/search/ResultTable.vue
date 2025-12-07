@@ -1,60 +1,60 @@
 <template>
-  <div class="overflow-x-auto animate-fade-in">
-    <table class="w-full text-sm text-left">
-      <thead class="text-xs text-slate-500 uppercase bg-slate-50">
+  <div class="prospector-result-table-wrapper">
+    <table class="prospector-result-table">
+      <thead class="prospector-result-table__head">
         <tr>
-          <th class="px-4 py-3 font-semibold border-b border-slate-200 w-10">
+          <th class="prospector-result-table__th prospector-result-table__th--checkbox">
             <input
               type="checkbox"
               :checked="allSelected"
               @change="toggleSelectAll"
-              class="w-4 h-4 rounded border-slate-300 text-primary-500 focus:ring-primary-500 cursor-pointer"
+              class="prospector-result-table__checkbox"
             />
           </th>
-          <th class="px-4 py-3 font-semibold border-b border-slate-200 w-16">Cover</th>
-          <th class="px-4 py-3 font-semibold border-b border-slate-200">Show Name</th>
-          <th class="px-4 py-3 font-semibold border-b border-slate-200">Host</th>
-          <th class="px-4 py-3 font-semibold border-b border-slate-200 w-24">Type</th>
-          <th class="px-4 py-3 font-semibold border-b border-slate-200 w-32">Category</th>
-          <th class="px-4 py-3 font-semibold border-b border-slate-200 text-right w-24">Action</th>
+          <th class="prospector-result-table__th prospector-result-table__th--cover">Cover</th>
+          <th class="prospector-result-table__th">Show Name</th>
+          <th class="prospector-result-table__th">Host</th>
+          <th class="prospector-result-table__th prospector-result-table__th--type">Type</th>
+          <th class="prospector-result-table__th prospector-result-table__th--category">Category</th>
+          <th class="prospector-result-table__th prospector-result-table__th--action">Action</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-slate-200">
+      <tbody>
         <tr
           v-for="(result, index) in results"
           :key="result.id || index"
-          class="hover:bg-slate-50 group transition-colors"
+          class="prospector-result-table__row"
         >
           <!-- Checkbox -->
-          <td class="px-4 py-3">
+          <td class="prospector-result-table__td">
             <input
               type="checkbox"
               :checked="result._selected"
               @change="$emit('toggle-select', index)"
               :disabled="isTracked(index)"
-              class="w-4 h-4 rounded border-slate-300 text-primary-500 focus:ring-primary-500 cursor-pointer disabled:opacity-50"
+              class="prospector-result-table__checkbox"
             />
           </td>
 
           <!-- Cover -->
-          <td class="px-4 py-3">
+          <td class="prospector-result-table__td">
             <img
               :src="result.image || result.artwork || '/wp-content/plugins/podcast-prospector/assets/placeholder.png'"
               :alt="result.title"
-              class="w-10 h-10 rounded object-cover border border-slate-200"
+              class="prospector-result-table__cover"
               @error="handleImageError"
             />
           </td>
 
           <!-- Title -->
-          <td class="px-4 py-3">
-            <div class="flex items-center gap-2">
-              <span class="font-medium text-slate-800 group-hover:text-primary-500 transition-colors">
+          <td class="prospector-result-table__td">
+            <div class="prospector-result-table__title-cell">
+              <span class="prospector-result-table__title">
                 {{ result.title }}
               </span>
               <span 
                 v-if="isTracked(index)" 
-                class="text-[10px] uppercase font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded whitespace-nowrap"
+                class="prospector-result-table__tracked-badge"
               >
                 In Pipeline
               </span>
@@ -62,46 +62,46 @@
           </td>
 
           <!-- Host -->
-          <td class="px-4 py-3 text-slate-500">
+          <td class="prospector-result-table__td prospector-result-table__td--muted">
             {{ result.author || result.host || result.ownerName || 'Unknown' }}
           </td>
 
           <!-- Type -->
-          <td class="px-4 py-3">
-            <div class="flex items-center gap-2 text-slate-500">
-              <component :is="getTypeIcon(result)" class="w-4 h-4" :class="getTypeColor(result)" />
-              <span class="text-xs capitalize">{{ getTypeLabel(result) }}</span>
+          <td class="prospector-result-table__td">
+            <div class="prospector-result-table__type">
+              <component :is="getTypeIcon(result)" class="prospector-result-table__type-icon" :class="getTypeColor(result)" />
+              <span class="prospector-result-table__type-label">{{ getTypeLabel(result) }}</span>
             </div>
           </td>
 
           <!-- Category -->
-          <td class="px-4 py-3">
+          <td class="prospector-result-table__td">
             <span 
               v-if="result.category || result.genre"
-              class="bg-primary-50 text-primary-600 text-[11px] font-semibold px-2 py-0.5 rounded"
+              class="prospector-result-table__category"
             >
               {{ result.category || result.genre }}
             </span>
           </td>
 
           <!-- Action -->
-          <td class="px-4 py-3 text-right">
+          <td class="prospector-result-table__td prospector-result-table__td--action">
             <button
               v-if="!isTracked(index)"
               @click="$emit('import', { result, index })"
               :disabled="isImporting(index)"
-              class="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-primary-500 hover:border-primary-500 font-medium rounded-lg transition-all duration-200 px-3 py-1.5 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+              class="prospector-result-table__action-btn"
             >
-              <ArrowDownTrayIcon v-if="!isImporting(index)" class="w-3.5 h-3.5" />
+              <ArrowDownTrayIcon v-if="!isImporting(index)" class="prospector-result-table__action-icon" />
               <LoadingSpinner v-else size="xs" />
               <span>Import</span>
             </button>
             <a
               v-else
               :href="getHydration(index)?.crm_url"
-              class="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-primary-500 hover:border-primary-500 font-medium rounded-lg transition-all duration-200 px-3 py-1.5 text-xs"
+              class="prospector-result-table__action-btn prospector-result-table__action-btn--view"
             >
-              <EyeIcon class="w-3.5 h-3.5" />
+              <EyeIcon class="prospector-result-table__action-icon" />
               <span>View</span>
             </a>
           </td>
@@ -178,9 +178,9 @@ const getTypeIcon = (result) => {
 }
 
 const getTypeColor = (result) => {
-  if (result.type === 'youtube' || result.channel === 'youtube') return 'text-red-500'
-  if (result.type === 'summit' || result.channel === 'summits') return 'text-orange-500'
-  return 'text-purple-500'
+  if (result.type === 'youtube' || result.channel === 'youtube') return 'prospector-result-table__type-icon--youtube'
+  if (result.type === 'summit' || result.channel === 'summits') return 'prospector-result-table__type-icon--summit'
+  return 'prospector-result-table__type-icon--podcast'
 }
 
 const getTypeLabel = (result) => {
@@ -196,11 +196,205 @@ const handleImageError = (e) => {
 </script>
 
 <style scoped>
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.prospector-result-table-wrapper {
+  overflow-x: auto;
+  animation: prospectorFadeIn 0.3s ease-out forwards;
 }
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out forwards;
+
+.prospector-result-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--prospector-font-size-sm);
+  text-align: left;
+}
+
+.prospector-result-table__head {
+  background: var(--prospector-slate-50);
+}
+
+.prospector-result-table__th {
+  padding: var(--prospector-space-md);
+  font-size: var(--prospector-font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--prospector-slate-500);
+  border-bottom: 1px solid var(--prospector-slate-200);
+}
+
+.prospector-result-table__th--checkbox {
+  width: 2.5rem;
+}
+
+.prospector-result-table__th--cover {
+  width: 4rem;
+}
+
+.prospector-result-table__th--type {
+  width: 6rem;
+}
+
+.prospector-result-table__th--category {
+  width: 8rem;
+}
+
+.prospector-result-table__th--action {
+  width: 6rem;
+  text-align: right;
+}
+
+.prospector-result-table__row {
+  transition: background var(--prospector-transition-fast);
+}
+
+.prospector-result-table__row:hover {
+  background: var(--prospector-slate-50);
+}
+
+.prospector-result-table__td {
+  padding: var(--prospector-space-md);
+  color: var(--prospector-slate-700);
+  border-bottom: 1px solid var(--prospector-slate-100);
+  vertical-align: middle;
+}
+
+.prospector-result-table__td--muted {
+  color: var(--prospector-slate-500);
+}
+
+.prospector-result-table__td--action {
+  text-align: right;
+}
+
+.prospector-result-table__checkbox {
+  width: 1rem;
+  height: 1rem;
+  border-radius: var(--prospector-radius-sm);
+  border: 1px solid var(--prospector-slate-300);
+  accent-color: var(--prospector-primary-500);
+  cursor: pointer;
+}
+
+.prospector-result-table__checkbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prospector-result-table__cover {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--prospector-radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--prospector-slate-200);
+}
+
+.prospector-result-table__title-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--prospector-space-sm);
+}
+
+.prospector-result-table__title {
+  font-weight: 500;
+  color: var(--prospector-slate-800);
+  transition: color var(--prospector-transition-fast);
+}
+
+.prospector-result-table__row:hover .prospector-result-table__title {
+  color: var(--prospector-primary-500);
+}
+
+.prospector-result-table__tracked-badge {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: var(--prospector-success-100);
+  color: var(--prospector-success-700);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--prospector-radius-sm);
+}
+
+.prospector-result-table__type {
+  display: flex;
+  align-items: center;
+  gap: var(--prospector-space-sm);
+  color: var(--prospector-slate-500);
+}
+
+.prospector-result-table__type-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.prospector-result-table__type-icon--podcast {
+  color: #a855f7;
+}
+
+.prospector-result-table__type-icon--youtube {
+  color: #ef4444;
+}
+
+.prospector-result-table__type-icon--summit {
+  color: #f97316;
+}
+
+.prospector-result-table__type-label {
+  font-size: var(--prospector-font-size-xs);
+  text-transform: capitalize;
+}
+
+.prospector-result-table__category {
+  display: inline-block;
+  background: var(--prospector-primary-50);
+  color: var(--prospector-primary-600);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--prospector-radius-sm);
+}
+
+.prospector-result-table__action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--prospector-space-sm);
+  padding: 0.375rem 0.75rem;
+  font-size: var(--prospector-font-size-xs);
+  font-weight: 500;
+  color: var(--prospector-slate-500);
+  background: white;
+  border: 1px solid var(--prospector-slate-200);
+  border-radius: var(--prospector-radius-lg);
+  cursor: pointer;
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-result-table__action-btn:hover:not(:disabled) {
+  color: var(--prospector-primary-500);
+  border-color: var(--prospector-primary-500);
+  background: var(--prospector-slate-50);
+}
+
+.prospector-result-table__action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prospector-result-table__action-btn--view {
+  text-decoration: none;
+}
+
+.prospector-result-table__action-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+@keyframes prospectorFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>

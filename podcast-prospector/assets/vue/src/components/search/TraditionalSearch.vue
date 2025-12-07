@@ -1,21 +1,10 @@
 <template>
-  <div class="space-y-6">
-    <!-- Page Header (no card wrapper, matches mockup) -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <div>
-        <h2 class="text-2xl font-semibold text-[#1e293b] tracking-tight">Prospector</h2>
-        <p class="text-sm text-[#64748b] mt-1">Find podcasts, channels, and events for your guests</p>
-      </div>
-      <div class="flex items-center gap-3">
-        <SearchCapBadge />
-        <button class="bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-[#0ea5e9] hover:border-[#7dd3fc] font-medium rounded-lg transition-all duration-200 px-4 py-2 text-sm whitespace-nowrap">
-          Saved Searches
-        </button>
-      </div>
-    </div>
+  <div class="prospector-container">
+    <!-- Main Card Container -->
+    <div class="prospector-card">
+      <!-- Header -->
+      <AppHeader @open-saved-searches="handleOpenSavedSearches" />
 
-    <!-- Search Card -->
-    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
       <!-- Search Mode Tabs -->
       <SearchModeTabs
         v-model="searchStore.mode"
@@ -24,7 +13,7 @@
       />
 
       <!-- Search Controls -->
-      <div class="p-6">
+      <div class="prospector-card__body">
         <!-- Search Input Row -->
         <div class="flex flex-col md:flex-row gap-3">
           <!-- Channel Dropdown -->
@@ -46,21 +35,21 @@
           <!-- Filters & Search Buttons -->
           <div class="flex gap-2">
             <button
+              type="button"
               @click="toggleFilters"
               :class="[
-                'h-11 px-4 border rounded-lg flex items-center gap-2 transition-colors font-medium text-sm',
-                filtersVisible
-                  ? 'bg-[#e0f2fe] border-[#7dd3fc] text-[#0ea5e9]'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                'prospector-btn prospector-btn--filter',
+                filtersVisible && 'is-active'
               ]"
             >
               <AdjustmentsHorizontalIcon class="w-5 h-5" />
               <span>Filters</span>
             </button>
             <button
+              type="button"
               @click="handleSearch"
               :disabled="!searchStore.query.trim() || !userStore.canSearch || searchStore.loading"
-              class="h-11 px-6 bg-[#0ea5e9] hover:bg-[#0284c7] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors text-sm"
+              class="prospector-btn prospector-btn--search"
             >
               <span v-if="searchStore.loading">Searching...</span>
               <span v-else>Search</span>
@@ -68,25 +57,25 @@
           </div>
         </div>
       </div>
+
+      <!-- Filters Panel -->
+      <FilterPanel
+        v-if="filtersVisible"
+        :search-mode="searchStore.mode"
+        @apply="handleSearch"
+        @reset="handleClearFilters"
+      />
     </div>
 
-    <!-- Filters Panel (separate from search card) -->
-    <FilterPanel
-      v-if="filtersVisible"
-      :search-mode="searchStore.mode"
-      @apply="handleSearch"
-      @reset="handleClearFilters"
-    />
-
-    <!-- Results Card -->
-    <div v-if="hasSearched || searchStore.hasResults" class="bg-white border border-slate-200 rounded-xl overflow-hidden">
-      <!-- Results Header -->
-      <div class="px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4">
-        <p class="text-sm text-slate-500">
+    <!-- Results Section -->
+    <div v-if="hasSearched || searchStore.hasResults" class="prospector-card mt-6">
+      <!-- Results Toolbar -->
+      <div class="prospector-results-toolbar">
+        <p class="prospector-results-toolbar__info">
           <template v-if="searchStore.hasResults">
-            Showing <span class="font-medium text-slate-700">{{ searchStore.results.length }}</span> of 
-            <span class="font-medium text-slate-700">{{ searchStore.total }}</span> results
-            <span v-if="searchStore.query"> for <span class="font-medium text-slate-700">"{{ searchStore.query }}"</span></span>
+            Showing <span class="prospector-results-toolbar__info-count">{{ searchStore.results.length }}</span> of 
+            <span class="prospector-results-toolbar__info-count">{{ searchStore.total }}</span> results
+            <span v-if="searchStore.query"> for <span class="prospector-results-toolbar__info-query">"{{ searchStore.query }}"</span></span>
           </template>
           <template v-else-if="searchStore.loading">
             Searching...
@@ -97,50 +86,49 @@
         </p>
 
         <!-- View Toggle & Actions -->
-        <div class="flex items-center gap-3">
+        <div class="prospector-results-toolbar__actions">
           <!-- Bulk Import Button -->
           <button
             v-if="searchStore.selectedCount > 0"
+            type="button"
             @click="handleBulkImport"
             :disabled="bulkImporting"
-            class="flex items-center gap-2 px-4 py-2 bg-[#0ea5e9] hover:bg-[#0284c7] text-white text-sm font-medium rounded-lg transition-colors"
+            class="prospector-btn prospector-btn--primary"
           >
             <ArrowDownTrayIcon class="w-4 h-4" />
             Import {{ searchStore.selectedCount }} Selected
           </button>
 
           <!-- View Toggle -->
-          <div class="flex rounded-lg overflow-hidden">
+          <div class="prospector-view-toggle">
             <button
+              type="button"
               @click="searchStore.setViewMode('grid')"
               :class="[
-                'p-2 transition-colors',
-                searchStore.viewMode === 'grid'
-                  ? 'bg-white text-[#0ea5e9]'
-                  : 'bg-transparent text-slate-400 hover:text-slate-600'
+                'prospector-view-toggle__btn',
+                searchStore.viewMode === 'grid' && 'prospector-view-toggle__btn--active'
               ]"
               title="Grid View"
             >
-              <Squares2X2Icon class="w-5 h-5" />
+              <Squares2X2Icon class="prospector-view-toggle__icon" />
             </button>
             <button
+              type="button"
               @click="searchStore.setViewMode('table')"
               :class="[
-                'p-2 transition-colors',
-                searchStore.viewMode === 'table'
-                  ? 'bg-white text-[#0ea5e9]'
-                  : 'bg-transparent text-slate-400 hover:text-slate-600'
+                'prospector-view-toggle__btn',
+                searchStore.viewMode === 'table' && 'prospector-view-toggle__btn--active'
               ]"
               title="Table View"
             >
-              <ListBulletIcon class="w-5 h-5" />
+              <ListBulletIcon class="prospector-view-toggle__icon" />
             </button>
           </div>
         </div>
       </div>
 
       <!-- Results Content -->
-      <div class="p-6 min-h-[300px]">
+      <div class="prospector-card__body min-h-[300px]">
         <ResultsContainer
           :results="searchStore.results"
           :hydration-map="searchStore.hydrationMap"
@@ -159,7 +147,7 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="searchStore.hasResults && searchStore.total > searchStore.perPage" class="px-6 py-4 border-t border-slate-100">
+      <div v-if="searchStore.hasResults && searchStore.total > searchStore.perPage" class="prospector-card__footer">
         <Pagination
           :current-page="searchStore.page"
           :per-page="searchStore.perPage"
@@ -170,7 +158,7 @@
     </div>
 
     <!-- Empty State (before any search) -->
-    <div v-else class="bg-white border border-slate-200 rounded-xl">
+    <div v-else class="prospector-card mt-6">
       <EmptyState
         :channel="searchStore.channel"
         :search-mode="searchStore.mode"
@@ -195,7 +183,7 @@ import { useToast } from '../../stores/toastStore'
 import api from '../../api/prospectorApi'
 
 // Components
-import SearchCapBadge from '../common/SearchCapBadge.vue'
+import AppHeader from '../common/AppHeader.vue'
 import ChannelDropdown from '../common/ChannelDropdown.vue'
 import SearchInput from '../common/SearchInput.vue'
 import SearchModeTabs from './SearchModeTabs.vue'
@@ -212,7 +200,7 @@ const { success, error: showError } = useToast()
 
 // Local state
 const hasSearched = ref(false)
-const filtersVisible = ref(false) // CLOSED by default
+const filtersVisible = ref(false)
 const importingIndices = ref([])
 const bulkImporting = ref(false)
 
@@ -234,6 +222,11 @@ const toggleFilters = () => {
   filtersVisible.value = !filtersVisible.value
 }
 
+const handleOpenSavedSearches = () => {
+  // TODO: Open saved searches modal
+  console.log('Open saved searches')
+}
+
 const handleSearch = async () => {
   if (!searchStore.query.trim()) return
   if (!userStore.canSearch) {
@@ -243,14 +236,11 @@ const handleSearch = async () => {
 
   hasSearched.value = true
 
-  // Build search params with filters
   const params = {
     ...filterStore.filterParams
   }
 
   await searchStore.search(params)
-
-  // Update user stats after search
   userStore.decrementSearchCount()
 }
 
@@ -276,8 +266,6 @@ const handleModeChange = (mode) => {
 const handlePageChange = async (page) => {
   searchStore.setPage(page)
   await handleSearch()
-
-  // Scroll to top of results
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
@@ -296,8 +284,6 @@ const handleSingleImport = async ({ result, index }) => {
         'Added to Pipeline',
         `${result.title || 'Podcast'} is now in your Interview Tracker.`
       )
-
-      // Update hydration for this result
       await searchStore.refreshHydration()
     } else {
       throw new Error(response.message || 'Import failed')
@@ -311,14 +297,12 @@ const handleSingleImport = async ({ result, index }) => {
 
 const handleBulkImport = async () => {
   const selected = searchStore.selectedResults
-
   if (selected.length === 0) return
 
   bulkImporting.value = true
 
   try {
     const response = await api.importToPipeline(selected, searchStore.searchMeta)
-
     const isPartial = response.fail_count > 0
 
     if (isPartial) {
@@ -333,10 +317,8 @@ const handleBulkImport = async () => {
       )
     }
 
-    // Refresh hydration and clear selection
     await searchStore.refreshHydration()
     searchStore.deselectAll()
-
   } catch (err) {
     showError('Bulk Import Failed', err.message || 'Could not import selected podcasts.')
   } finally {
@@ -344,7 +326,6 @@ const handleBulkImport = async () => {
   }
 }
 
-// Watch for channel changes to reset state
 watch(() => searchStore.channel, () => {
   hasSearched.value = false
 })

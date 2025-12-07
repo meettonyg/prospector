@@ -1,11 +1,10 @@
 <template>
-  <div class="flex flex-wrap gap-2">
+  <div class="prospector-quick-actions">
     <button
       v-for="action in actions"
       :key="action.action"
       @click="$emit('action', action.action)"
-      class="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200
-             text-slate-700 text-sm rounded-full transition-colors"
+      class="prospector-quick-actions__chip"
     >
       {{ action.label }}
     </button>
@@ -28,3 +27,29 @@ defineProps({
 
 defineEmits(['action'])
 </script>
+
+<style scoped>
+.prospector-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--prospector-space-sm);
+}
+
+.prospector-quick-actions__chip {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--prospector-space-sm) var(--prospector-space-md);
+  font-size: var(--prospector-font-size-sm);
+  color: var(--prospector-slate-700);
+  background: var(--prospector-slate-100);
+  border: none;
+  border-radius: var(--prospector-radius-full);
+  cursor: pointer;
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-quick-actions__chip:hover {
+  background: var(--prospector-slate-200);
+  color: var(--prospector-slate-800);
+}
+</style>

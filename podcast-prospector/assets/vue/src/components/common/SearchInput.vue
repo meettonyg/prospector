@@ -1,16 +1,21 @@
 <template>
-  <input
-    type="text"
-    :value="modelValue"
-    @input="$emit('update:modelValue', $event.target.value)"
-    @keydown.enter="$emit('search')"
-    :placeholder="placeholder"
-    :disabled="disabled"
-    class="w-full h-11 px-4 bg-white border border-slate-200 rounded-lg text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#0ea5e9] focus:ring-2 focus:ring-[#e0f2fe] disabled:bg-slate-50 disabled:cursor-not-allowed transition-colors"
-  />
+  <div class="prospector-search-input">
+    <MagnifyingGlassIcon class="prospector-search-input__icon" />
+    <input
+      type="text"
+      :value="modelValue"
+      @input="$emit('update:modelValue', $event.target.value)"
+      @keydown.enter="$emit('search')"
+      :placeholder="placeholder"
+      :disabled="disabled"
+      class="prospector-search-input__field"
+    />
+  </div>
 </template>
 
 <script setup>
+import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
+
 defineProps({
   modelValue: {
     type: String,
