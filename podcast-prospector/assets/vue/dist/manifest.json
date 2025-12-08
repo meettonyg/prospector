@@ -1,13 +1,13 @@
 {
   "src/main.css": {
-    "file": "prospector-96caf8d1.css",
+    "file": "prospector-22056ba9.css",
     "src": "src/main.css"
   },
   "src/main.js": {
     "css": [
-      "prospector-96caf8d1.css"
+      "prospector-22056ba9.css"
     ],
-    "file": "prospector-15664460.js",
+    "file": "prospector-31c1b42f.js",
     "isEntry": true,
     "src": "src/main.js"
   }

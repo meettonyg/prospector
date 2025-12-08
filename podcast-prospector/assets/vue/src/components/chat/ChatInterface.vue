@@ -1,19 +1,31 @@
 <template>
-  <div class="prospector-chat">
-    <!-- Chat header -->
-    <div class="prospector-chat__header">
-      <div class="prospector-chat__header-title">
-        <ChatBubbleLeftRightIcon class="prospector-chat__header-icon" />
-        <h3 class="prospector-chat__header-text">Podcast Discovery Assistant</h3>
-      </div>
-      <button
-        v-if="chatStore.hasMessages"
-        @click="startNewChat"
-        class="prospector-chat__header-action"
-      >
-        New Chat
-      </button>
+  <div class="prospector-container">
+    <!-- Main Card Container -->
+    <div class="prospector-card">
+      <!-- Header -->
+      <AppHeader
+        :mode="mode"
+        @update:mode="$emit('update:mode', $event)"
+        @open-saved-searches="handleOpenSavedSearches"
+      />
     </div>
+
+    <!-- Chat Card -->
+    <div class="prospector-card prospector-card--chat">
+      <!-- Chat subheader -->
+      <div class="prospector-chat__subheader">
+        <div class="prospector-chat__subheader-title">
+          <ChatBubbleLeftRightIcon class="prospector-chat__subheader-icon" />
+          <h3 class="prospector-chat__subheader-text">Podcast Discovery Assistant</h3>
+        </div>
+        <button
+          v-if="chatStore.hasMessages"
+          @click="startNewChat"
+          class="prospector-chat__subheader-action"
+        >
+          New Chat
+        </button>
+      </div>
 
     <!-- Messages area -->
     <div
@@ -58,13 +70,14 @@
       class="prospector-chat__quick-actions"
     />
 
-    <!-- Input area -->
-    <ChatInput
-      v-model="inputText"
-      :disabled="chatStore.isTyping || !userStore.canSearch"
-      :placeholder="inputPlaceholder"
-      @send="handleSend"
-    />
+      <!-- Input area -->
+      <ChatInput
+        v-model="inputText"
+        :disabled="chatStore.isTyping || !userStore.canSearch"
+        :placeholder="inputPlaceholder"
+        @send="handleSend"
+      />
+    </div>
   </div>
 </template>
 
@@ -86,10 +99,20 @@ import api from '../../api/prospectorApi'
 // Get config for feature flags
 const config = inject('config', {})
 
+import AppHeader from '../common/AppHeader.vue'
 import ChatEmptyState from './ChatEmptyState.vue'
 import ChatMessage from './ChatMessage.vue'
 import ChatInput from './ChatInput.vue'
 import QuickActionChips from './QuickActionChips.vue'
+
+defineProps({
+  mode: {
+    type: String,
+    default: 'chat'
+  }
+})
+
+defineEmits(['update:mode'])
 
 const chatStore = useChatStore()
 const searchStore = useSearchStore()
@@ -243,49 +266,52 @@ const startNewChat = () => {
   chatStore.clearMessages()
   suggestedActions.value = []
 }
+
+const handleOpenSavedSearches = () => {
+  // TODO: Open saved searches modal
+  console.log('Open saved searches')
+}
 </script>
 
 <style scoped>
-.prospector-chat {
+.prospector-card--chat {
+  margin-top: var(--prospector-space-lg);
   display: flex;
   flex-direction: column;
   height: 600px;
-  background: white;
-  border: 1px solid var(--prospector-slate-200);
-  border-radius: var(--prospector-radius-xl);
   overflow: hidden;
 }
 
-.prospector-chat__header {
+.prospector-chat__subheader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--prospector-space-md);
+  padding: var(--prospector-space-md) var(--prospector-space-lg);
   border-bottom: 1px solid var(--prospector-slate-200);
   background: var(--prospector-slate-50);
 }
 
-.prospector-chat__header-title {
+.prospector-chat__subheader-title {
   display: flex;
   align-items: center;
   gap: var(--prospector-space-sm);
 }
 
-.prospector-chat__header-icon {
-  width: 1.25rem;
-  height: 1.25rem;
+.prospector-chat__subheader-icon {
+  width: 1.125rem;
+  height: 1.125rem;
   color: var(--prospector-primary-500);
 }
 
-.prospector-chat__header-text {
+.prospector-chat__subheader-text {
   font-weight: 500;
-  font-size: var(--prospector-font-size-base);
+  font-size: var(--prospector-font-size-sm);
   color: var(--prospector-slate-800);
   margin: 0;
 }
 
-.prospector-chat__header-action {
-  font-size: var(--prospector-font-size-sm);
+.prospector-chat__subheader-action {
+  font-size: var(--prospector-font-size-xs);
   color: var(--prospector-slate-500);
   background: transparent;
   border: none;
@@ -293,7 +319,7 @@ const startNewChat = () => {
   transition: color var(--prospector-transition-fast);
 }
 
-.prospector-chat__header-action:hover {
+.prospector-chat__subheader-action:hover {
   color: var(--prospector-slate-700);
 }
 

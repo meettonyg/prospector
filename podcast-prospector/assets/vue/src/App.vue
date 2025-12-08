@@ -18,42 +18,17 @@
 
       <!-- Main Content -->
       <div class="prospector-main">
-        <!-- Mode Toggle (Future: Chat/Traditional) -->
-        <div v-if="features.chat" class="flex items-center justify-between mb-4 gap-4">
-          <div class="flex items-center gap-3">
-            <div class="flex items-center rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
-              <button
-                v-for="m in modes"
-                :key="m.name"
-                type="button"
-                @click="mode = m.name"
-                :class="[
-                  'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all',
-                  mode === m.name
-                    ? 'bg-slate-100 text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                ]"
-              >
-                <component :is="m.icon" class="w-5 h-5" />
-                {{ m.label }}
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            class="text-primary-600 text-sm font-medium border-b border-transparent hover:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-200 rounded"
-            @click="openSavedSearches"
-          >
-            Saved Searches
-          </button>
-        </div>
-
         <!-- Traditional Search (Default) -->
-        <TraditionalSearch v-if="mode === 'search'" />
+        <TraditionalSearch
+          v-if="mode === 'search'"
+          v-model:mode="mode"
+        />
 
         <!-- Chat Interface (Feature Flagged) -->
-        <ChatInterface v-else-if="mode === 'chat' && features.chat" />
+        <ChatInterface
+          v-else-if="mode === 'chat' && features.chat"
+          v-model:mode="mode"
+        />
       </div>
     </div>
 
@@ -64,7 +39,7 @@
 
 <script setup>
 import { ref, inject, computed } from 'vue'
-import { ExclamationTriangleIcon, ChatBubbleLeftRightIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
+import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 import TraditionalSearch from './components/search/TraditionalSearch.vue'
 import ChatInterface from './components/chat/ChatInterface.vue'
 import ToastContainer from './components/common/ToastContainer.vue'
@@ -72,17 +47,8 @@ import ToastContainer from './components/common/ToastContainer.vue'
 const config = inject('config', {})
 
 const mode = ref('search')
-const modes = [
-  { name: 'search', label: 'Search', icon: MagnifyingGlassIcon },
-  { name: 'chat', label: 'Chat', icon: ChatBubbleLeftRightIcon }
-]
 const guestIntelActive = computed(() => config.guestIntelActive !== false)
 const features = computed(() => config.features || {})
-
-const openSavedSearches = () => {
-  // TODO: Open saved searches modal
-  console.log('Open saved searches')
-}
 </script>
 
 <style scoped>

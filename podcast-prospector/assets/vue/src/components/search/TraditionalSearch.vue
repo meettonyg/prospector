@@ -3,7 +3,11 @@
     <!-- Main Card Container -->
     <div class="prospector-card">
       <!-- Header -->
-      <AppHeader @open-saved-searches="handleOpenSavedSearches" />
+      <AppHeader
+        :mode="mode"
+        @update:mode="$emit('update:mode', $event)"
+        @open-saved-searches="handleOpenSavedSearches"
+      />
 
       <!-- Search Mode Tabs -->
       <SearchModeTabs
@@ -180,6 +184,15 @@ import { useUserStore } from '../../stores/userStore'
 import { useFilterStore } from '../../stores/filterStore'
 import { useToast } from '../../stores/toastStore'
 import api from '../../api/prospectorApi'
+
+defineProps({
+  mode: {
+    type: String,
+    default: 'search'
+  }
+})
+
+defineEmits(['update:mode'])
 
 // Components
 import AppHeader from '../common/AppHeader.vue'
