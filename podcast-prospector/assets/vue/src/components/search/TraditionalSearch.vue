@@ -6,7 +6,6 @@
       <AppHeader
         :mode="mode"
         @update:mode="$emit('update:mode', $event)"
-        @open-saved-searches="handleOpenSavedSearches"
       />
 
       <!-- Search Mode Tabs -->
@@ -232,11 +231,6 @@ const searchPlaceholder = computed(() => {
 // Handlers
 const toggleFilters = () => {
   filtersVisible.value = !filtersVisible.value
-}
-
-const handleOpenSavedSearches = () => {
-  // TODO: Open saved searches modal
-  console.log('Open saved searches')
 }
 
 const handleSearch = async () => {

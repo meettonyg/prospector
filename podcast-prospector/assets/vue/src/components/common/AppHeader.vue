@@ -21,16 +21,6 @@
         <span>{{ m.label }}</span>
       </button>
     </div>
-
-    <div class="prospector-header__actions">
-      <button 
-        type="button" 
-        class="prospector-header__btn"
-        @click="$emit('openSavedSearches')"
-      >
-        Saved Searches
-      </button>
-    </div>
   </div>
 </template>
 
@@ -44,7 +34,7 @@ defineProps({
   }
 })
 
-defineEmits(['openSavedSearches', 'update:mode'])
+defineEmits(['update:mode'])
 
 const modes = [
   { name: 'search', label: 'Search', icon: MagnifyingGlassIcon },
@@ -63,6 +53,7 @@ const modes = [
 }
 
 .prospector-header__content {
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -122,32 +113,6 @@ const modes = [
 .mode-toggle__icon {
   width: 1rem;
   height: 1rem;
-}
-
-.prospector-header__actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.prospector-header__btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  font-family: var(--prospector-font-family);
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--prospector-primary-500);
-  background: transparent;
-  border: 1px solid var(--prospector-primary-500);
-  border-radius: var(--prospector-radius-md);
-  cursor: pointer;
-  transition: all var(--prospector-transition-fast);
-}
-
-.prospector-header__btn:hover {
-  background: var(--prospector-primary-50);
 }
 
 /* Responsive */

@@ -6,7 +6,6 @@
       <AppHeader
         :mode="mode"
         @update:mode="$emit('update:mode', $event)"
-        @open-saved-searches="handleOpenSavedSearches"
       />
     </div>
 
@@ -265,11 +264,6 @@ const handleImport = async (podcast) => {
 const startNewChat = () => {
   chatStore.clearMessages()
   suggestedActions.value = []
-}
-
-const handleOpenSavedSearches = () => {
-  // TODO: Open saved searches modal
-  console.log('Open saved searches')
 }
 </script>
 
