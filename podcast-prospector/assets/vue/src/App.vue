@@ -19,31 +19,42 @@
       <!-- Main Content -->
       <div class="prospector-main">
         <!-- Mode Toggle (Future: Chat/Traditional) -->
-        <div v-if="features.chat" class="flex justify-end mb-4">
-          <div class="inline-flex rounded-lg border border-slate-200 p-1 bg-white">
-            <button
-              @click="mode = 'search'"
-              :class="[
-                'px-4 py-2 text-sm font-medium rounded-md transition-colors',
-                mode === 'search'
-                  ? 'bg-primary-500 text-white'
-                  : 'text-slate-600 hover:text-slate-800'
-              ]"
-            >
-              Search
-            </button>
-            <button
-              @click="mode = 'chat'"
-              :class="[
-                'px-4 py-2 text-sm font-medium rounded-md transition-colors',
-                mode === 'chat'
-                  ? 'bg-primary-500 text-white'
-                  : 'text-slate-600 hover:text-slate-800'
-              ]"
-            >
-              Chat
-            </button>
+        <div v-if="features.chat" class="flex items-center justify-between mb-4 gap-4">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
+              <button
+                @click="mode = 'search'"
+                :class="[
+                  'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all',
+                  mode === 'search'
+                    ? 'bg-slate-100 text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                ]"
+              >
+                <MagnifyingGlassIcon class="w-5 h-5" />
+                Search
+              </button>
+              <button
+                @click="mode = 'chat'"
+                :class="[
+                  'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl transition-all',
+                  mode === 'chat'
+                    ? 'bg-slate-100 text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                ]"
+              >
+                <ChatBubbleLeftRightIcon class="w-5 h-5" />
+                Chat
+              </button>
+            </div>
           </div>
+
+          <button
+            type="button"
+            class="text-primary-600 text-sm font-medium border-b border-transparent hover:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-200 rounded"
+          >
+            Saved Searches
+          </button>
         </div>
 
         <!-- Traditional Search (Default) -->
@@ -61,7 +72,7 @@
 
 <script setup>
 import { ref, inject, computed } from 'vue'
-import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
+import { ExclamationTriangleIcon, ChatBubbleLeftRightIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 import TraditionalSearch from './components/search/TraditionalSearch.vue'
 import ChatInterface from './components/chat/ChatInterface.vue'
 import ToastContainer from './components/common/ToastContainer.vue'
