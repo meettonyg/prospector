@@ -54,6 +54,30 @@ class Podcast_Prospector_User_Shortcodes {
 	}
 
 	/**
+	 * Get current user context including user data from database.
+	 *
+	 * Helper method to reduce code duplication across shortcode methods.
+	 *
+	 * @return array{user_id: int, user_data: object|null}|null User context or null if not logged in.
+	 */
+	private function get_current_user_context(): ?array {
+		if ( ! is_user_logged_in() ) {
+			return null;
+		}
+
+		$user_id  = get_current_user_id();
+		$ghl_id   = get_user_meta( $user_id, 'highlevel_contact_id', true );
+		$database = Podcast_Prospector_Database::get_instance();
+
+		$user_data = $database->get_user_data( $ghl_id, $user_id );
+
+		return [
+			'user_id'   => $user_id,
+			'user_data' => $user_data,
+		];
+	}
+
+	/**
 	 * Shortcode: [prospector_searches]
 	 *
 	 * Displays the current period search count.
@@ -62,16 +86,13 @@ class Podcast_Prospector_User_Shortcodes {
 	 * @return string Search count or empty string if not logged in.
 	 */
 	public function render_searches( $atts ): string {
-		if ( ! is_user_logged_in() ) {
+		$context = $this->get_current_user_context();
+
+		if ( ! $context ) {
 			return '';
 		}
 
-		$user_id  = get_current_user_id();
-		$ghl_id   = get_user_meta( $user_id, 'highlevel_contact_id', true );
-		$database = Podcast_Prospector_Database::get_instance();
-
-		$user_data    = $database->get_user_data( $ghl_id, $user_id );
-		$search_count = $user_data ? (int) $user_data->search_count : 0;
+		$search_count = $context['user_data'] ? (int) $context['user_data']->search_count : 0;
 
 		return (string) $search_count;
 	}
@@ -85,19 +106,15 @@ class Podcast_Prospector_User_Shortcodes {
 	 * @return string Remaining searches or empty string if not logged in.
 	 */
 	public function render_searches_remaining( $atts ): string {
-		if ( ! is_user_logged_in() ) {
+		$context = $this->get_current_user_context();
+
+		if ( ! $context ) {
 			return '';
 		}
 
-		$user_id    = get_current_user_id();
-		$ghl_id     = get_user_meta( $user_id, 'highlevel_contact_id', true );
-		$search_cap = (int) get_user_meta( $user_id, 'podcast_prospector_search_cap', true );
-
-		$database     = Podcast_Prospector_Database::get_instance();
-		$user_data    = $database->get_user_data( $ghl_id, $user_id );
-		$search_count = $user_data ? (int) $user_data->search_count : 0;
-
-		$remaining = max( 0, $search_cap - $search_count );
+		$search_cap   = (int) get_user_meta( $context['user_id'], 'podcast_prospector_search_cap', true );
+		$search_count = $context['user_data'] ? (int) $context['user_data']->search_count : 0;
+		$remaining    = max( 0, $search_cap - $search_count );
 
 		return (string) $remaining;
 	}
@@ -163,8 +180,10 @@ class Podcast_Prospector_User_Shortcodes {
 		}
 
 		try {
-			$date_obj = new DateTime( $last_renewal_date );
+			$date_obj = new DateTime( $last_renewal_date, wp_timezone() );
 		} catch ( Exception $e ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( 'Podcast Prospector: Failed to parse last renewal date: ' . $e->getMessage() );
 			return '';
 		}
 
@@ -191,17 +210,14 @@ class Podcast_Prospector_User_Shortcodes {
 	 * @return string Total searches or empty string if not logged in.
 	 */
 	public function render_total_searches( $atts ): string {
-		if ( ! is_user_logged_in() ) {
+		$context = $this->get_current_user_context();
+
+		if ( ! $context ) {
 			return '';
 		}
 
-		$user_id  = get_current_user_id();
-		$ghl_id   = get_user_meta( $user_id, 'highlevel_contact_id', true );
-		$database = Podcast_Prospector_Database::get_instance();
-
-		$user_data      = $database->get_user_data( $ghl_id, $user_id );
-		$total_searches = $user_data && isset( $user_data->total_searches )
-			? (int) $user_data->total_searches
+		$total_searches = $context['user_data'] && isset( $context['user_data']->total_searches )
+			? (int) $context['user_data']->total_searches
 			: 0;
 
 		return (string) $total_searches;
