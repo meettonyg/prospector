@@ -3,7 +3,7 @@
  * Plugin Name: Podcast Prospector
  * Plugin URI: https://example.com/podcast-prospector
  * Description: Search and display podcast episodes from multiple podcast databases. Import podcasts to Formidable Forms or Guest Intelligence tracker.
- * Version: 2.2.0
+ * Version: 2.3.0
  * Author: Podcast Prospector Team
  * Author URI: https://example.com
  * Text Domain: podcast-prospector
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Plugin version.
  */
-define( 'PODCAST_PROSPECTOR_VERSION', '2.2.0' );
+define( 'PODCAST_PROSPECTOR_VERSION', '2.3.0' );
 
 /**
  * Plugin file path.
@@ -140,6 +140,7 @@ final class Podcast_Prospector {
         require_once $includes_dir . 'class-sponsored-listings-admin.php';
         require_once $includes_dir . 'class-impression-queue.php';
         require_once $includes_dir . 'class-vue-assets.php';
+        require_once $includes_dir . 'class-user-shortcodes.php';
 
         // Initialize core instances
         $this->settings = Podcast_Prospector_Settings::get_instance();
@@ -325,6 +326,10 @@ final class Podcast_Prospector {
         // Initialize shortcode
         $shortcode = Podcast_Prospector_Shortcode::get_instance();
         $shortcode->init();
+
+        // Initialize user shortcodes
+        $user_shortcodes = Podcast_Prospector_User_Shortcodes::get_instance();
+        $user_shortcodes->init();
 
         // Initialize admin dashboard widget
         $dashboard = new Podcast_Prospector_Admin_Dashboard();
