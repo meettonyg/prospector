@@ -150,14 +150,6 @@ class Podcast_Prospector_Container {
             return new Podcast_Prospector_Renderer( $c->get( 'rss_cache' ) );
         } );
 
-        // Form Handler
-        $this->singleton( 'form_handler', function ( $c ) {
-            return new Podcast_Prospector_Form_Handler(
-                $c->get( 'settings' ),
-                $c->get( 'logger' )
-            );
-        } );
-
         // Search Service
         $this->singleton( 'search', function ( $c ) {
             return new Podcast_Prospector_Search_Service(
@@ -169,24 +161,21 @@ class Podcast_Prospector_Container {
             );
         } );
 
-        // AJAX Handler
+        // AJAX Handler (singleton - uses get_instance())
         $this->singleton( 'ajax_handler', function ( $c ) {
-            return new Podcast_Prospector_Ajax_Handler(
-                $c->get( 'search' ),
-                $c->get( 'form_handler' ),
-                $c->get( 'database' ),
-                $c->get( 'membership' ),
-                $c->get( 'validator' ),
-                $c->get( 'renderer' ),
-                $c->get( 'logger' )
-            );
+            return Podcast_Prospector_Ajax_Handler::get_instance();
+        } );
+
+        // Guest Intel Import Handler
+        $this->singleton( 'guest_intel_import', function ( $c ) {
+            return Podcast_Prospector_Guest_Intel_Import_Handler::get_instance();
         } );
 
         // REST API
         $this->singleton( 'rest_api', function ( $c ) {
             return new Podcast_Prospector_REST_API(
                 $c->get( 'search' ),
-                $c->get( 'form_handler' ),
+                $c->get( 'guest_intel_import' ),
                 $c->get( 'validator' ),
                 $c->get( 'membership' ),
                 $c->get( 'logger' )
