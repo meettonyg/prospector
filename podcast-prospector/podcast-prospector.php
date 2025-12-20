@@ -116,7 +116,6 @@ final class Podcast_Prospector {
         require_once $includes_dir . 'class-api-podcastindex.php';
         require_once $includes_dir . 'class-api-taddy.php';
         require_once $includes_dir . 'class-renderer.php';
-        require_once $includes_dir . 'class-form-handler.php';
         require_once $includes_dir . 'class-guest-intel-import-handler.php';
         require_once $includes_dir . 'class-ajax-handler.php';
         require_once $includes_dir . 'class-shortcode.php';
@@ -203,11 +202,6 @@ final class Podcast_Prospector {
             );
         } );
 
-        // Register form handler
-        $this->container->singleton( Podcast_Prospector_Form_Handler::class, function() {
-            return Podcast_Prospector_Form_Handler::get_instance();
-        } );
-
         // Register Guest Intel import handler
         $this->container->singleton( Podcast_Prospector_Guest_Intel_Import_Handler::class, function() {
             return Podcast_Prospector_Guest_Intel_Import_Handler::get_instance();
@@ -217,7 +211,7 @@ final class Podcast_Prospector {
         $this->container->singleton( Podcast_Prospector_REST_API::class, function() {
             return new Podcast_Prospector_REST_API(
                 $this->container->get( Podcast_Prospector_Search_Service::class ),
-                $this->container->get( Podcast_Prospector_Form_Handler::class ),
+                $this->container->get( Podcast_Prospector_Guest_Intel_Import_Handler::class ),
                 $this->container->get( Podcast_Prospector_Validator::class ),
                 $this->container->get( Podcast_Prospector_Membership::class ),
                 $this->logger

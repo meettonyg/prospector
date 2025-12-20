@@ -32,11 +32,11 @@ class Podcast_Prospector_REST_API {
     private Podcast_Prospector_Search_Service $search_service;
 
     /**
-     * Form handler.
+     * Guest Intel import handler.
      *
-     * @var Podcast_Prospector_Form_Handler
+     * @var Podcast_Prospector_Guest_Intel_Import_Handler
      */
-    private Podcast_Prospector_Form_Handler $form_handler;
+    private Podcast_Prospector_Guest_Intel_Import_Handler $import_handler;
 
     /**
      * Validator.
@@ -69,21 +69,21 @@ class Podcast_Prospector_REST_API {
     /**
      * Constructor.
      *
-     * @param Podcast_Prospector_Search_Service $search_service Search service.
-     * @param Podcast_Prospector_Form_Handler   $form_handler   Form handler.
-     * @param Podcast_Prospector_Validator      $validator      Validator.
-     * @param Podcast_Prospector_Membership     $membership     Membership.
-     * @param Podcast_Prospector_Logger|null    $logger         Logger.
+     * @param Podcast_Prospector_Search_Service            $search_service Search service.
+     * @param Podcast_Prospector_Guest_Intel_Import_Handler $import_handler Guest Intel import handler.
+     * @param Podcast_Prospector_Validator                 $validator      Validator.
+     * @param Podcast_Prospector_Membership                $membership     Membership.
+     * @param Podcast_Prospector_Logger|null               $logger         Logger.
      */
     public function __construct(
         Podcast_Prospector_Search_Service $search_service,
-        Podcast_Prospector_Form_Handler $form_handler,
+        Podcast_Prospector_Guest_Intel_Import_Handler $import_handler,
         Podcast_Prospector_Validator $validator,
         Podcast_Prospector_Membership $membership,
         ?Podcast_Prospector_Logger $logger = null
     ) {
         $this->search_service = $search_service;
-        $this->form_handler = $form_handler;
+        $this->import_handler = $import_handler;
         $this->validator = $validator;
         $this->membership = $membership;
         $this->logger = $logger;
@@ -301,8 +301,8 @@ class Podcast_Prospector_REST_API {
             );
         }
 
-        // Perform import
-        $result = $this->form_handler->create_entries(
+        // Perform import to Guest Intelligence database
+        $result = $this->import_handler->import_items(
             array_map( 'wp_json_encode', $validation->get( 'podcasts' ) ),
             [
                 'search_term' => $validation->get( 'search_term' ),
@@ -316,7 +316,8 @@ class Podcast_Prospector_REST_API {
             'success'       => $result['fail_count'] === 0,
             'success_count' => $result['success_count'],
             'fail_count'    => $result['fail_count'],
-            'message'       => $result['html'], // Contains formatted message
+            'message'       => $result['html'],
+            'details'       => $result['details'], // Include import details with opportunity_ids
         ], $status );
     }
 
