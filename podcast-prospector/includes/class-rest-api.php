@@ -262,12 +262,13 @@ class Podcast_Prospector_REST_API {
             );
         }
 
-        // Get updated user stats
-        $updated_data = $database->get_user_data( $ghl_id, $user_id );
-
         // Get result data and enrich with location info
         $response_data = $result->get_data();
         $enriched_data = $this->enrich_with_location( $response_data );
+
+        // Use increment_result values directly to avoid redundant database query
+        $search_count = $increment_result ? (int) $increment_result['search_count'] : 0;
+        $total_searches = $increment_result ? (int) $increment_result['total_searches'] : 0;
 
         return new WP_REST_Response( [
             'success'        => true,
@@ -278,9 +279,9 @@ class Podcast_Prospector_REST_API {
             'locations'      => $enriched_data['locations'] ?? [],
             'location_count' => $enriched_data['location_count'] ?? 0,
             'user_stats'     => [
-                'search_count'       => $updated_data ? (int) $updated_data->search_count : 0,
-                'total_searches'     => $updated_data ? (int) $updated_data->total_searches : 0,
-                'searches_remaining' => max( 0, $search_cap - ( $updated_data ? (int) $updated_data->search_count : 0 ) ),
+                'search_count'       => $search_count,
+                'total_searches'     => $total_searches,
+                'searches_remaining' => max( 0, $search_cap - $search_count ),
                 'search_cap'         => $search_cap,
                 'milestone_reached'  => $milestone_reached,
             ],

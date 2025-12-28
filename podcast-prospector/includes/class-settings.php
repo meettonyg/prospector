@@ -191,7 +191,17 @@ class Podcast_Prospector_Settings {
      */
     public function get_celebration_milestones(): array {
         $milestones_string = $this->get( 'celebration_milestones', '5, 100, 250, 500' );
-        $milestones = array_map( 'absint', array_map( 'trim', explode( ',', $milestones_string ) ) );
+        return $this->parse_milestones_string( $milestones_string );
+    }
+
+    /**
+     * Parse a comma-separated milestones string into an array of positive integers.
+     *
+     * @param string $string Comma-separated milestones string.
+     * @return int[]
+     */
+    private function parse_milestones_string( string $string ): array {
+        $milestones = array_map( 'absint', array_map( 'trim', explode( ',', $string ) ) );
         return array_filter( $milestones, fn( $m ) => $m > 0 );
     }
 
@@ -598,8 +608,7 @@ class Podcast_Prospector_Settings {
 
         // Celebration milestones (comma-separated integers)
         if ( isset( $input['celebration_milestones'] ) ) {
-            $milestones = array_map( 'absint', array_map( 'trim', explode( ',', $input['celebration_milestones'] ) ) );
-            $milestones = array_filter( $milestones, fn( $m ) => $m > 0 );
+            $milestones = $this->parse_milestones_string( $input['celebration_milestones'] );
             sort( $milestones );
             $sanitized['celebration_milestones'] = implode( ', ', $milestones );
         } else {
