@@ -226,7 +226,7 @@ class Podcast_Prospector_Database {
      *
      * @param string|null $ghl_id     GoHighLevel contact ID.
      * @param int|null    $wp_user_id WordPress user ID.
-     * @return array{search_count: int, total_searches: int}|null
+     * @return array{search_count: int, total_searches: int, milestone_reached: int|null}|null
      */
     public function increment_search_count( ?string $ghl_id = null, ?int $wp_user_id = null ): ?array {
         $user_data = $this->get_or_create_user_data( $ghl_id, $wp_user_id );
@@ -257,33 +257,36 @@ class Podcast_Prospector_Database {
             return null;
         }
 
-        // Update user meta for external sync
+        // Update user meta for external sync and check for milestone
+        $milestone_reached = null;
         if ( $wp_user_id ) {
             update_user_meta( $wp_user_id, 'guestify_total_searches', $new_total );
-            $this->sync_milestones( $wp_user_id, $new_total );
+            $milestone_reached = $this->sync_milestones( $wp_user_id, $new_total );
         }
 
         $this->log_debug( 'Incremented search count', [
-            'wp_user_id'    => $wp_user_id,
-            'search_count'  => $new_search_count,
-            'total_searches' => $new_total,
+            'wp_user_id'        => $wp_user_id,
+            'search_count'      => $new_search_count,
+            'total_searches'    => $new_total,
+            'milestone_reached' => $milestone_reached,
         ] );
 
         return [
-            'search_count'   => $new_search_count,
-            'total_searches' => $new_total,
+            'search_count'      => $new_search_count,
+            'total_searches'    => $new_total,
+            'milestone_reached' => $milestone_reached,
         ];
     }
 
     /**
-     * Sync milestone achievements to external CRM.
+     * Check if a milestone was reached and sync to external CRM.
      *
      * @param int $wp_user_id    WordPress user ID.
      * @param int $total_searches Total search count.
-     * @return void
+     * @return int|null The milestone reached, or null if no milestone.
      */
-    private function sync_milestones( int $wp_user_id, int $total_searches ): void {
-        $milestones = [ 5, 100, 250, 500 ];
+    private function sync_milestones( int $wp_user_id, int $total_searches ): ?int {
+        $milestones = $this->get_celebration_milestones();
 
         if ( in_array( $total_searches, $milestones, true ) ) {
             if ( function_exists( 'wp_fusion' ) ) {
@@ -296,7 +299,24 @@ class Podcast_Prospector_Database {
                 'wp_user_id'     => $wp_user_id,
                 'total_searches' => $total_searches,
             ] );
+
+            return $total_searches;
         }
+
+        return null;
+    }
+
+    /**
+     * Get celebration milestones from settings.
+     *
+     * @return int[]
+     */
+    private function get_celebration_milestones(): array {
+        if ( class_exists( 'Podcast_Prospector_Settings' ) ) {
+            return Podcast_Prospector_Settings::get_instance()->get_celebration_milestones();
+        }
+        // Fallback to defaults if settings class not available
+        return [ 5, 100, 250, 500 ];
     }
 
     /**

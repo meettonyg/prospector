@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import api from '../api/prospectorApi'
+import { useCelebrationStore } from './celebrationStore'
+import { useUserStore } from './userStore'
 
 export const useSearchStore = defineStore('search', {
   state: () => ({
@@ -189,6 +191,16 @@ export const useSearchStore = defineStore('search', {
         this.cachedAt = response.from_cache ? new Date().toISOString() : null
 
         console.log('[SearchStore] Processed results:', this.results.length, 'Total:', this.total)
+
+        // Update user stats and check for milestone celebration
+        if (response.user_stats) {
+          const userStore = useUserStore()
+          userStore.updateFromResponse(response.user_stats)
+
+          // Check for milestone celebration
+          const celebrationStore = useCelebrationStore()
+          celebrationStore.checkMilestone(response.user_stats)
+        }
 
         // Auto-hydrate results
         if (this.results.length > 0) {
