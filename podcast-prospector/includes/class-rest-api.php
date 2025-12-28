@@ -247,8 +247,9 @@ class Podcast_Prospector_REST_API {
             );
         }
 
-        // Increment search count
-        $database->increment_search_count( $ghl_id, $user_id );
+        // Increment search count and check for milestone
+        $increment_result = $database->increment_search_count( $ghl_id, $user_id );
+        $milestone_reached = $increment_result['milestone_reached'] ?? null;
 
         // Perform search
         $result = $this->search_service->search( $validation->get_all(), $user_id );
@@ -278,8 +279,10 @@ class Podcast_Prospector_REST_API {
             'location_count' => $enriched_data['location_count'] ?? 0,
             'user_stats'     => [
                 'search_count'       => $updated_data ? (int) $updated_data->search_count : 0,
+                'total_searches'     => $updated_data ? (int) $updated_data->total_searches : 0,
                 'searches_remaining' => max( 0, $search_cap - ( $updated_data ? (int) $updated_data->search_count : 0 ) ),
                 'search_cap'         => $search_cap,
+                'milestone_reached'  => $milestone_reached,
             ],
         ], 200 );
     }

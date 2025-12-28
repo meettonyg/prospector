@@ -81,6 +81,9 @@ class Podcast_Prospector_Settings {
         'chatgpt_enabled'           => false,
         'openai_api_key'            => '',
         'chatgpt_model'             => 'gpt-4o-mini',
+
+        // Celebration Settings
+        'celebration_milestones'    => '5, 100, 250, 500',
     ];
 
     /**
@@ -179,6 +182,17 @@ class Podcast_Prospector_Settings {
             'api_key' => $this->get( 'taddy_api_key' ),
             'user_id' => $this->get( 'taddy_user_id' ),
         ];
+    }
+
+    /**
+     * Get celebration milestones as an array of integers.
+     *
+     * @return int[]
+     */
+    public function get_celebration_milestones(): array {
+        $milestones_string = $this->get( 'celebration_milestones', '5, 100, 250, 500' );
+        $milestones = array_map( 'absint', array_map( 'trim', explode( ',', $milestones_string ) ) );
+        return array_filter( $milestones, fn( $m ) => $m > 0 );
     }
 
     /**
@@ -321,6 +335,18 @@ class Podcast_Prospector_Settings {
                 'gpt-4-turbo' => __( 'GPT-4 Turbo', 'podcast-prospector' ),
             ],
         ] );
+
+        // Celebration Settings Section
+        add_settings_section(
+            'celebration_section',
+            __( 'Celebration Settings', 'podcast-prospector' ),
+            [ $this, 'render_celebration_section_description' ],
+            self::PAGE_SLUG
+        );
+
+        $this->add_settings_field( 'celebration_milestones', __( 'Celebration Milestones', 'podcast-prospector' ), 'celebration_section', 'text', [
+            'description' => __( 'Comma-separated list of search counts that trigger a celebration (e.g., 5, 100, 250, 500)', 'podcast-prospector' ),
+        ] );
     }
 
     /**
@@ -438,6 +464,15 @@ class Podcast_Prospector_Settings {
     }
 
     /**
+     * Render celebration section description.
+     *
+     * @return void
+     */
+    public function render_celebration_section_description(): void {
+        echo '<p>' . esc_html__( 'Configure celebration effects when users reach search milestones. A confetti animation will be displayed when users hit these search counts.', 'podcast-prospector' ) . '</p>';
+    }
+
+    /**
      * Render a settings field.
      *
      * @param array $args Field arguments.
@@ -499,6 +534,11 @@ class Podcast_Prospector_Settings {
                 );
                 break;
         }
+
+        // Show description hint if provided
+        if ( ! empty( $args['description'] ) ) {
+            printf( '<p class="description">%s</p>', esc_html( $args['description'] ) );
+        }
     }
 
     /**
@@ -555,6 +595,16 @@ class Podcast_Prospector_Settings {
         $sanitized['chatgpt_model'] = isset( $input['chatgpt_model'] ) && in_array( $input['chatgpt_model'], $valid_models, true )
             ? $input['chatgpt_model']
             : 'gpt-4o-mini';
+
+        // Celebration milestones (comma-separated integers)
+        if ( isset( $input['celebration_milestones'] ) ) {
+            $milestones = array_map( 'absint', array_map( 'trim', explode( ',', $input['celebration_milestones'] ) ) );
+            $milestones = array_filter( $milestones, fn( $m ) => $m > 0 );
+            sort( $milestones );
+            $sanitized['celebration_milestones'] = implode( ', ', $milestones );
+        } else {
+            $sanitized['celebration_milestones'] = '5, 100, 250, 500';
+        }
 
         return $sanitized;
     }
