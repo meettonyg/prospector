@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Podcast Prospector
+ * Plugin Name: Guestify Podcast Prospector
  * Plugin URI: https://example.com/podcast-prospector
- * Description: Search and display podcast episodes from multiple podcast databases. Import podcasts to Formidable Forms or Guest Intelligence tracker.
+ * Description: Search and display podcast episodes from multiple podcast databases. Import podcasts to Guest Intelligence tracker.
  * Version: 2.3.0
  * Author: Podcast Prospector Team
  * Author URI: https://example.com
