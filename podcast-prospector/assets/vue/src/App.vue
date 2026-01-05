@@ -1,14 +1,14 @@
 <template>
-  <div class="prospector-root font-sans">
+  <div class="prospector-root">
     <!-- Centered Container with Side Margins -->
-    <div class="max-w-[1600px] mx-auto px-6 lg:px-8 py-6">
+    <div class="prospector-container">
       <!-- Guest Intel Check -->
-      <div v-if="!guestIntelActive" class="p-6 bg-amber-50 border border-amber-200 rounded-xl mb-6">
-        <div class="flex items-start gap-3">
-          <ExclamationTriangleIcon class="w-6 h-6 text-amber-500 flex-shrink-0" />
-          <div>
-            <h3 class="font-semibold text-amber-800">Guest Intel Required</h3>
-            <p class="text-sm text-amber-700 mt-1">
+      <div v-if="!guestIntelActive" class="prospector-alert prospector-alert--warning">
+        <div class="prospector-alert__content">
+          <ExclamationTriangleIcon class="prospector-alert__icon" />
+          <div class="prospector-alert__text">
+            <h3 class="prospector-alert__title">Guest Intel Required</h3>
+            <p class="prospector-alert__description">
               The Guest Intel plugin is required for importing podcasts to your pipeline.
               Search functionality is available, but imports are disabled.
             </p>

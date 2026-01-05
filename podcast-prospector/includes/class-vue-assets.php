@@ -137,15 +137,30 @@ class Podcast_Prospector_Vue_Assets {
             return;
         }
 
+        // Ensure Guestify design tokens are available
+        // If theme provides tokens, they're already registered. Otherwise, use local fallback.
+        if (!wp_style_is('guestify-tokens', 'registered')) {
+            $fallback_tokens = PODCAST_PROSPECTOR_PLUGIN_DIR . 'assets/css/guestify-tokens.css';
+            if (file_exists($fallback_tokens)) {
+                wp_register_style(
+                    'guestify-tokens',
+                    PODCAST_PROSPECTOR_PLUGIN_URL . 'assets/css/guestify-tokens.css',
+                    [],
+                    filemtime($fallback_tokens)
+                );
+            }
+        }
+        wp_enqueue_style('guestify-tokens');
+
         $dist_url = PODCAST_PROSPECTOR_PLUGIN_URL . 'assets/vue/dist/';
 
-        // Enqueue CSS files
+        // Enqueue CSS files (with guestify-tokens as dependency)
         if (!empty($entry['css'])) {
             foreach ($entry['css'] as $index => $css_file) {
                 wp_enqueue_style(
                     'prospector-vue-css-' . $index,
                     $dist_url . $css_file,
-                    [],
+                    ['guestify-tokens'],
                     null
                 );
             }

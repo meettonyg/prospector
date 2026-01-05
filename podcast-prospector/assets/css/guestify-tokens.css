@@ -1,0 +1,650 @@
+/**
+ * Guestify Design Tokens
+ * ======================
+ * Version: 1.0.0
+ * Last Updated: January 4, 2026
+ *
+ * Single source of truth for all Guestify plugins.
+ * This file defines the unified design system and provides
+ * backwards-compatible aliases for existing plugin prefixes.
+ *
+ * Naming Convention: --gfy-{category}-{property}-{variant}
+ *
+ * Categories:
+ *   - Colors: primary, secondary, accent, gray, success, warning, error, info
+ *   - Typography: font, text, leading
+ *   - Spacing: space
+ *   - Borders: border, radius
+ *   - Effects: shadow, transition, z
+ *
+ * NOTE: This is a FALLBACK copy for standalone plugin operation.
+ * The authoritative source is in the Guestify theme.
+ */
+
+:root {
+  /* ==========================================================================
+     BRAND COLORS
+     Based on Guestify Visual Brand Standards
+     ========================================================================== */
+
+  /* ---------------------------------------------------------------------------
+     Primary - Intelligence Blue
+     Brand anchor: #1B365D
+     Usage: Primary brand element, headers, navigation, strategic emphasis
+     --------------------------------------------------------------------------- */
+  --gfy-primary-50: #f0f4f8;
+  --gfy-primary-100: #d9e2ec;
+  --gfy-primary-200: #bcccdc;
+  --gfy-primary-300: #9fb3c8;
+  --gfy-primary-400: #829ab1;
+  --gfy-primary-500: #627d98;
+  --gfy-primary-600: #486581;
+  --gfy-primary-700: #334e68;
+  --gfy-primary-800: #1B365D;  /* Brand Anchor - Intelligence Blue */
+  --gfy-primary-900: #102a43;
+
+  /* ---------------------------------------------------------------------------
+     Secondary - Connection Green
+     Brand anchor: #2B7A4C
+     Usage: Relationship features, positive outcomes, growth metrics
+     --------------------------------------------------------------------------- */
+  --gfy-secondary-50: #e6f4ea;
+  --gfy-secondary-100: #c6e6d0;
+  --gfy-secondary-200: #a3d4b4;
+  --gfy-secondary-300: #7ec298;
+  --gfy-secondary-400: #5fb07e;
+  --gfy-secondary-500: #2B7A4C;  /* Brand Anchor - Connection Green */
+  --gfy-secondary-600: #256b42;
+  --gfy-secondary-700: #1e5c38;
+  --gfy-secondary-800: #184d2e;
+  --gfy-secondary-900: #123e24;
+
+  /* ---------------------------------------------------------------------------
+     Accent - Transformation Orange
+     Brand anchor: #ED8936
+     Usage: CTAs, transformation highlights, energy elements
+     --------------------------------------------------------------------------- */
+  --gfy-accent-50: #fffaf0;
+  --gfy-accent-100: #feebc8;
+  --gfy-accent-200: #fbd38d;
+  --gfy-accent-300: #f6ad55;
+  --gfy-accent-400: #ed8936;
+  --gfy-accent-500: #ED8936;  /* Brand Anchor - Transformation Orange */
+  --gfy-accent-600: #dd6b20;
+  --gfy-accent-700: #c05621;
+  --gfy-accent-800: #9c4221;
+  --gfy-accent-900: #7b341e;
+
+  /* ---------------------------------------------------------------------------
+     Extended Brand Colors
+     --------------------------------------------------------------------------- */
+
+  /* Insight Purple - AI/intelligence features, premium elements */
+  --gfy-purple-50: #faf5ff;
+  --gfy-purple-100: #e9d8fd;
+  --gfy-purple-200: #d6bcfa;
+  --gfy-purple-300: #b794f4;
+  --gfy-purple-400: #9f7aea;
+  --gfy-purple-500: #805AD5;  /* Brand - Insight Purple */
+  --gfy-purple-600: #6b46c1;
+  --gfy-purple-700: #553c9a;
+  --gfy-purple-800: #44337a;
+  --gfy-purple-900: #322659;
+
+  /* Success Teal - Achievement highlights, metrics */
+  --gfy-teal-50: #e6fffa;
+  --gfy-teal-100: #b2f5ea;
+  --gfy-teal-200: #81e6d9;
+  --gfy-teal-300: #4fd1c5;
+  --gfy-teal-400: #38B2AC;  /* Brand - Success Teal */
+  --gfy-teal-500: #319795;
+  --gfy-teal-600: #2c7a7b;
+  --gfy-teal-700: #285e61;
+  --gfy-teal-800: #234e52;
+  --gfy-teal-900: #1d4044;
+
+  /* ==========================================================================
+     NEUTRAL COLORS (Gray Scale)
+     ========================================================================== */
+  --gfy-gray-50: #f8fafc;
+  --gfy-gray-100: #f1f5f9;
+  --gfy-gray-200: #e2e8f0;
+  --gfy-gray-300: #cbd5e1;
+  --gfy-gray-400: #94a3b8;
+  --gfy-gray-500: #64748b;
+  --gfy-gray-600: #475569;
+  --gfy-gray-700: #334155;
+  --gfy-gray-800: #1e293b;
+  --gfy-gray-900: #0f172a;
+  --gfy-gray-950: #020617;
+
+  /* Named Neutrals (from Brand Standards) */
+  --gfy-white: #ffffff;
+  --gfy-off-white: #F7FAFC;
+  --gfy-near-black: #1A202C;
+
+  /* ==========================================================================
+     SEMANTIC COLORS
+     ========================================================================== */
+
+  /* Success */
+  --gfy-success-50: #ecfdf5;
+  --gfy-success-100: #d1fae5;
+  --gfy-success-200: #a7f3d0;
+  --gfy-success-500: #10b981;
+  --gfy-success-600: #059669;
+  --gfy-success-700: #047857;
+  --gfy-success: var(--gfy-success-500);
+  --gfy-success-light: var(--gfy-success-100);
+  --gfy-success-dark: var(--gfy-success-700);
+
+  /* Warning */
+  --gfy-warning-50: #fffbeb;
+  --gfy-warning-100: #fef3c7;
+  --gfy-warning-200: #fde68a;
+  --gfy-warning-500: #f59e0b;
+  --gfy-warning-600: #d97706;
+  --gfy-warning-700: #b45309;
+  --gfy-warning: var(--gfy-warning-500);
+  --gfy-warning-light: var(--gfy-warning-100);
+  --gfy-warning-dark: var(--gfy-warning-700);
+
+  /* Error */
+  --gfy-error-50: #fef2f2;
+  --gfy-error-100: #fee2e2;
+  --gfy-error-200: #fecaca;
+  --gfy-error-500: #ef4444;
+  --gfy-error-600: #dc2626;
+  --gfy-error-700: #b91c1c;
+  --gfy-error: var(--gfy-error-500);
+  --gfy-error-light: var(--gfy-error-100);
+  --gfy-error-dark: var(--gfy-error-700);
+
+  /* Info */
+  --gfy-info-50: #eff6ff;
+  --gfy-info-100: #dbeafe;
+  --gfy-info-200: #bfdbfe;
+  --gfy-info-500: #3b82f6;
+  --gfy-info-600: #2563eb;
+  --gfy-info-700: #1d4ed8;
+  --gfy-info: var(--gfy-info-500);
+  --gfy-info-light: var(--gfy-info-100);
+  --gfy-info-dark: var(--gfy-info-700);
+
+  /* ==========================================================================
+     TYPOGRAPHY
+     ========================================================================== */
+
+  /* Font Families */
+  --gfy-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --gfy-font-mono: 'Fira Code', 'Courier New', Consolas, monospace;
+  --gfy-font-display: 'Playfair Display', Georgia, serif;
+
+  /* Font Sizes */
+  --gfy-text-xs: 0.75rem;      /* 12px */
+  --gfy-text-sm: 0.875rem;     /* 14px */
+  --gfy-text-base: 1rem;       /* 16px */
+  --gfy-text-lg: 1.125rem;     /* 18px */
+  --gfy-text-xl: 1.25rem;      /* 20px */
+  --gfy-text-2xl: 1.5rem;      /* 24px */
+  --gfy-text-3xl: 1.875rem;    /* 30px */
+  --gfy-text-4xl: 2.25rem;     /* 36px */
+  --gfy-text-5xl: 3rem;        /* 48px */
+
+  /* Font Weights */
+  --gfy-font-normal: 400;
+  --gfy-font-medium: 500;
+  --gfy-font-semibold: 600;
+  --gfy-font-bold: 700;
+  --gfy-font-extrabold: 800;
+
+  /* Line Heights */
+  --gfy-leading-none: 1;
+  --gfy-leading-tight: 1.25;
+  --gfy-leading-snug: 1.375;
+  --gfy-leading-normal: 1.5;
+  --gfy-leading-relaxed: 1.625;
+  --gfy-leading-loose: 2;
+
+  /* Letter Spacing */
+  --gfy-tracking-tight: -0.025em;
+  --gfy-tracking-normal: 0;
+  --gfy-tracking-wide: 0.025em;
+  --gfy-tracking-wider: 0.05em;
+
+  /* ==========================================================================
+     SPACING (8px Base Unit)
+     ========================================================================== */
+  --gfy-space-0: 0;
+  --gfy-space-px: 1px;
+  --gfy-space-0-5: 0.125rem;   /* 2px */
+  --gfy-space-1: 0.25rem;      /* 4px */
+  --gfy-space-1-5: 0.375rem;   /* 6px */
+  --gfy-space-2: 0.5rem;       /* 8px - Base unit */
+  --gfy-space-2-5: 0.625rem;   /* 10px */
+  --gfy-space-3: 0.75rem;      /* 12px */
+  --gfy-space-3-5: 0.875rem;   /* 14px */
+  --gfy-space-4: 1rem;         /* 16px */
+  --gfy-space-5: 1.25rem;      /* 20px */
+  --gfy-space-6: 1.5rem;       /* 24px */
+  --gfy-space-7: 1.75rem;      /* 28px */
+  --gfy-space-8: 2rem;         /* 32px */
+  --gfy-space-9: 2.25rem;      /* 36px */
+  --gfy-space-10: 2.5rem;      /* 40px */
+  --gfy-space-11: 2.75rem;     /* 44px */
+  --gfy-space-12: 3rem;        /* 48px */
+  --gfy-space-14: 3.5rem;      /* 56px */
+  --gfy-space-16: 4rem;        /* 64px */
+  --gfy-space-20: 5rem;        /* 80px */
+  --gfy-space-24: 6rem;        /* 96px */
+  --gfy-space-28: 7rem;        /* 112px */
+  --gfy-space-32: 8rem;        /* 128px */
+
+  /* ==========================================================================
+     BORDERS
+     ========================================================================== */
+
+  /* Border Colors */
+  --gfy-border-color: var(--gfy-gray-200);
+  --gfy-border-color-light: var(--gfy-gray-100);
+  --gfy-border-color-dark: var(--gfy-gray-300);
+  --gfy-border-color-focus: var(--gfy-primary-500);
+
+  /* Border Radius */
+  --gfy-radius-none: 0;
+  --gfy-radius-sm: 0.125rem;   /* 2px */
+  --gfy-radius-base: 0.25rem;  /* 4px */
+  --gfy-radius-md: 0.375rem;   /* 6px */
+  --gfy-radius-lg: 0.5rem;     /* 8px */
+  --gfy-radius-xl: 0.75rem;    /* 12px */
+  --gfy-radius-2xl: 1rem;      /* 16px */
+  --gfy-radius-3xl: 1.5rem;    /* 24px */
+  --gfy-radius-full: 9999px;
+
+  /* Border Widths */
+  --gfy-border-0: 0;
+  --gfy-border-1: 1px;
+  --gfy-border-2: 2px;
+  --gfy-border-4: 4px;
+  --gfy-border-8: 8px;
+
+  /* ==========================================================================
+     SHADOWS
+     ========================================================================== */
+  --gfy-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --gfy-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --gfy-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --gfy-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --gfy-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --gfy-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --gfy-shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+  --gfy-shadow-none: 0 0 #0000;
+
+  /* Focus Ring */
+  --gfy-ring-offset: 2px;
+  --gfy-ring-color: var(--gfy-primary-500);
+  --gfy-ring: 0 0 0 var(--gfy-ring-offset) var(--gfy-ring-color);
+
+  /* ==========================================================================
+     TRANSITIONS
+     ========================================================================== */
+  --gfy-transition-none: none;
+  --gfy-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --gfy-transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --gfy-transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --gfy-transition-slower: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Easing Functions */
+  --gfy-ease-linear: linear;
+  --gfy-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --gfy-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --gfy-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --gfy-ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* ==========================================================================
+     Z-INDEX SCALE
+     ========================================================================== */
+  --gfy-z-auto: auto;
+  --gfy-z-0: 0;
+  --gfy-z-10: 10;
+  --gfy-z-20: 20;
+  --gfy-z-30: 30;
+  --gfy-z-40: 40;
+  --gfy-z-50: 50;
+  --gfy-z-dropdown: 1000;
+  --gfy-z-sticky: 1100;
+  --gfy-z-fixed: 1200;
+  --gfy-z-modal-backdrop: 1300;
+  --gfy-z-modal: 1400;
+  --gfy-z-popover: 1500;
+  --gfy-z-tooltip: 1600;
+
+  /* ==========================================================================
+     LAYOUT
+     ========================================================================== */
+  --gfy-header-height: 60px;
+  --gfy-sidebar-width: 250px;
+  --gfy-sidebar-collapsed: 60px;
+  --gfy-content-max-width: 1400px;
+  --gfy-admin-bar-height: 32px;
+  --gfy-admin-bar-height-mobile: 46px;
+
+  /* ==========================================================================
+
+     LEGACY ALIAS MAPPINGS
+
+     These aliases map existing plugin variable prefixes to the new unified
+     system. This provides instant visual consistency without requiring
+     changes to individual plugin CSS files.
+
+     ========================================================================== */
+
+  /* ---------------------------------------------------------------------------
+     MEDIA KIT BUILDER (mk4) ALIASES
+     Prefix: --gmkb-*
+     --------------------------------------------------------------------------- */
+
+  /* Colors */
+  --gmkb-color-primary: var(--gfy-info-500);
+  --gmkb-color-primary-hover: var(--gfy-info-600);
+  --gmkb-color-primary-light: var(--gfy-info-400);
+  --gmkb-color-primary-dark: var(--gfy-info-700);
+  --gmkb-color-secondary: var(--gfy-gray-500);
+  --gmkb-color-accent: var(--gfy-purple-500);
+  --gmkb-color-accent-hover: var(--gfy-purple-600);
+  --gmkb-color-text: var(--gfy-gray-900);
+  --gmkb-color-text-light: var(--gfy-gray-600);
+  --gmkb-color-text-muted: var(--gfy-gray-400);
+  --gmkb-color-background: var(--gfy-white);
+  --gmkb-color-surface: var(--gfy-gray-50);
+  --gmkb-color-border: var(--gfy-gray-200);
+  --gmkb-color-success: var(--gfy-success);
+  --gmkb-color-warning: var(--gfy-warning);
+  --gmkb-color-error: var(--gfy-error);
+  --gmkb-color-info: var(--gfy-info);
+
+  /* Typography */
+  --gmkb-font-primary: var(--gfy-font-sans);
+  --gmkb-font-size-xs: var(--gfy-text-xs);
+  --gmkb-font-size-sm: var(--gfy-text-sm);
+  --gmkb-font-size-base: var(--gfy-text-base);
+  --gmkb-font-size-lg: var(--gfy-text-lg);
+  --gmkb-font-size-xl: var(--gfy-text-xl);
+  --gmkb-font-size-2xl: var(--gfy-text-2xl);
+  --gmkb-font-size-3xl: var(--gfy-text-3xl);
+  --gmkb-font-size-4xl: var(--gfy-text-4xl);
+  --gmkb-font-weight-normal: var(--gfy-font-normal);
+  --gmkb-font-weight-medium: var(--gfy-font-medium);
+  --gmkb-font-weight-semibold: var(--gfy-font-semibold);
+  --gmkb-font-weight-bold: var(--gfy-font-bold);
+  --gmkb-line-height-tight: var(--gfy-leading-tight);
+  --gmkb-line-height-normal: var(--gfy-leading-normal);
+  --gmkb-line-height-relaxed: var(--gfy-leading-relaxed);
+
+  /* Spacing */
+  --gmkb-space-1: var(--gfy-space-1);
+  --gmkb-space-2: var(--gfy-space-2);
+  --gmkb-space-3: var(--gfy-space-3);
+  --gmkb-space-4: var(--gfy-space-4);
+  --gmkb-space-5: var(--gfy-space-5);
+  --gmkb-space-6: var(--gfy-space-6);
+  --gmkb-space-8: var(--gfy-space-8);
+  --gmkb-space-10: var(--gfy-space-10);
+  --gmkb-space-12: var(--gfy-space-12);
+  --gmkb-space-16: var(--gfy-space-16);
+
+  /* Borders */
+  --gmkb-radius-sm: var(--gfy-radius-base);
+  --gmkb-radius-base: var(--gfy-radius-lg);
+  --gmkb-radius-md: var(--gfy-radius-xl);
+  --gmkb-radius-lg: var(--gfy-radius-2xl);
+  --gmkb-radius-xl: var(--gfy-radius-3xl);
+  --gmkb-radius-full: var(--gfy-radius-full);
+
+  /* Shadows */
+  --gmkb-shadow-sm: var(--gfy-shadow-xs);
+  --gmkb-shadow-base: var(--gfy-shadow-sm);
+  --gmkb-shadow-md: var(--gfy-shadow-md);
+  --gmkb-shadow-lg: var(--gfy-shadow-lg);
+  --gmkb-shadow-xl: var(--gfy-shadow-xl);
+
+  /* Transitions */
+  --gmkb-transition-fast: var(--gfy-transition-fast);
+  --gmkb-transition-base: var(--gfy-transition-base);
+  --gmkb-transition-slow: var(--gfy-transition-slow);
+
+  /* Z-Index */
+  --gmkb-z-dropdown: var(--gfy-z-dropdown);
+  --gmkb-z-sticky: var(--gfy-z-sticky);
+  --gmkb-z-modal-backdrop: var(--gfy-z-modal-backdrop);
+  --gmkb-z-modal: var(--gfy-z-modal);
+  --gmkb-z-tooltip: var(--gfy-z-tooltip);
+
+  /* ---------------------------------------------------------------------------
+     PODCAST PROSPECTOR ALIASES
+     Prefix: --prospector-*
+     --------------------------------------------------------------------------- */
+
+  /* Primary Colors */
+  --prospector-primary-50: var(--gfy-info-50);
+  --prospector-primary-100: var(--gfy-info-100);
+  --prospector-primary-200: var(--gfy-info-200);
+  --prospector-primary-300: var(--gfy-info-500);
+  --prospector-primary-400: var(--gfy-info-500);
+  --prospector-primary-500: var(--gfy-info-500);
+  --prospector-primary-600: var(--gfy-info-600);
+  --prospector-primary-700: var(--gfy-info-700);
+  --prospector-primary-800: var(--gfy-primary-800);
+  --prospector-primary-900: var(--gfy-primary-900);
+
+  /* Neutral Colors */
+  --prospector-slate-50: var(--gfy-gray-50);
+  --prospector-slate-100: var(--gfy-gray-100);
+  --prospector-slate-200: var(--gfy-gray-200);
+  --prospector-slate-300: var(--gfy-gray-300);
+  --prospector-slate-400: var(--gfy-gray-400);
+  --prospector-slate-500: var(--gfy-gray-500);
+  --prospector-slate-600: var(--gfy-gray-600);
+  --prospector-slate-700: var(--gfy-gray-700);
+  --prospector-slate-800: var(--gfy-gray-800);
+  --prospector-slate-900: var(--gfy-gray-900);
+
+  /* Status Colors */
+  --prospector-success-50: var(--gfy-success-50);
+  --prospector-success-100: var(--gfy-success-100);
+  --prospector-success-500: var(--gfy-success);
+  --prospector-success-700: var(--gfy-success-700);
+  --prospector-warning-50: var(--gfy-warning-50);
+  --prospector-warning-100: var(--gfy-warning-100);
+  --prospector-warning-500: var(--gfy-warning);
+  --prospector-warning-700: var(--gfy-warning-700);
+  --prospector-error-50: var(--gfy-error-50);
+  --prospector-error-100: var(--gfy-error-100);
+  --prospector-error-500: var(--gfy-error);
+  --prospector-error-700: var(--gfy-error-700);
+
+  /* Spacing */
+  --prospector-space-xs: var(--gfy-space-1);
+  --prospector-space-sm: var(--gfy-space-2);
+  --prospector-space-md: var(--gfy-space-4);
+  --prospector-space-lg: var(--gfy-space-6);
+  --prospector-space-xl: var(--gfy-space-8);
+
+  /* Border Radius */
+  --prospector-radius-sm: var(--gfy-radius-base);
+  --prospector-radius-md: var(--gfy-radius-lg);
+  --prospector-radius-lg: var(--gfy-radius-xl);
+  --prospector-radius-xl: var(--gfy-radius-2xl);
+  --prospector-radius-full: var(--gfy-radius-full);
+
+  /* Shadows */
+  --prospector-shadow-sm: var(--gfy-shadow-xs);
+  --prospector-shadow-md: var(--gfy-shadow-md);
+  --prospector-shadow-lg: var(--gfy-shadow-lg);
+
+  /* Transitions */
+  --prospector-transition-fast: var(--gfy-transition-fast);
+  --prospector-transition-base: var(--gfy-transition-base);
+  --prospector-transition-slow: var(--gfy-transition-slow);
+
+  /* Typography */
+  --prospector-font-family: var(--gfy-font-sans);
+  --prospector-font-size-xs: var(--gfy-text-xs);
+  --prospector-font-size-sm: var(--gfy-text-sm);
+  --prospector-font-size-base: var(--gfy-text-base);
+  --prospector-font-size-lg: var(--gfy-text-lg);
+  --prospector-font-size-xl: var(--gfy-text-xl);
+
+  /* ---------------------------------------------------------------------------
+     GUESTIFY THEME ALIASES
+     Prefix: Various legacy names
+     --------------------------------------------------------------------------- */
+
+  /* Brand Color Names (from app-navigation.css) */
+  --intelligence-blue: var(--gfy-primary-800);
+  --connection-green: var(--gfy-secondary-500);
+  --authority-gray: var(--gfy-gray-600);
+  --transformation-orange: var(--gfy-accent-500);
+  --insight-purple: var(--gfy-purple-500);
+  --success-teal: var(--gfy-teal-400);
+
+  /* Neutral Names */
+  --pure-white: var(--gfy-white);
+  --off-white: var(--gfy-off-white);
+  --light-gray: var(--gfy-gray-200);
+  --medium-gray: var(--gfy-gray-500);
+  --dark-gray: var(--gfy-gray-700);
+  --near-black: var(--gfy-near-black);
+
+  /* Common Names */
+  --border-color: var(--gfy-border-color);
+  --hover-bg: var(--gfy-gray-50);
+  --active-blue: var(--gfy-info-500);
+  --bg-white: var(--gfy-white);
+  --bg-light: var(--gfy-gray-50);
+  --bg-medium: var(--gfy-gray-100);
+  --text-dark: var(--gfy-gray-900);
+  --text-light: var(--gfy-gray-600);
+  --text-muted: var(--gfy-gray-400);
+
+  /* ---------------------------------------------------------------------------
+     SHOWAUTHORITY ALIASES
+     Prefix: --cal-* (from calendar.css), --pit-*
+     --------------------------------------------------------------------------- */
+
+  /* Calendar Colors */
+  --cal-primary: var(--gfy-info-500);
+  --cal-primary-hover: var(--gfy-info-600);
+  --cal-danger: var(--gfy-error);
+  --cal-success: var(--gfy-success);
+  --cal-warning: var(--gfy-warning);
+  --cal-border: var(--gfy-border-color);
+  --cal-bg: var(--gfy-white);
+  --cal-text: var(--gfy-gray-800);
+  --cal-radius: var(--gfy-radius-lg);
+
+  /* ---------------------------------------------------------------------------
+     EMAIL OUTREACH ALIASES
+     Note: Tailwind config will reference --gfy-* variables directly
+     --------------------------------------------------------------------------- */
+
+  /* For any custom CSS in the plugin */
+  --outreach-primary: var(--gfy-info-500);
+  --outreach-primary-hover: var(--gfy-info-600);
+  --outreach-secondary: var(--gfy-gray-500);
+  --outreach-accent: var(--gfy-accent-500);
+  --outreach-success: var(--gfy-success);
+  --outreach-warning: var(--gfy-warning);
+  --outreach-error: var(--gfy-error);
+
+  /* ---------------------------------------------------------------------------
+     AI MODULE ALIASES (mk4 AI tools)
+     Prefix: --gmkb-ai-*
+     --------------------------------------------------------------------------- */
+  --gmkb-ai-primary: var(--gfy-info-500);
+  --gmkb-ai-primary-hover: var(--gfy-info-600);
+  --gmkb-ai-text: var(--gfy-gray-800);
+  --gmkb-ai-text-secondary: var(--gfy-gray-600);
+  --gmkb-ai-bg: var(--gfy-white);
+  --gmkb-ai-bg-secondary: var(--gfy-gray-50);
+  --gmkb-ai-border: var(--gfy-gray-200);
+  --gmkb-ai-success: var(--gfy-success);
+  --gmkb-ai-error: var(--gfy-error);
+
+  /* ---------------------------------------------------------------------------
+     GENERATOR ALIASES (mk4 content generators)
+     Prefix: --mkcg-*
+     --------------------------------------------------------------------------- */
+  --mkcg-primary: var(--gfy-info-500);
+  --mkcg-primary-light: var(--gfy-info-400);
+  --mkcg-primary-dark: var(--gfy-info-600);
+  --mkcg-secondary: var(--gfy-accent-500);
+  --mkcg-secondary-light: var(--gfy-accent-400);
+  --mkcg-secondary-dark: var(--gfy-accent-600);
+  --mkcg-text-primary: var(--gfy-gray-800);
+  --mkcg-text-secondary: var(--gfy-gray-600);
+  --mkcg-text-tertiary: var(--gfy-gray-500);
+  --mkcg-text-light: var(--gfy-gray-400);
+  --mkcg-bg-primary: var(--gfy-white);
+  --mkcg-bg-secondary: var(--gfy-gray-50);
+  --mkcg-bg-tertiary: var(--gfy-gray-100);
+  --mkcg-border: var(--gfy-gray-200);
+  --mkcg-success: var(--gfy-success);
+  --mkcg-warning: var(--gfy-warning);
+  --mkcg-error: var(--gfy-error);
+  --mkcg-info: var(--gfy-info);
+}
+
+/* ==========================================================================
+   DARK MODE SUPPORT
+   Using CSS media query for automatic switching
+   ========================================================================== */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Override core colors for dark mode */
+    --gfy-gray-50: #1e293b;
+    --gfy-gray-100: #334155;
+    --gfy-gray-200: #475569;
+    --gfy-gray-300: #64748b;
+    --gfy-gray-400: #94a3b8;
+    --gfy-gray-500: #cbd5e1;
+    --gfy-gray-600: #e2e8f0;
+    --gfy-gray-700: #f1f5f9;
+    --gfy-gray-800: #f8fafc;
+    --gfy-gray-900: #ffffff;
+
+    /* Dark backgrounds */
+    --gfy-white: #0f172a;
+    --gfy-off-white: #1e293b;
+    --gfy-near-black: #f8fafc;
+
+    /* Adjust semantic colors for dark mode */
+    --gfy-border-color: var(--gfy-gray-200);
+
+    /* Shadows need adjustment for dark mode */
+    --gfy-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+    --gfy-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+    --gfy-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* ==========================================================================
+   UTILITY: Force Light Mode
+   Add .gfy-light-mode class to override dark mode detection
+   ========================================================================== */
+.gfy-light-mode {
+  --gfy-gray-50: #f8fafc;
+  --gfy-gray-100: #f1f5f9;
+  --gfy-gray-200: #e2e8f0;
+  --gfy-gray-300: #cbd5e1;
+  --gfy-gray-400: #94a3b8;
+  --gfy-gray-500: #64748b;
+  --gfy-gray-600: #475569;
+  --gfy-gray-700: #334155;
+  --gfy-gray-800: #1e293b;
+  --gfy-gray-900: #0f172a;
+  --gfy-white: #ffffff;
+  --gfy-off-white: #F7FAFC;
+  --gfy-near-black: #1A202C;
+}
