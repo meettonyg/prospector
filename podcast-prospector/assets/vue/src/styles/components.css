@@ -1,90 +1,22 @@
 /* ==============================================
    PODCAST PROSPECTOR - BEM COMPONENT STYLES
    ==============================================
-   
+
+   UNIFIED GUESTIFY DESIGN SYSTEM:
+   All --prospector-* tokens are defined in guestify-tokens.css
+   which maps them to the unified --gfy-* system.
+
    BEM Naming Convention:
    - Block: .prospector-{block}
    - Element: .prospector-{block}__{element}
    - Modifier: .prospector-{block}--{modifier} or .prospector-{block}__{element}--{modifier}
-   
+
+   NOTE: Token definitions have been removed from this file.
+   They are now centralized in:
+   - /assets/css/guestify-tokens.css (authoritative source)
+   - This ensures visual consistency across all Guestify plugins.
+
    ============================================== */
-
-/* ==============================================
-   DESIGN TOKENS (CSS Variables)
-   ============================================== */
-:root {
-  /* Primary Colors */
-  --prospector-primary-50: #f0f9ff;
-  --prospector-primary-100: #e0f2fe;
-  --prospector-primary-200: #bae6fd;
-  --prospector-primary-300: #7dd3fc;
-  --prospector-primary-400: #38bdf8;
-  --prospector-primary-500: #0ea5e9;
-  --prospector-primary-600: #0284c7;
-  --prospector-primary-700: #0369a1;
-  --prospector-primary-800: #075985;
-  --prospector-primary-900: #0c4a6e;
-
-  /* Neutral Colors */
-  --prospector-slate-50: #f8fafc;
-  --prospector-slate-100: #f1f5f9;
-  --prospector-slate-200: #e2e8f0;
-  --prospector-slate-300: #cbd5e1;
-  --prospector-slate-400: #94a3b8;
-  --prospector-slate-500: #64748b;
-  --prospector-slate-600: #475569;
-  --prospector-slate-700: #334155;
-  --prospector-slate-800: #1e293b;
-  --prospector-slate-900: #0f172a;
-
-  /* Status Colors */
-  --prospector-success-50: #ecfdf5;
-  --prospector-success-100: #d1fae5;
-  --prospector-success-500: #10b981;
-  --prospector-success-700: #047857;
-  
-  --prospector-warning-50: #fffbeb;
-  --prospector-warning-100: #fef3c7;
-  --prospector-warning-500: #f59e0b;
-  --prospector-warning-700: #b45309;
-  
-  --prospector-error-50: #fef2f2;
-  --prospector-error-100: #fee2e2;
-  --prospector-error-500: #ef4444;
-  --prospector-error-700: #b91c1c;
-
-  /* Spacing */
-  --prospector-space-xs: 0.25rem;
-  --prospector-space-sm: 0.5rem;
-  --prospector-space-md: 1rem;
-  --prospector-space-lg: 1.5rem;
-  --prospector-space-xl: 2rem;
-
-  /* Border Radius */
-  --prospector-radius-sm: 0.25rem;
-  --prospector-radius-md: 0.5rem;
-  --prospector-radius-lg: 0.75rem;
-  --prospector-radius-xl: 1rem;
-  --prospector-radius-full: 9999px;
-
-  /* Shadows */
-  --prospector-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --prospector-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --prospector-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-
-  /* Typography */
-  --prospector-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --prospector-font-size-xs: 0.75rem;
-  --prospector-font-size-sm: 0.875rem;
-  --prospector-font-size-base: 1rem;
-  --prospector-font-size-lg: 1.125rem;
-  --prospector-font-size-xl: 1.25rem;
-
-  /* Transitions */
-  --prospector-transition-fast: 150ms ease;
-  --prospector-transition-base: 200ms ease;
-  --prospector-transition-slow: 300ms ease;
-}
 
 /* ==============================================
    BLOCK: ROOT

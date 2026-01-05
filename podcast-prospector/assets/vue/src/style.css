@@ -1,18 +1,28 @@
 /* ==============================================
    PODCAST PROSPECTOR - MAIN STYLES
    ==============================================
-   
+
+   UNIFIED GUESTIFY DESIGN SYSTEM:
+   All design tokens are defined in guestify-tokens.css which provides:
+   - Core --gfy-* unified tokens
+   - --prospector-* alias mappings for this plugin
+   - Cross-plugin visual consistency
+
    BEM-based CSS architecture for WordPress plugin.
    No Tailwind dependency - pure CSS with design tokens.
-   
+
    Architecture:
-   1. Google Fonts import
-   2. BEM Components (./styles/components.css)
-   3. WordPress admin reset
-   4. Backwards compatibility aliases
-   5. Utility classes
-   
+   1. Unified Guestify Design Tokens (../../css/guestify-tokens.css)
+   2. Google Fonts import
+   3. BEM Components (./styles/components.css)
+   4. WordPress admin reset
+   5. Backwards compatibility aliases
+   6. Utility classes
+
    ============================================== */
+
+/* Unified Guestify Design Tokens - MUST be imported first */
+@import '../../css/guestify-tokens.css';
 
 /* Google Fonts - Inter */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
