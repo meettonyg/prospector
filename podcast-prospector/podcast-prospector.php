@@ -140,6 +140,7 @@ final class Podcast_Prospector {
         require_once $includes_dir . 'class-impression-queue.php';
         require_once $includes_dir . 'class-vue-assets.php';
         require_once $includes_dir . 'class-user-shortcodes.php';
+        require_once $includes_dir . 'class-home-widget-shortcode.php';
 
         // Initialize core instances
         $this->settings = Podcast_Prospector_Settings::get_instance();
