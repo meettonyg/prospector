@@ -142,6 +142,11 @@ final class Podcast_Prospector {
         require_once $includes_dir . 'class-user-shortcodes.php';
         require_once $includes_dir . 'class-home-widget-shortcode.php';
 
+        // Agency Integration (Guestify Core multi-tenant management)
+        if (file_exists($includes_dir . 'class-agency-bridge.php')) {
+            require_once $includes_dir . 'class-agency-bridge.php';
+        }
+
         // Initialize core instances
         $this->settings = Podcast_Prospector_Settings::get_instance();
         $this->logger = Podcast_Prospector_Logger::get_instance();
