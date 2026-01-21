@@ -132,12 +132,30 @@ export const useSearchStore = defineStore('search', {
         
         // Taddy - Podcast Series (byadvancedpodcast)
         if (response.data?.data?.searchForTerm?.podcastSeries) {
-          results = response.data.data.searchForTerm.podcastSeries
+          // Normalize podcast series data to match expected field names
+          results = response.data.data.searchForTerm.podcastSeries.map(podcast => ({
+            ...podcast,
+            // Map Taddy field names to expected component field names
+            image: podcast.imageUrl || '',
+            artwork: podcast.imageUrl || '',
+            title: podcast.name || 'Untitled Podcast',
+            author: podcast.authorName || ''
+          }))
           console.log('[SearchStore] Found Taddy podcastSeries:', results.length)
         }
         // Taddy - Podcast Episodes (byadvancedepisode)
         else if (response.data?.data?.searchForTerm?.podcastEpisodes) {
-          results = response.data.data.searchForTerm.podcastEpisodes
+          // Normalize episode data to include image at top level from podcastSeries
+          results = response.data.data.searchForTerm.podcastEpisodes.map(episode => ({
+            ...episode,
+            // Extract image from podcastSeries for display components
+            image: episode.podcastSeries?.imageUrl || '',
+            artwork: episode.podcastSeries?.imageUrl || '',
+            // Use episode name as title, keep podcast info accessible
+            title: episode.name || 'Untitled Episode',
+            // Extract author from podcastSeries
+            author: episode.podcastSeries?.authorName || ''
+          }))
           console.log('[SearchStore] Found Taddy podcastEpisodes:', results.length)
         }
         
