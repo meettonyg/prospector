@@ -21,9 +21,9 @@ app.provide('config', config)
 app.mount('#prospector-app')
 
 // Initialize from URL parameters
-const initFromUrlParams = () => {
+const initFromUrlParams = (piniaInstance) => {
   const params = new URLSearchParams(window.location.search)
-  const searchStore = useSearchStore()
+  const searchStore = useSearchStore(piniaInstance)
 
   // Valid tab values mapped to their channels
   const tabToChannel = {
@@ -55,7 +55,7 @@ const initFromUrlParams = () => {
   }
 }
 
-initFromUrlParams()
+initFromUrlParams(pinia)
 
 // Log initialization
 console.log('Podcast Prospector Vue app initialized', {
