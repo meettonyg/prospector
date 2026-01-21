@@ -132,26 +132,53 @@ export const useSearchStore = defineStore('search', {
         
         // Taddy - Podcast Series (byadvancedpodcast)
         if (response.data?.data?.searchForTerm?.podcastSeries) {
-          results = response.data.data.searchForTerm.podcastSeries
+          // Normalize podcast series data to match expected field names
+          results = response.data.data.searchForTerm.podcastSeries.map(podcast => ({
+            ...podcast,
+            // Map Taddy field names to expected component field names
+            image: podcast.imageUrl || '',
+            artwork: podcast.imageUrl || '',
+            title: podcast.name || 'Untitled Podcast',
+            author: podcast.authorName || ''
+          }))
           console.log('[SearchStore] Found Taddy podcastSeries:', results.length)
         }
         // Taddy - Podcast Episodes (byadvancedepisode)
         else if (response.data?.data?.searchForTerm?.podcastEpisodes) {
-          results = response.data.data.searchForTerm.podcastEpisodes
+          // Normalize episode data to include image at top level from podcastSeries
+          results = response.data.data.searchForTerm.podcastEpisodes.map(episode => ({
+            ...episode,
+            // Extract image from podcastSeries for display components
+            image: episode.podcastSeries?.imageUrl || '',
+            artwork: episode.podcastSeries?.imageUrl || '',
+            // Use episode name as title, keep podcast info accessible
+            title: episode.name || 'Untitled Episode',
+            // Extract author from podcastSeries
+            author: episode.podcastSeries?.authorName || ''
+          }))
           console.log('[SearchStore] Found Taddy podcastEpisodes:', results.length)
         }
         
         // =====================================================
         // PODCASTINDEX API
         // =====================================================
-        
+
         // PodcastIndex - search by person (returns items array)
         else if (response.data?.items) {
-          results = response.data.items
+          // Normalize PodcastIndex episode data - image is in feedImage, not image
+          results = response.data.items.map(item => ({
+            ...item,
+            // Map feedImage to image/artwork for display components
+            image: item.feedImage || '',
+            artwork: item.feedImage || '',
+            // feedTitle is the podcast name, title is the episode title
+            author: item.feedTitle || ''
+          }))
           console.log('[SearchStore] Found PodcastIndex items (byperson):', results.length)
         }
         // PodcastIndex - search by term/title (returns feeds array)
         else if (response.data?.feeds) {
+          // Feeds already have correct field names (image, artwork, title, author)
           results = response.data.feeds
           console.log('[SearchStore] Found PodcastIndex feeds (bytitle):', results.length)
         }
@@ -159,10 +186,18 @@ export const useSearchStore = defineStore('search', {
         // =====================================================
         // YOUTUBE API
         // =====================================================
-        
+
         // YouTube - returns data.items
         else if (response.data?.data?.items) {
-          results = response.data.data.items
+          // Normalize YouTube data - image is thumbnailUrl, author is channelTitle
+          results = response.data.data.items.map(item => ({
+            ...item,
+            // Map thumbnailUrl to image/artwork for display components
+            image: item.thumbnailUrl || '',
+            artwork: item.thumbnailUrl || '',
+            // Map channelTitle to author
+            author: item.channelTitle || ''
+          }))
           console.log('[SearchStore] Found YouTube items:', results.length)
         }
         
