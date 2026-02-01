@@ -267,6 +267,8 @@ class Podcast_Prospector_Guest_Intel_Import_Handler {
     /**
      * Create opportunity record.
      *
+     * Uses PIT_Opportunity_Repository for proper agency context stamping.
+     *
      * @param int    $podcast_id  Podcast ID.
      * @param int    $user_id     User ID.
      * @param string $search_type Search type used (byperson, bytitle, etc.).
@@ -274,17 +276,13 @@ class Podcast_Prospector_Guest_Intel_Import_Handler {
      * @return int|false Opportunity ID or false on failure.
      */
     public function create_opportunity( int $podcast_id, int $user_id, string $search_type, string $search_term ) {
-        global $wpdb;
-        $table = $wpdb->prefix . 'pit_opportunities';
-
-        // Get the default pipeline stage (first stage by sort_order)
         $default_stage = $this->get_default_pipeline_stage( $user_id );
 
         $insert_data = [
             'user_id'     => $user_id,
             'podcast_id'  => $podcast_id,
-            'status'      => $default_stage['stage_key'], // For backward compatibility
-            'stage_id'    => $default_stage['id'],        // Foreign key reference
+            'status'      => $default_stage['stage_key'],
+            'stage_id'    => $default_stage['id'],
             'priority'    => 'medium',
             'source'      => $search_type,
             'notes'       => sprintf(
@@ -293,21 +291,18 @@ class Podcast_Prospector_Guest_Intel_Import_Handler {
                 $search_type,
                 $search_term
             ),
-            'created_at'  => current_time( 'mysql' ),
-            'updated_at'  => current_time( 'mysql' ),
         ];
 
-        $result = $wpdb->insert( $table, $insert_data );
+        $opportunity_id = PIT_Opportunity_Repository::create( $insert_data );
 
-        if ( false === $result ) {
-            $this->log_error( 'Database insert failed for opportunity', [
+        if ( ! $opportunity_id ) {
+            $this->log_error( 'Repository insert failed for opportunity', [
                 'podcast_id' => $podcast_id,
-                'error'      => $wpdb->last_error,
             ] );
             return false;
         }
 
-        return $wpdb->insert_id;
+        return $opportunity_id;
     }
 
     /**
