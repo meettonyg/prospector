@@ -181,6 +181,8 @@ const handleImageError = (e) => {
   padding: var(--prospector-space-md);
   cursor: pointer;
   transition: all var(--prospector-transition-fast);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .prospector-result-grid__item:hover {
