@@ -78,6 +78,10 @@
   background: var(--prospector-slate-50);
 }
 
+.prospector-card--results {
+  overflow: visible;
+}
+
 .prospector-card__header {
   padding: var(--prospector-space-lg);
   border-bottom: 1px solid var(--prospector-slate-100);
