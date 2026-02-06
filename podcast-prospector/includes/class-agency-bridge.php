@@ -105,7 +105,9 @@ class Podcast_Prospector_Agency_Bridge {
             ));
 
             if ($updated > 0) {
-                error_log("Prospector Agency Bridge: Transferred {$updated} records from client {$client_id} to user {$target_user_id}");
+                if ( class_exists( 'Podcast_Prospector_Logger' ) ) {
+                    Podcast_Prospector_Logger::get_instance()->info( "Agency Bridge: Transferred {$updated} records from client {$client_id} to user {$target_user_id}" );
+                }
             }
         }
 

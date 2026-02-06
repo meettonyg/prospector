@@ -182,8 +182,9 @@ class Podcast_Prospector_User_Shortcodes {
 		try {
 			$date_obj = new DateTime( $last_renewal_date, wp_timezone() );
 		} catch ( Exception $e ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( 'Podcast Prospector: Failed to parse last renewal date: ' . $e->getMessage() );
+			if ( class_exists( 'Podcast_Prospector_Logger' ) ) {
+				Podcast_Prospector_Logger::get_instance()->error( 'Failed to parse last renewal date: ' . $e->getMessage() );
+			}
 			return '';
 		}
 
