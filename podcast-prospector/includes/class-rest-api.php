@@ -485,7 +485,9 @@ class Podcast_Prospector_REST_API {
                     'has_opportunity'    => (bool) $opportunity,
                     'opportunity_id'     => $opportunity ? (int) $opportunity->id : null,
                     'opportunity_status' => $opportunity ? $opportunity->status : null,
-                    'has_engagement'     => $opportunity ? ! empty( $opportunity->engagement_id ) : false,
+                    'has_engagement'     => $opportunity
+                        ? ( ! empty( $opportunity->engagement_id ) || 'aired' === $opportunity->status )
+                        : false,
                     'crm_url'            => $opportunity
                         ? home_url( "/app/interview/{$opportunity->id}/" )
                         : home_url( "/app/podcasts/{$podcast->slug}/" ),
@@ -559,8 +561,8 @@ class Podcast_Prospector_REST_API {
             );
         }
 
-        // Check if already linked
-        if ( ! empty( $opportunity->engagement_id ) ) {
+        // Check if already linked (engagement_id set OR status already 'aired')
+        if ( ! empty( $opportunity->engagement_id ) || 'aired' === $opportunity->status ) {
             return new WP_Error(
                 'already_linked',
                 __( 'This opportunity already has an episode linked.', 'podcast-prospector' ),

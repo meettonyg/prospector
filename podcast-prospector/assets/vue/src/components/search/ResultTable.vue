@@ -173,7 +173,10 @@ const emit = defineEmits(['result-click', 'toggle-select', 'import', 'link-episo
 
 const getHydration = (index) => props.hydrationMap[index]
 const isTracked = (index) => props.hydrationMap[index]?.tracked
-const hasEngagement = (index) => props.hydrationMap[index]?.has_engagement
+const hasEngagement = (index) => {
+  const h = props.hydrationMap[index]
+  return h?.has_engagement || h?.opportunity_status === 'aired'
+}
 const isImporting = (index) => props.importingIndices.includes(index)
 const isLinking = (index) => props.linkingIndices.includes(index)
 
