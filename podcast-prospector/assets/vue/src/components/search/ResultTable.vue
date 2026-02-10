@@ -52,8 +52,14 @@
               <span class="prospector-result-table__title">
                 {{ result.title }}
               </span>
-              <span 
-                v-if="isTracked(index)" 
+              <span
+                v-if="isTracked(index) && hasEngagement(index)"
+                class="prospector-result-table__tracked-badge prospector-result-table__tracked-badge--aired"
+              >
+                Aired
+              </span>
+              <span
+                v-else-if="isTracked(index)"
                 class="prospector-result-table__tracked-badge"
               >
                 In Pipeline
@@ -86,6 +92,7 @@
 
           <!-- Action -->
           <td class="prospector-result-table__td prospector-result-table__td--action">
+            <!-- Not tracked: Import -->
             <button
               v-if="!isTracked(index)"
               @click="$emit('import', { result, index })"
@@ -96,6 +103,18 @@
               <LoadingSpinner v-else size="xs" />
               <span>Import</span>
             </button>
+            <!-- Tracked but no episode: Link Episode -->
+            <button
+              v-else-if="!hasEngagement(index)"
+              @click="$emit('link-episode', { result, index })"
+              :disabled="isLinking(index)"
+              class="prospector-result-table__action-btn prospector-result-table__action-btn--link"
+            >
+              <LinkIcon v-if="!isLinking(index)" class="prospector-result-table__action-icon" />
+              <LoadingSpinner v-else size="xs" />
+              <span>Link</span>
+            </button>
+            <!-- Tracked and linked: View -->
             <a
               v-else
               :href="getHydration(index)?.crm_url"
@@ -113,9 +132,10 @@
 
 <script setup>
 import { computed } from 'vue'
-import { 
-  ArrowDownTrayIcon, 
+import {
+  ArrowDownTrayIcon,
   EyeIcon,
+  LinkIcon,
   MicrophoneIcon,
   PresentationChartBarIcon
 } from '@heroicons/vue/24/outline'
@@ -139,17 +159,23 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
+  linkingIndices: {
+    type: Array,
+    default: () => []
+  },
   searchMode: {
     type: String,
     default: 'byperson'
   }
 })
 
-const emit = defineEmits(['result-click', 'toggle-select', 'import'])
+const emit = defineEmits(['result-click', 'toggle-select', 'import', 'link-episode'])
 
 const getHydration = (index) => props.hydrationMap[index]
 const isTracked = (index) => props.hydrationMap[index]?.tracked
+const hasEngagement = (index) => props.hydrationMap[index]?.has_engagement
 const isImporting = (index) => props.importingIndices.includes(index)
+const isLinking = (index) => props.linkingIndices.includes(index)
 
 const allSelected = computed(() => {
   const selectableResults = props.results.filter((_, i) => !isTracked(i))
@@ -315,6 +341,11 @@ const handleImageError = (e) => {
   border-radius: var(--prospector-radius-sm);
 }
 
+.prospector-result-table__tracked-badge--aired {
+  background: var(--prospector-primary-100, #dbeafe);
+  color: var(--prospector-primary-700, #1d4ed8);
+}
+
 .prospector-result-table__type {
   display: flex;
   align-items: center;
@@ -378,6 +409,17 @@ const handleImageError = (e) => {
 .prospector-result-table__action-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.prospector-result-table__action-btn--link {
+  color: var(--prospector-primary-500);
+  background: var(--prospector-primary-50, #eff6ff);
+  border-color: var(--prospector-primary-200, #bfdbfe);
+}
+
+.prospector-result-table__action-btn--link:hover:not(:disabled) {
+  background: var(--prospector-primary-100, #dbeafe);
+  border-color: var(--prospector-primary-500);
 }
 
 .prospector-result-table__action-btn--view {

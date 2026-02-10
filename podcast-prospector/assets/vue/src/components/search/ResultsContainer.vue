@@ -48,10 +48,12 @@
         :results="results"
         :hydration-map="hydrationMap"
         :importing-indices="importingIndices"
+        :linking-indices="linkingIndices"
         :search-mode="searchMode"
         @result-click="$emit('result-click', $event)"
         @toggle-select="$emit('toggle-select', $event)"
         @import="$emit('import', $event)"
+        @link-episode="$emit('link-episode', $event)"
       />
 
       <!-- Table view -->
@@ -60,10 +62,12 @@
         :results="results"
         :hydration-map="hydrationMap"
         :importing-indices="importingIndices"
+        :linking-indices="linkingIndices"
         :search-mode="searchMode"
         @result-click="$emit('result-click', $event)"
         @toggle-select="$emit('toggle-select', $event)"
         @import="$emit('import', $event)"
+        @link-episode="$emit('link-episode', $event)"
       />
     </div>
   </div>
@@ -112,13 +116,17 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
+  linkingIndices: {
+    type: Array,
+    default: () => []
+  },
   searchMode: {
     type: String,
     default: 'byperson'
   }
 })
 
-defineEmits(['result-click', 'toggle-select', 'import', 'retry', 'clear-filters'])
+defineEmits(['result-click', 'toggle-select', 'import', 'link-episode', 'retry', 'clear-filters'])
 
 const hasResults = computed(() => props.results.length > 0)
 </script>

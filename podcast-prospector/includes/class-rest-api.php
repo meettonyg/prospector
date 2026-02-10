@@ -177,6 +177,30 @@ class Podcast_Prospector_REST_API {
             'args'                => $this->get_location_search_args(),
         ] );
 
+        // Link episode to existing opportunity
+        register_rest_route( self::NAMESPACE, '/link-episode', [
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => [ $this, 'handle_link_episode' ],
+            'permission_callback' => [ $this, 'check_import_permission' ],
+            'args'                => [
+                'opportunity_id' => [
+                    'required' => true,
+                    'type'     => 'integer',
+                    'minimum'  => 1,
+                ],
+                'result' => [
+                    'required'    => true,
+                    'type'        => 'string',
+                    'description' => __( 'JSON-encoded search result with episode data', 'podcast-prospector' ),
+                ],
+                'search_type' => [
+                    'required' => false,
+                    'type'     => 'string',
+                    'default'  => 'byperson',
+                ],
+            ],
+        ] );
+
         // Sponsored listings endpoints
         register_rest_route( self::NAMESPACE, '/sponsored/click', [
             'methods'             => WP_REST_Server::CREATABLE,
@@ -446,7 +470,7 @@ class Podcast_Prospector_REST_API {
             if ( $podcast ) {
                 // Check for active opportunity
                 $opportunity = $wpdb->get_row( $wpdb->prepare(
-                    "SELECT id, status, priority FROM $opps_table
+                    "SELECT id, status, priority, engagement_id FROM $opps_table
                      WHERE podcast_id = %d AND user_id = %d",
                     $podcast->id,
                     $user_id
@@ -461,6 +485,7 @@ class Podcast_Prospector_REST_API {
                     'has_opportunity'    => (bool) $opportunity,
                     'opportunity_id'     => $opportunity ? (int) $opportunity->id : null,
                     'opportunity_status' => $opportunity ? $opportunity->status : null,
+                    'has_engagement'     => $opportunity ? ! empty( $opportunity->engagement_id ) : false,
                     'crm_url'            => $opportunity
                         ? home_url( "/app/interview/{$opportunity->id}/" )
                         : home_url( "/app/podcasts/{$podcast->slug}/" ),
@@ -475,6 +500,7 @@ class Podcast_Prospector_REST_API {
                     'has_opportunity'    => false,
                     'opportunity_id'     => null,
                     'opportunity_status' => null,
+                    'has_engagement'     => false,
                     'crm_url'            => null,
                 ];
             }
@@ -488,6 +514,94 @@ class Podcast_Prospector_REST_API {
             'results'            => $results,
             'total_tracked'      => $tracked_count,
             'total_checked'      => count( $results ),
+        ], 200 );
+    }
+
+    /**
+     * Handle link-episode request.
+     *
+     * Links an episode from search results to an existing pipeline opportunity.
+     *
+     * @param WP_REST_Request $request Request object.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function handle_link_episode( WP_REST_Request $request ) {
+        global $wpdb;
+
+        $opportunity_id = (int) $request->get_param( 'opportunity_id' );
+        $result_json    = $request->get_param( 'result' );
+        $search_type    = sanitize_text_field( $request->get_param( 'search_type' ) ?? 'byperson' );
+        $user_id        = get_current_user_id();
+
+        // Decode the result JSON
+        $decoded = json_decode( stripslashes( $result_json ), true );
+        if ( ! $decoded || ! is_array( $decoded ) ) {
+            return new WP_Error(
+                'invalid_data',
+                __( 'Invalid result data.', 'podcast-prospector' ),
+                [ 'status' => 400 ]
+            );
+        }
+
+        // Validate opportunity exists and belongs to user
+        $opps_table = $wpdb->prefix . 'pit_opportunities';
+        $opportunity = $wpdb->get_row( $wpdb->prepare(
+            "SELECT id, podcast_id, engagement_id, status FROM $opps_table WHERE id = %d AND user_id = %d",
+            $opportunity_id,
+            $user_id
+        ) );
+
+        if ( ! $opportunity ) {
+            return new WP_Error(
+                'not_found',
+                __( 'Opportunity not found.', 'podcast-prospector' ),
+                [ 'status' => 404 ]
+            );
+        }
+
+        // Check if already linked
+        if ( ! empty( $opportunity->engagement_id ) ) {
+            return new WP_Error(
+                'already_linked',
+                __( 'This opportunity already has an episode linked.', 'podcast-prospector' ),
+                [ 'status' => 400 ]
+            );
+        }
+
+        // Extract episode data
+        $episode_data = $this->import_handler->extract_episode_data( $decoded, $search_type );
+
+        if ( ! $episode_data ) {
+            return new WP_Error(
+                'no_episode_data',
+                __( 'No episode data found in the search result.', 'podcast-prospector' ),
+                [ 'status' => 400 ]
+            );
+        }
+
+        // Link the episode
+        $link_result = $this->import_handler->link_episode_to_opportunity(
+            $opportunity_id,
+            (int) $opportunity->podcast_id,
+            $episode_data,
+            $user_id
+        );
+
+        if ( ! $link_result ) {
+            return new WP_Error(
+                'link_failed',
+                __( 'Failed to link episode to opportunity.', 'podcast-prospector' ),
+                [ 'status' => 500 ]
+            );
+        }
+
+        return new WP_REST_Response( [
+            'success'        => true,
+            'message'        => __( 'Episode linked successfully.', 'podcast-prospector' ),
+            'engagement_id'  => $link_result['engagement_id'],
+            'credit_id'      => $link_result['credit_id'],
+            'opportunity_id' => $opportunity_id,
+            'episode_title'  => $episode_data['title'],
         ], 200 );
     }
 

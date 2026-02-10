@@ -67,6 +67,22 @@ export default {
   },
 
   /**
+   * Link episode to existing pipeline opportunity
+   * @param {number} opportunityId - The opportunity ID to link to
+   * @param {Object} result - Raw search result object
+   * @param {string} searchType - Search type (byperson, byadvancedepisode, etc.)
+   * @returns {Promise<Object>} Link result
+   */
+  async linkEpisode(opportunityId, result, searchType) {
+    const response = await api.post('/link-episode', {
+      opportunity_id: opportunityId,
+      result: JSON.stringify(result),
+      search_type: searchType
+    })
+    return response.data
+  },
+
+  /**
    * Get user stats (search cap, membership)
    * @returns {Promise<Object>} User stats
    */

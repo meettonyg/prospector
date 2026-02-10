@@ -140,9 +140,11 @@
           :query="searchStore.query"
           :view-mode="searchStore.viewMode"
           :importing-indices="importingIndices"
+          :linking-indices="linkingIndices"
           :search-mode="searchStore.mode"
           @toggle-select="searchStore.toggleSelection"
           @import="handleSingleImport"
+          @link-episode="handleLinkEpisode"
           @retry="handleSearch"
           @clear-filters="handleClearFilters"
         />
@@ -212,6 +214,7 @@ const { success, error: showError } = useToast()
 const hasSearched = ref(false)
 const filtersVisible = ref(false)
 const importingIndices = ref([])
+const linkingIndices = ref([])
 const bulkImporting = ref(false)
 const selectedChannel = ref('podcasts')
 
@@ -292,6 +295,30 @@ const handleSingleImport = async ({ result, index }) => {
     showError('Import Failed', err.message || 'Could not add podcast to pipeline.')
   } finally {
     importingIndices.value = importingIndices.value.filter(i => i !== index)
+  }
+}
+
+const handleLinkEpisode = async ({ result, index }) => {
+  const hydration = searchStore.hydrationMap[index]
+  if (!hydration?.opportunity_id) return
+
+  linkingIndices.value.push(index)
+  try {
+    const response = await api.linkEpisode(
+      hydration.opportunity_id,
+      result,
+      searchStore.mode
+    )
+    if (response.success) {
+      success('Episode Linked', 'Episode linked and added to your portfolio.')
+      await searchStore.refreshHydration()
+    } else {
+      throw new Error(response.message || 'Could not link episode.')
+    }
+  } catch (err) {
+    showError('Link Failed', err.message || 'Could not link episode.')
+  } finally {
+    linkingIndices.value = linkingIndices.value.filter(i => i !== index)
   }
 }
 

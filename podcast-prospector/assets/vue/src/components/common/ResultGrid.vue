@@ -35,8 +35,14 @@
             {{ getTypeLabel(result) }}
           </span>
           <!-- Tracked Badge -->
-          <span 
-            v-if="isTracked(index)" 
+          <span
+            v-if="isTracked(index) && hasEngagement(index)"
+            class="prospector-result-grid__tracked-badge prospector-result-grid__tracked-badge--aired"
+          >
+            Aired
+          </span>
+          <span
+            v-else-if="isTracked(index)"
             class="prospector-result-grid__tracked-badge"
           >
             In Pipeline
@@ -54,7 +60,7 @@
         </p>
 
         <!-- Category/Genre Badge -->
-        <span 
+        <span
           v-if="result.category || result.genre"
           class="prospector-result-grid__category"
         >
@@ -62,8 +68,9 @@
         </span>
       </div>
 
-      <!-- Import Button -->
+      <!-- Action Buttons -->
       <div class="prospector-result-grid__action">
+        <!-- Not tracked: Import button -->
         <button
           v-if="!isTracked(index)"
           @click.stop="$emit('import', { result, index })"
@@ -74,6 +81,20 @@
           <ArrowDownTrayIcon v-if="!isImporting(index)" class="prospector-result-grid__import-icon" />
           <LoadingSpinner v-else size="sm" />
         </button>
+
+        <!-- Tracked but no episode linked: Link Episode button -->
+        <button
+          v-else-if="!hasEngagement(index)"
+          @click.stop="$emit('link-episode', { result, index })"
+          :disabled="isLinking(index)"
+          class="prospector-result-grid__link-btn"
+          title="Link this episode to your pipeline"
+        >
+          <LinkIcon v-if="!isLinking(index)" class="prospector-result-grid__link-icon" />
+          <LoadingSpinner v-else size="sm" />
+        </button>
+
+        <!-- Tracked and episode linked: View button -->
         <a
           v-else
           :href="getHydration(index)?.crm_url"
@@ -89,9 +110,10 @@
 </template>
 
 <script setup>
-import { 
-  ArrowDownTrayIcon, 
+import {
+  ArrowDownTrayIcon,
   EyeIcon,
+  LinkIcon,
   MicrophoneIcon,
   PresentationChartBarIcon
 } from '@heroicons/vue/24/outline'
@@ -115,17 +137,23 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
+  linkingIndices: {
+    type: Array,
+    default: () => []
+  },
   searchMode: {
     type: String,
     default: 'byperson'
   }
 })
 
-defineEmits(['result-click', 'toggle-select', 'import'])
+defineEmits(['result-click', 'toggle-select', 'import', 'link-episode'])
 
 const getHydration = (index) => props.hydrationMap[index]
 const isTracked = (index) => props.hydrationMap[index]?.tracked
+const hasEngagement = (index) => props.hydrationMap[index]?.has_engagement
 const isImporting = (index) => props.importingIndices.includes(index)
+const isLinking = (index) => props.linkingIndices.includes(index)
 
 const getTypeIcon = (result) => {
   if (result.type === 'youtube' || result.channel === 'youtube') return YouTubeIcon
@@ -267,6 +295,11 @@ const handleImageError = (e) => {
   border-radius: var(--prospector-radius-sm);
 }
 
+.prospector-result-grid__tracked-badge--aired {
+  background: var(--prospector-primary-100, #dbeafe);
+  color: var(--prospector-primary-700, #1d4ed8);
+}
+
 .prospector-result-grid__title {
   font-weight: 600;
   font-size: var(--prospector-font-size-sm);
@@ -333,6 +366,34 @@ const handleImageError = (e) => {
 }
 
 .prospector-result-grid__import-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.prospector-result-grid__link-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--prospector-space-sm);
+  background: var(--prospector-primary-50, #eff6ff);
+  border: 1px solid var(--prospector-primary-200, #bfdbfe);
+  border-radius: var(--prospector-radius-lg);
+  color: var(--prospector-primary-500);
+  cursor: pointer;
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-result-grid__link-btn:hover:not(:disabled) {
+  background: var(--prospector-primary-100, #dbeafe);
+  border-color: var(--prospector-primary-500);
+}
+
+.prospector-result-grid__link-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prospector-result-grid__link-icon {
   width: 1rem;
   height: 1rem;
 }

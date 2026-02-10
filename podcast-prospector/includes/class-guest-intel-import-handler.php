@@ -129,17 +129,40 @@ class Podcast_Prospector_Guest_Intel_Import_Handler {
             }
 
             $success_count++;
-            $details[] = [
+            $detail = [
                 'opportunity_id' => $opportunity_id,
                 'podcast_id'     => $podcast_id,
                 'podcast_name'   => $podcast_data['title'],
                 'status'         => 'potential',
+                'episode_linked' => false,
             ];
+
+            // Auto-link episode if episode-level data is available
+            $episode_data = $this->extract_episode_data( $decoded, $search_type );
+            if ( $episode_data ) {
+                $link_result = $this->link_episode_to_opportunity(
+                    $opportunity_id,
+                    $podcast_id,
+                    $episode_data,
+                    $current_user
+                );
+
+                if ( $link_result ) {
+                    $detail['episode_linked']  = true;
+                    $detail['engagement_id']   = $link_result['engagement_id'];
+                    $detail['credit_id']       = $link_result['credit_id'];
+                    $detail['status']          = 'aired';
+                    $detail['episode_title']   = $episode_data['title'];
+                }
+            }
+
+            $details[] = $detail;
 
             $this->log_info( 'Imported podcast to Guest Intel', [
                 'podcast_id'     => $podcast_id,
                 'opportunity_id' => $opportunity_id,
                 'title'          => $podcast_data['title'],
+                'episode_linked' => $detail['episode_linked'],
             ] );
         }
 
@@ -536,6 +559,163 @@ class Podcast_Prospector_Guest_Intel_Import_Handler {
             . '<span class="message-text">' . esc_html__( 'No podcasts were processed. Please check selection.', 'podcast-prospector' ) . '</span>'
             . '</div>'
             . '</div>';
+    }
+
+    /**
+     * Extract episode-level data from decoded search result.
+     *
+     * Returns null if the result is podcast-level only (e.g., bytitle/byadvancedpodcast feeds).
+     *
+     * @param array  $decoded     Decoded search result data.
+     * @param string $search_type Search type used.
+     * @return array|null Normalized episode data or null if no episode data.
+     */
+    public function extract_episode_data( array $decoded, string $search_type ): ?array {
+        $data = null;
+
+        if ( 'byperson' === $search_type && isset( $decoded['feedTitle'] ) && isset( $decoded['title'] ) ) {
+            // PodcastIndex episode result (has feedTitle for podcast + title for episode)
+            $date_raw = $decoded['datePublished'] ?? null;
+            $data = [
+                'title'       => $decoded['title'] ?? '',
+                'date'        => $date_raw ? gmdate( 'Y-m-d', (int) $date_raw ) : null,
+                'duration'    => ! empty( $decoded['duration'] ) ? (int) $decoded['duration'] : null,
+                'url'         => $decoded['link'] ?? '',
+                'guid'        => $decoded['guid'] ?? ( $decoded['enclosureUrl'] ?? '' ),
+                'description' => $decoded['description'] ?? '',
+                'audio_url'   => $decoded['enclosureUrl'] ?? '',
+                'thumbnail'   => $decoded['image'] ?? ( $decoded['feedImage'] ?? '' ),
+            ];
+
+        } elseif ( 'byadvancedepisode' === $search_type && isset( $decoded['podcastSeries'] ) ) {
+            // Taddy episode result (has podcastSeries nested object)
+            $date_raw = $decoded['datePublished'] ?? null;
+            $data = [
+                'title'       => $decoded['name'] ?? '',
+                'date'        => $date_raw ? gmdate( 'Y-m-d', (int) $date_raw ) : null,
+                'duration'    => ! empty( $decoded['duration'] ) ? (int) $decoded['duration'] : null,
+                'url'         => $decoded['episodeUrl'] ?? ( $decoded['websiteUrl'] ?? '' ),
+                'guid'        => $decoded['uuid'] ?? '',
+                'description' => $decoded['description'] ?? '',
+                'audio_url'   => $decoded['audioUrl'] ?? '',
+                'thumbnail'   => $decoded['imageUrl'] ?? '',
+            ];
+
+        } elseif ( 'byyoutube' === $search_type && ! empty( $decoded['videoId'] ) ) {
+            // YouTube video result
+            $data = [
+                'title'       => $decoded['title'] ?? '',
+                'date'        => ! empty( $decoded['publishedAt'] ) ? gmdate( 'Y-m-d', strtotime( $decoded['publishedAt'] ) ) : null,
+                'duration'    => ! empty( $decoded['duration'] ) ? (int) $decoded['duration'] : null,
+                'url'         => $decoded['url'] ?? '',
+                'guid'        => $decoded['videoId'] ?? '',
+                'description' => $decoded['description'] ?? '',
+                'audio_url'   => '',
+                'thumbnail'   => $decoded['thumbnailUrl'] ?? '',
+            ];
+        }
+
+        // For bytitle and byadvancedpodcast, data stays null (no episode info)
+
+        // Validate: must have at least a title to be useful
+        if ( $data && empty( $data['title'] ) ) {
+            return null;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Link an episode to an existing opportunity.
+     *
+     * Creates engagement record, links to opportunity, sets status to aired,
+     * creates guest profile and speaking credit for portfolio.
+     *
+     * @param int    $opportunity_id Opportunity ID.
+     * @param int    $podcast_id     Podcast ID.
+     * @param array  $episode_data   Normalized episode data from extract_episode_data().
+     * @param int    $user_id        User ID.
+     * @return array{engagement_id: int, credit_id: int|null}|false Result or false on failure.
+     */
+    public function link_episode_to_opportunity( int $opportunity_id, int $podcast_id, array $episode_data, int $user_id ) {
+        // 1. Create or find engagement record
+        $engagement_insert = [
+            'podcast_id'            => $podcast_id,
+            'engagement_type'       => 'podcast_interview',
+            'title'                 => sanitize_text_field( $episode_data['title'] ),
+            'engagement_date'       => $episode_data['date'] ?: null,
+            'episode_url'           => esc_url_raw( $episode_data['url'] ?? '' ) ?: null,
+            'episode_guid'          => sanitize_text_field( $episode_data['guid'] ?? '' ) ?: null,
+            'duration_seconds'      => $episode_data['duration'] ?: null,
+            'description'           => sanitize_textarea_field( $episode_data['description'] ?? '' ) ?: null,
+            'audio_url'             => esc_url_raw( $episode_data['audio_url'] ?? '' ) ?: null,
+            'thumbnail_url'         => esc_url_raw( $episode_data['thumbnail'] ?? '' ) ?: null,
+            'discovery_source'      => 'prospector_import',
+            'discovered_by_user_id' => $user_id,
+            'created_at'            => current_time( 'mysql' ),
+            'updated_at'            => current_time( 'mysql' ),
+        ];
+
+        $engagement_result = PIT_Engagement_Repository::upsert( $engagement_insert );
+        $engagement_id = $engagement_result['id'] ?? null;
+
+        if ( ! $engagement_id ) {
+            $this->log_error( 'Failed to create engagement for episode', [
+                'opportunity_id' => $opportunity_id,
+                'episode_title'  => $episode_data['title'],
+            ] );
+            return false;
+        }
+
+        // 2. Link engagement to opportunity
+        $linked = PIT_Opportunity_Repository::link_engagement( $opportunity_id, $engagement_id );
+
+        if ( ! $linked ) {
+            $this->log_error( 'Failed to link engagement to opportunity', [
+                'opportunity_id' => $opportunity_id,
+                'engagement_id'  => $engagement_id,
+            ] );
+            return false;
+        }
+
+        // 3. Update opportunity status to 'aired' and set air_date
+        $update_data = [ 'status' => 'aired' ];
+        if ( ! empty( $episode_data['date'] ) ) {
+            $update_data['air_date'] = $episode_data['date'];
+        }
+        PIT_Opportunity_Repository::update( $opportunity_id, $update_data );
+
+        // 4. Get or create user's guest profile
+        $user = get_userdata( $user_id );
+        $guest_id = null;
+        $credit_id = null;
+
+        if ( $user && class_exists( 'PIT_Guest_Repository' ) ) {
+            $guest_id = PIT_Guest_Repository::upsert( [
+                'full_name'  => $user->display_name,
+                'email'      => $user->user_email,
+                'first_name' => get_user_meta( $user_id, 'first_name', true ),
+                'last_name'  => get_user_meta( $user_id, 'last_name', true ),
+            ], $user_id );
+
+            // 5. Create speaking credit (links guest to engagement for portfolio)
+            if ( $guest_id && class_exists( 'PIT_Speaking_Credit_Repository' ) ) {
+                $credit_id = PIT_Speaking_Credit_Repository::link( $guest_id, $engagement_id, 'guest' );
+            }
+        }
+
+        $this->log_info( 'Linked episode to opportunity', [
+            'opportunity_id' => $opportunity_id,
+            'engagement_id'  => $engagement_id,
+            'guest_id'       => $guest_id,
+            'credit_id'      => $credit_id,
+            'episode_title'  => $episode_data['title'],
+        ] );
+
+        return [
+            'engagement_id' => $engagement_id,
+            'credit_id'     => $credit_id,
+        ];
     }
 
     /**
