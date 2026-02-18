@@ -18,7 +18,15 @@
 
       <!-- Content -->
       <div class="prospector-chat-result-card__content">
-        <h4 class="prospector-chat-result-card__title">{{ title }}</h4>
+        <div class="prospector-chat-result-card__header">
+          <h4 class="prospector-chat-result-card__title">{{ title }}</h4>
+          <span
+            v-if="isTracked"
+            class="prospector-chat-result-card__badge"
+          >
+            In Pipeline
+          </span>
+        </div>
         <p v-if="author" class="prospector-chat-result-card__author">{{ author }}</p>
 
         <div class="prospector-chat-result-card__actions">
@@ -33,11 +41,21 @@
           </a>
 
           <button
+            v-if="!isTracked"
             @click="$emit('import')"
             class="prospector-chat-result-card__import-btn"
           >
             + Add to Pipeline
           </button>
+          <a
+            v-else-if="hydration?.crm_url"
+            :href="hydration.crm_url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="prospector-chat-result-card__link"
+          >
+            View in Pipeline
+          </a>
         </div>
       </div>
     </div>
@@ -52,10 +70,16 @@ const props = defineProps({
   result: {
     type: Object,
     required: true
+  },
+  hydration: {
+    type: Object,
+    default: null
   }
 })
 
 defineEmits(['import'])
+
+const isTracked = computed(() => props.hydration?.tracked === true)
 
 const title = computed(() => {
   return props.result.title || props.result.name || props.result.feedTitle || 'Untitled'
@@ -122,6 +146,27 @@ const websiteUrl = computed(() => {
 .prospector-chat-result-card__content {
   flex: 1;
   min-width: 0;
+}
+
+.prospector-chat-result-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--prospector-space-sm);
+}
+
+.prospector-chat-result-card__badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.0625rem 0.375rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  color: var(--prospector-success-700, #15803d);
+  background: var(--prospector-success-50, #f0fdf4);
+  border: 1px solid var(--prospector-success-200, #bbf7d0);
+  border-radius: var(--prospector-radius-full);
 }
 
 .prospector-chat-result-card__title {

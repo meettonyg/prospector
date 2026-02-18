@@ -130,9 +130,10 @@ function extractValue(match, intent) {
 /**
  * Map intent to search parameters
  * @param {Object} detectedIntent - Result from detectIntent
- * @returns {Object} Search parameters for API
+ * @param {Object|null} lastSearchParams - Previous search params for context-dependent intents
+ * @returns {Object|null} Search parameters for API, or null if not a searchable intent
  */
-export function intentToSearchParams(detectedIntent) {
+export function intentToSearchParams(detectedIntent, lastSearchParams = null) {
   const { intent, extractedValue } = detectedIntent
 
   switch (intent) {
@@ -153,6 +154,13 @@ export function intentToSearchParams(detectedIntent) {
         search_term: extractedValue,
         search_type: 'bytitle'
       }
+
+    case 'showMore':
+      // Re-use previous search params — caller handles page increment
+      if (lastSearchParams) {
+        return { ...lastSearchParams }
+      }
+      return null
 
     default:
       return null
@@ -196,6 +204,12 @@ export function generateResponse(detectedIntent, resultCount = 0) {
     case 'showMore':
       return "Loading more results..."
 
+    case 'filter':
+      if (extractedValue) {
+        return `Got it — I'll filter results by "${extractedValue}".`
+      }
+      return "I'll apply that filter for you."
+
     case 'import':
       return "I'll add that to your pipeline right away."
 
@@ -208,33 +222,47 @@ export function generateResponse(detectedIntent, resultCount = 0) {
  * Get suggested follow-up actions based on context
  * @param {Object} detectedIntent - Detected intent
  * @param {boolean} hasResults - Whether there are results
+ * @param {Object} options - Additional context
+ * @param {boolean} options.hasMore - Whether more pages of results are available
+ * @param {boolean} options.hasActiveFilters - Whether any filters are currently set
  * @returns {Array} Array of suggested actions
  */
-export function getSuggestedActions(detectedIntent, hasResults = false) {
+export function getSuggestedActions(detectedIntent, hasResults = false, { hasMore = true, hasActiveFilters = false } = {}) {
   const { intent } = detectedIntent
 
   if (!hasResults && intent !== 'greeting' && intent !== 'help') {
-    return [
-      { label: 'Try a different search', action: 'newSearch' },
-      { label: 'Clear filters', action: 'clearFilters' }
+    const actions = [
+      { label: 'Try a different search', action: 'newSearch' }
     ]
+    if (hasActiveFilters) {
+      actions.push({ label: 'Clear filters', action: 'clearFilters' })
+    }
+    return actions
   }
 
   switch (intent) {
     case 'searchByPerson':
     case 'searchByTopic':
-      return [
-        { label: 'Show more results', action: 'loadMore' },
-        { label: 'Add filters', action: 'openFilters' },
-        { label: 'New search', action: 'newSearch' }
-      ]
+    case 'searchByTitle':
+    case 'showMore': {
+      const actions = []
+      if (hasMore) {
+        actions.push({ label: 'Show more results', action: 'loadMore' })
+      }
+      if (hasActiveFilters) {
+        actions.push({ label: 'Clear filters', action: 'clearFilters' })
+      } else {
+        actions.push({ label: 'Add filters', action: 'openFilters' })
+      }
+      actions.push({ label: 'New search', action: 'newSearch' })
+      return actions
+    }
 
     case 'greeting':
     case 'help':
       return [
         { label: 'Find podcasts by guest', action: 'examplePerson' },
-        { label: 'Search by topic', action: 'exampleTopic' },
-        { label: 'Browse categories', action: 'browseCategories' }
+        { label: 'Search by topic', action: 'exampleTopic' }
       ]
 
     default:
@@ -242,4 +270,53 @@ export function getSuggestedActions(detectedIntent, hasResults = false) {
         { label: 'Start a new search', action: 'newSearch' }
       ]
   }
+}
+
+/**
+ * Parse a natural-language filter value into a filterStore-compatible key/value pair.
+ * @param {string} value - Extracted filter value (e.g. "english", "us", "business")
+ * @returns {{ key: string, value: string } | null}
+ */
+export function parseFilterValue(value) {
+  if (!value) return null
+
+  const normalized = value.toLowerCase().trim()
+
+  // Language names → codes
+  const LANGUAGE_MAP = {
+    english: 'en', spanish: 'es', french: 'fr', german: 'de',
+    portuguese: 'pt', italian: 'it', japanese: 'ja', chinese: 'zh'
+  }
+  if (LANGUAGE_MAP[normalized]) {
+    return { key: 'language', value: LANGUAGE_MAP[normalized] }
+  }
+
+  // Country names / abbreviations → codes
+  const COUNTRY_MAP = {
+    us: 'us', usa: 'us', 'united states': 'us',
+    uk: 'gb', 'united kingdom': 'gb', gb: 'gb',
+    canada: 'ca', ca: 'ca',
+    australia: 'au', au: 'au',
+    germany: 'de', de: 'de',
+    france: 'fr', fr: 'fr',
+    spain: 'es', es: 'es',
+    mexico: 'mx', mx: 'mx'
+  }
+  if (COUNTRY_MAP[normalized]) {
+    return { key: 'country', value: COUNTRY_MAP[normalized] }
+  }
+
+  // Genre names
+  const GENRE_MAP = {
+    business: 'business', technology: 'technology', tech: 'technology',
+    health: 'health', fitness: 'health', 'health & fitness': 'health',
+    education: 'education', society: 'society', culture: 'society',
+    'society & culture': 'society', comedy: 'comedy', news: 'news',
+    sports: 'sports'
+  }
+  if (GENRE_MAP[normalized]) {
+    return { key: 'genre', value: GENRE_MAP[normalized] }
+  }
+
+  return null
 }
