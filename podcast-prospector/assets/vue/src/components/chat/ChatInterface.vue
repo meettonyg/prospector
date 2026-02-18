@@ -451,7 +451,7 @@ const handleFilterChange = () => {
   }
 }
 
-const handleImport = async (podcast) => {
+const handleImport = async ({ result: podcast, messageId, index }) => {
   try {
     const response = await api.importToPipeline([podcast], {
       term: 'chat',
@@ -460,6 +460,14 @@ const handleImport = async (podcast) => {
 
     if (response.success_count > 0) {
       success('Added to Pipeline', `${podcast.title || 'Podcast'} added to your tracker.`)
+
+      // Update hydration for this result so the badge appears immediately
+      const message = chatStore.messages.find(m => m.id === messageId)
+      if (message) {
+        const hydration = { ...(message.hydration || {}) }
+        hydration[index] = { ...(hydration[index] || {}), tracked: true }
+        chatStore.setMessageHydration(messageId, hydration)
+      }
     }
   } catch (err) {
     showError('Import Failed', err.message)

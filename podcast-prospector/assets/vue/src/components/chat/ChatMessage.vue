@@ -27,7 +27,7 @@
             :key="result.id || index"
             :result="result"
             :hydration="message.hydration?.[index] || null"
-            @import="$emit('import', result)"
+            @import="$emit('import', { result, messageId: message.id, index })"
           />
         </div>
       </div>
