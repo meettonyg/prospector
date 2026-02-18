@@ -130,9 +130,10 @@ function extractValue(match, intent) {
 /**
  * Map intent to search parameters
  * @param {Object} detectedIntent - Result from detectIntent
- * @returns {Object} Search parameters for API
+ * @param {Object|null} lastSearchParams - Previous search params for context-dependent intents
+ * @returns {Object|null} Search parameters for API, or null if not a searchable intent
  */
-export function intentToSearchParams(detectedIntent) {
+export function intentToSearchParams(detectedIntent, lastSearchParams = null) {
   const { intent, extractedValue } = detectedIntent
 
   switch (intent) {
@@ -153,6 +154,13 @@ export function intentToSearchParams(detectedIntent) {
         search_term: extractedValue,
         search_type: 'bytitle'
       }
+
+    case 'showMore':
+      // Re-use previous search params — caller handles page increment
+      if (lastSearchParams) {
+        return { ...lastSearchParams }
+      }
+      return null
 
     default:
       return null
@@ -208,33 +216,42 @@ export function generateResponse(detectedIntent, resultCount = 0) {
  * Get suggested follow-up actions based on context
  * @param {Object} detectedIntent - Detected intent
  * @param {boolean} hasResults - Whether there are results
+ * @param {Object} options - Additional context
+ * @param {boolean} options.hasMore - Whether more pages of results are available
+ * @param {boolean} options.hasActiveFilters - Whether any filters are currently set
  * @returns {Array} Array of suggested actions
  */
-export function getSuggestedActions(detectedIntent, hasResults = false) {
+export function getSuggestedActions(detectedIntent, hasResults = false, { hasMore = true, hasActiveFilters = false } = {}) {
   const { intent } = detectedIntent
 
   if (!hasResults && intent !== 'greeting' && intent !== 'help') {
-    return [
-      { label: 'Try a different search', action: 'newSearch' },
-      { label: 'Clear filters', action: 'clearFilters' }
+    const actions = [
+      { label: 'Try a different search', action: 'newSearch' }
     ]
+    if (hasActiveFilters) {
+      actions.push({ label: 'Clear filters', action: 'clearFilters' })
+    }
+    return actions
   }
 
   switch (intent) {
     case 'searchByPerson':
     case 'searchByTopic':
-      return [
-        { label: 'Show more results', action: 'loadMore' },
-        { label: 'Add filters', action: 'openFilters' },
-        { label: 'New search', action: 'newSearch' }
-      ]
+    case 'searchByTitle':
+    case 'showMore': {
+      const actions = []
+      if (hasMore) {
+        actions.push({ label: 'Show more results', action: 'loadMore' })
+      }
+      actions.push({ label: 'New search', action: 'newSearch' })
+      return actions
+    }
 
     case 'greeting':
     case 'help':
       return [
         { label: 'Find podcasts by guest', action: 'examplePerson' },
-        { label: 'Search by topic', action: 'exampleTopic' },
-        { label: 'Browse categories', action: 'browseCategories' }
+        { label: 'Search by topic', action: 'exampleTopic' }
       ]
 
     default:

@@ -6,7 +6,13 @@ export const useChatStore = defineStore('chat', {
     isTyping: false,
     pendingResults: [],
     sessionId: null,
-    error: null
+    error: null,
+
+    // Search context for pagination and follow-up actions
+    lastSearchParams: null, // { search_term, search_type, results_per_page }
+    lastIntent: null,       // Last detected intent object
+    currentPage: 1,
+    hasMore: false
   }),
 
   getters: {
@@ -98,6 +104,34 @@ export const useChatStore = defineStore('chat', {
     clearMessages() {
       this.messages = []
       this.error = null
+      this.lastSearchParams = null
+      this.lastIntent = null
+      this.currentPage = 1
+      this.hasMore = false
+    },
+
+    /**
+     * Save search context for pagination / follow-ups
+     */
+    setSearchContext(params, intent) {
+      this.lastSearchParams = params
+      this.lastIntent = intent
+      this.currentPage = 1
+      this.hasMore = true
+    },
+
+    /**
+     * Advance to the next page
+     */
+    nextPage() {
+      this.currentPage++
+    },
+
+    /**
+     * Mark that no more results are available
+     */
+    setNoMore() {
+      this.hasMore = false
     },
 
     /**
@@ -107,6 +141,10 @@ export const useChatStore = defineStore('chat', {
       this.sessionId = Date.now().toString()
       this.messages = []
       this.error = null
+      this.lastSearchParams = null
+      this.lastIntent = null
+      this.currentPage = 1
+      this.hasMore = false
     }
   }
 })

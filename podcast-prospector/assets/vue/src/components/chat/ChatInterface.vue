@@ -84,7 +84,6 @@
 import { ref, computed, nextTick, watch, inject } from 'vue'
 import { ChatBubbleLeftRightIcon } from '@heroicons/vue/24/outline'
 import { useChatStore } from '../../stores/chatStore'
-import { useSearchStore } from '../../stores/searchStore'
 import { useUserStore } from '../../stores/userStore'
 import { useToast } from '../../stores/toastStore'
 import {
@@ -114,7 +113,6 @@ defineProps({
 defineEmits(['update:mode'])
 
 const chatStore = useChatStore()
-const searchStore = useSearchStore()
 const userStore = useUserStore()
 const { success, error: showError } = useToast()
 
@@ -149,6 +147,61 @@ const scrollToBottom = () => {
   }
 }
 
+const CHAT_RESULTS_PER_PAGE = 5
+
+/**
+ * Normalize API response into a flat results array.
+ * Mirrors the logic in searchStore.search() to handle all API formats.
+ */
+const extractResults = (response) => {
+  // Taddy — podcast series
+  if (response.data?.data?.searchForTerm?.podcastSeries) {
+    return response.data.data.searchForTerm.podcastSeries.map(p => ({
+      ...p,
+      image: p.imageUrl || '',
+      artwork: p.imageUrl || '',
+      title: p.name || 'Untitled Podcast',
+      author: p.authorName || ''
+    }))
+  }
+  // Taddy — podcast episodes
+  if (response.data?.data?.searchForTerm?.podcastEpisodes) {
+    return response.data.data.searchForTerm.podcastEpisodes.map(ep => ({
+      ...ep,
+      image: ep.podcastSeries?.imageUrl || '',
+      artwork: ep.podcastSeries?.imageUrl || '',
+      title: ep.name || 'Untitled Episode',
+      author: ep.podcastSeries?.authorName || ''
+    }))
+  }
+  // PodcastIndex — by person (items)
+  if (response.data?.items) {
+    return response.data.items.map(item => ({
+      ...item,
+      image: item.feedImage || '',
+      artwork: item.feedImage || '',
+      author: item.feedTitle || ''
+    }))
+  }
+  // PodcastIndex — by title (feeds)
+  if (response.data?.feeds) {
+    return response.data.feeds
+  }
+  // YouTube
+  if (response.data?.data?.items) {
+    return response.data.data.items.map(item => ({
+      ...item,
+      image: item.thumbnailUrl || '',
+      artwork: item.thumbnailUrl || '',
+      author: item.channelTitle || ''
+    }))
+  }
+  // Fallbacks
+  if (response.data?.results) return response.data.results
+  if (Array.isArray(response.data)) return response.data
+  return []
+}
+
 const handleSend = async () => {
   const query = inputText.value.trim()
   if (!query) return
@@ -170,8 +223,8 @@ const handleSend = async () => {
     return
   }
 
-  // Get search params
-  const searchParams = intentToSearchParams(intent)
+  // Get search params — pass last search context for showMore / filter intents
+  const searchParams = intentToSearchParams(intent, chatStore.lastSearchParams)
 
   if (!searchParams) {
     const response = generateResponse(intent, 0)
@@ -180,31 +233,52 @@ const handleSend = async () => {
     return
   }
 
+  // Determine page number
+  const isShowMore = intent.intent === 'showMore'
+  let page = 1
+  if (isShowMore) {
+    chatStore.nextPage()
+    page = chatStore.currentPage
+  } else {
+    // New search — save context and reset page
+    chatStore.setSearchContext(searchParams, intent)
+    page = 1
+  }
+
   // Perform search
   chatStore.setTyping(true)
 
   try {
     const response = await api.search({
       ...searchParams,
-      results_per_page: 5
+      results_per_page: CHAT_RESULTS_PER_PAGE,
+      page
     })
 
-    // Extract results
-    let results = []
-    if (response.data?.data?.search?.podcastSeries) {
-      results = response.data.data.search.podcastSeries
-    } else if (response.data?.feeds) {
-      results = response.data.feeds
+    // Extract results using comprehensive normalizer
+    const results = extractResults(response)
+
+    // Determine if more results are likely available
+    const hasMore = results.length >= CHAT_RESULTS_PER_PAGE
+    if (!hasMore) {
+      chatStore.setNoMore()
     }
 
-    // Generate response
-    const assistantResponse = generateResponse(intent, results.length)
+    // Generate response text
+    const useIntent = isShowMore && chatStore.lastIntent ? chatStore.lastIntent : intent
+    const assistantResponse = isShowMore && results.length > 0
+      ? `Here are ${results.length} more result${results.length === 1 ? '' : 's'}:`
+      : generateResponse(useIntent, results.length)
 
     // Add message with results
     chatStore.addAssistantMessage(assistantResponse, results)
 
     // Update suggested actions
-    suggestedActions.value = getSuggestedActions(intent, results.length > 0)
+    suggestedActions.value = getSuggestedActions(
+      useIntent,
+      results.length > 0,
+      { hasMore, hasActiveFilters: false }
+    )
 
     // Decrement search count
     userStore.decrementSearchCount()
@@ -230,8 +304,10 @@ const handleQuickAction = (action) => {
       inputText.value = ''
       break
     case 'loadMore':
-      inputText.value = 'Show more results'
-      handleSend()
+      handleLoadMore()
+      break
+    case 'clearFilters':
+      // placeholder for future filter support
       break
     case 'examplePerson':
       inputText.value = 'Find podcasts featuring Tim Ferriss'
@@ -243,6 +319,52 @@ const handleQuickAction = (action) => {
       break
     default:
       break
+  }
+}
+
+/**
+ * Load more results for the previous search (next page).
+ */
+const handleLoadMore = async () => {
+  if (!chatStore.lastSearchParams || !chatStore.hasMore) return
+
+  chatStore.nextPage()
+  chatStore.setTyping(true)
+
+  try {
+    const response = await api.search({
+      ...chatStore.lastSearchParams,
+      results_per_page: CHAT_RESULTS_PER_PAGE,
+      page: chatStore.currentPage
+    })
+
+    const results = extractResults(response)
+    const hasMore = results.length >= CHAT_RESULTS_PER_PAGE
+    if (!hasMore) {
+      chatStore.setNoMore()
+    }
+
+    const assistantResponse = results.length > 0
+      ? `Here are ${results.length} more result${results.length === 1 ? '' : 's'}:`
+      : "No more results found."
+
+    chatStore.addAssistantMessage(assistantResponse, results)
+
+    const useIntent = chatStore.lastIntent || { intent: 'searchByTopic' }
+    suggestedActions.value = getSuggestedActions(
+      useIntent,
+      results.length > 0,
+      { hasMore, hasActiveFilters: false }
+    )
+
+    userStore.decrementSearchCount()
+  } catch (err) {
+    chatStore.addAssistantMessage(
+      "I'm sorry, I encountered an error loading more results. Please try again."
+    )
+    chatStore.setError(err.message)
+  } finally {
+    chatStore.setTyping(false)
   }
 }
 
@@ -264,6 +386,7 @@ const handleImport = async (podcast) => {
 const startNewChat = () => {
   chatStore.clearMessages()
   suggestedActions.value = []
+  inputText.value = ''
 }
 </script>
 
