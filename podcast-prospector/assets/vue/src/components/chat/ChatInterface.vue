@@ -199,55 +199,72 @@ const hydrateMessage = async (messageId, results, searchType) => {
 
 /**
  * Normalize API response into a flat results array.
- * Mirrors the logic in searchStore.search() to handle all API formats.
+ * Each handler has a `match` predicate and a `extract` mapper.
+ * Order matters — first match wins.
  */
-const extractResults = (response) => {
-  // Taddy — podcast series
-  if (response.data?.data?.searchForTerm?.podcastSeries) {
-    return response.data.data.searchForTerm.podcastSeries.map(p => ({
+const resultHandlers = [
+  {
+    name: 'taddy-series',
+    match: (r) => r.data?.data?.searchForTerm?.podcastSeries,
+    extract: (r) => r.data.data.searchForTerm.podcastSeries.map(p => ({
       ...p,
       image: p.imageUrl || '',
       artwork: p.imageUrl || '',
       title: p.name || 'Untitled Podcast',
       author: p.authorName || ''
     }))
-  }
-  // Taddy — podcast episodes
-  if (response.data?.data?.searchForTerm?.podcastEpisodes) {
-    return response.data.data.searchForTerm.podcastEpisodes.map(ep => ({
+  },
+  {
+    name: 'taddy-episodes',
+    match: (r) => r.data?.data?.searchForTerm?.podcastEpisodes,
+    extract: (r) => r.data.data.searchForTerm.podcastEpisodes.map(ep => ({
       ...ep,
       image: ep.podcastSeries?.imageUrl || '',
       artwork: ep.podcastSeries?.imageUrl || '',
       title: ep.name || 'Untitled Episode',
       author: ep.podcastSeries?.authorName || ''
     }))
-  }
-  // PodcastIndex — by person (items)
-  if (response.data?.items) {
-    return response.data.items.map(item => ({
+  },
+  {
+    name: 'podcastindex-items',
+    match: (r) => r.data?.items,
+    extract: (r) => r.data.items.map(item => ({
       ...item,
       image: item.feedImage || '',
       artwork: item.feedImage || '',
       author: item.feedTitle || ''
     }))
-  }
-  // PodcastIndex — by title (feeds)
-  if (response.data?.feeds) {
-    return response.data.feeds
-  }
-  // YouTube
-  if (response.data?.data?.items) {
-    return response.data.data.items.map(item => ({
+  },
+  {
+    name: 'podcastindex-feeds',
+    match: (r) => r.data?.feeds,
+    extract: (r) => r.data.feeds
+  },
+  {
+    name: 'youtube',
+    match: (r) => r.data?.data?.items,
+    extract: (r) => r.data.data.items.map(item => ({
       ...item,
       image: item.thumbnailUrl || '',
       artwork: item.thumbnailUrl || '',
       author: item.channelTitle || ''
     }))
+  },
+  {
+    name: 'generic-results',
+    match: (r) => r.data?.results,
+    extract: (r) => r.data.results
+  },
+  {
+    name: 'raw-array',
+    match: (r) => Array.isArray(r.data),
+    extract: (r) => r.data
   }
-  // Fallbacks
-  if (response.data?.results) return response.data.results
-  if (Array.isArray(response.data)) return response.data
-  return []
+]
+
+const extractResults = (response) => {
+  const handler = resultHandlers.find(h => h.match(response))
+  return handler ? handler.extract(response) : []
 }
 
 const handleSend = async () => {
