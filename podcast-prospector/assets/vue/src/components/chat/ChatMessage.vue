@@ -26,6 +26,7 @@
             v-for="(result, index) in message.results"
             :key="result.id || index"
             :result="result"
+            :hydration="message.hydration?.[index] || null"
             @import="$emit('import', result)"
           />
         </div>

@@ -55,12 +55,13 @@ export const useChatStore = defineStore('chat', {
     /**
      * Add an assistant message
      */
-    addAssistantMessage(content, results = []) {
+    addAssistantMessage(content, results = [], hydration = {}) {
       const message = {
         id: Date.now(),
         role: 'assistant',
         content,
         results,
+        hydration,
         timestamp: new Date().toISOString()
       }
       this.messages.push(message)
@@ -74,6 +75,16 @@ export const useChatStore = defineStore('chat', {
       const message = this.messages.find(m => m.id === messageId)
       if (message) {
         message.results = results
+      }
+    },
+
+    /**
+     * Set hydration data for a specific message
+     */
+    setMessageHydration(messageId, hydration) {
+      const message = this.messages.find(m => m.id === messageId)
+      if (message) {
+        message.hydration = hydration
       }
     },
 

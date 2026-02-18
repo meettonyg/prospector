@@ -69,6 +69,13 @@
       class="prospector-chat__quick-actions"
     />
 
+      <!-- Filter bar (collapsible) -->
+      <ChatFilterBar
+        v-if="showFilters"
+        @clear="handleClearFilters"
+        @change="handleFilterChange"
+      />
+
       <!-- Input area -->
       <ChatInput
         v-model="inputText"
@@ -85,12 +92,14 @@ import { ref, computed, nextTick, watch, inject } from 'vue'
 import { ChatBubbleLeftRightIcon } from '@heroicons/vue/24/outline'
 import { useChatStore } from '../../stores/chatStore'
 import { useUserStore } from '../../stores/userStore'
+import { useFilterStore } from '../../stores/filterStore'
 import { useToast } from '../../stores/toastStore'
 import {
   detectIntent,
   intentToSearchParams,
   generateResponse,
-  getSuggestedActions
+  getSuggestedActions,
+  parseFilterValue
 } from '../../utils/intentDetector'
 import api from '../../api/prospectorApi'
 
@@ -101,6 +110,7 @@ import AppHeader from '../common/AppHeader.vue'
 import ChatEmptyState from './ChatEmptyState.vue'
 import ChatMessage from './ChatMessage.vue'
 import ChatInput from './ChatInput.vue'
+import ChatFilterBar from './ChatFilterBar.vue'
 import QuickActionChips from './QuickActionChips.vue'
 
 defineProps({
@@ -114,11 +124,13 @@ defineEmits(['update:mode'])
 
 const chatStore = useChatStore()
 const userStore = useUserStore()
+const filterStore = useFilterStore()
 const { success, error: showError } = useToast()
 
 const messagesContainer = ref(null)
 const inputText = ref('')
 const suggestedActions = ref([])
+const showFilters = ref(false)
 
 // ChatGPT feature flag
 const chatGptEnabled = computed(() => config.features?.chatGpt === true)
@@ -148,6 +160,42 @@ const scrollToBottom = () => {
 }
 
 const CHAT_RESULTS_PER_PAGE = 5
+
+/**
+ * Build hydration identifiers from results (same logic as searchStore).
+ */
+const buildHydrationIdentifiers = (results, searchType) => {
+  return results.map(result => {
+    if (searchType === 'byadvancedpodcast' || searchType === 'byadvancedepisode') {
+      const podcast = result.podcastSeries || result
+      return {
+        itunes_id: podcast.itunesId || null,
+        rss_url: podcast.rssUrl || null,
+        podcast_index_id: null
+      }
+    }
+    return {
+      itunes_id: result.itunesId || result.feedItunesId || null,
+      rss_url: result.feedUrl || result.url || null,
+      podcast_index_id: result.feedId || result.id || null
+    }
+  })
+}
+
+/**
+ * Hydrate results for a message — check which podcasts are already in CRM.
+ */
+const hydrateMessage = async (messageId, results, searchType) => {
+  if (results.length === 0) return
+  try {
+    const identifiers = buildHydrationIdentifiers(results, searchType)
+    const response = await api.hydrate(identifiers)
+    chatStore.setMessageHydration(messageId, response.results || {})
+  } catch (err) {
+    // Don't block the UI if hydration fails
+    console.warn('[Chat] Hydration failed:', err)
+  }
+}
 
 /**
  * Normalize API response into a flat results array.
@@ -223,7 +271,36 @@ const handleSend = async () => {
     return
   }
 
-  // Get search params — pass last search context for showMore / filter intents
+  // Handle filter intent — apply filter and re-run last search
+  if (intent.intent === 'filter') {
+    const parsed = parseFilterValue(intent.extractedValue)
+    if (parsed) {
+      filterStore.setFilter(parsed.key, parsed.value)
+      const response = generateResponse(intent)
+      chatStore.addAssistantMessage(response)
+
+      // If there was a previous search, re-run it with the new filter
+      if (chatStore.lastSearchParams) {
+        chatStore.setSearchContext(chatStore.lastSearchParams, chatStore.lastIntent)
+        inputText.value = '' // already cleared, but be safe
+        await executeSearch(chatStore.lastSearchParams, 1, chatStore.lastIntent)
+      } else {
+        suggestedActions.value = [
+          { label: 'Start a new search', action: 'newSearch' }
+        ]
+      }
+    } else {
+      chatStore.addAssistantMessage(
+        "I didn't recognize that filter. Try: \"filter by English\", \"from US\", or \"filter by business\"."
+      )
+      suggestedActions.value = [
+        { label: 'Start a new search', action: 'newSearch' }
+      ]
+    }
+    return
+  }
+
+  // Get search params — pass last search context for showMore intents
   const searchParams = intentToSearchParams(intent, chatStore.lastSearchParams)
 
   if (!searchParams) {
@@ -245,12 +322,21 @@ const handleSend = async () => {
     page = 1
   }
 
-  // Perform search
+  const useIntent = isShowMore && chatStore.lastIntent ? chatStore.lastIntent : intent
+  const responseTextOverride = isShowMore ? 'more' : null
+  await executeSearch(searchParams, page, useIntent, responseTextOverride)
+}
+
+/**
+ * Core search execution — shared by handleSend, handleLoadMore, and filter re-search.
+ */
+const executeSearch = async (searchParams, page, displayIntent, responseTextOverride = null) => {
   chatStore.setTyping(true)
 
   try {
     const response = await api.search({
       ...searchParams,
+      ...filterStore.filterParams,
       results_per_page: CHAT_RESULTS_PER_PAGE,
       page
     })
@@ -265,23 +351,28 @@ const handleSend = async () => {
     }
 
     // Generate response text
-    const useIntent = isShowMore && chatStore.lastIntent ? chatStore.lastIntent : intent
-    const assistantResponse = isShowMore && results.length > 0
-      ? `Here are ${results.length} more result${results.length === 1 ? '' : 's'}:`
-      : generateResponse(useIntent, results.length)
+    let assistantResponse
+    if (responseTextOverride === 'more' && results.length > 0) {
+      assistantResponse = `Here are ${results.length} more result${results.length === 1 ? '' : 's'}:`
+    } else {
+      assistantResponse = generateResponse(displayIntent, results.length)
+    }
 
-    // Add message with results
-    chatStore.addAssistantMessage(assistantResponse, results)
+    // Add message with results (hydration filled in asynchronously)
+    const message = chatStore.addAssistantMessage(assistantResponse, results)
 
     // Update suggested actions
     suggestedActions.value = getSuggestedActions(
-      useIntent,
+      displayIntent,
       results.length > 0,
-      { hasMore, hasActiveFilters: false }
+      { hasMore, hasActiveFilters: filterStore.hasActiveFilters }
     )
 
     // Decrement search count
     userStore.decrementSearchCount()
+
+    // Hydrate results in background (non-blocking)
+    hydrateMessage(message.id, results, searchParams.search_type)
 
   } catch (err) {
     chatStore.addAssistantMessage(
@@ -306,8 +397,11 @@ const handleQuickAction = (action) => {
     case 'loadMore':
       handleLoadMore()
       break
+    case 'openFilters':
+      showFilters.value = !showFilters.value
+      break
     case 'clearFilters':
-      // placeholder for future filter support
+      handleClearFilters()
       break
     case 'examplePerson':
       inputText.value = 'Find podcasts featuring Tim Ferriss'
@@ -327,44 +421,33 @@ const handleQuickAction = (action) => {
  */
 const handleLoadMore = async () => {
   if (!chatStore.lastSearchParams || !chatStore.hasMore) return
-
   chatStore.nextPage()
-  chatStore.setTyping(true)
+  const useIntent = chatStore.lastIntent || { intent: 'searchByTopic' }
+  await executeSearch(chatStore.lastSearchParams, chatStore.currentPage, useIntent, 'more')
+}
 
-  try {
-    const response = await api.search({
-      ...chatStore.lastSearchParams,
-      results_per_page: CHAT_RESULTS_PER_PAGE,
-      page: chatStore.currentPage
-    })
-
-    const results = extractResults(response)
-    const hasMore = results.length >= CHAT_RESULTS_PER_PAGE
-    if (!hasMore) {
-      chatStore.setNoMore()
-    }
-
-    const assistantResponse = results.length > 0
-      ? `Here are ${results.length} more result${results.length === 1 ? '' : 's'}:`
-      : "No more results found."
-
-    chatStore.addAssistantMessage(assistantResponse, results)
-
+/**
+ * Handle filter clear — reset filters and re-run previous search if any.
+ */
+const handleClearFilters = () => {
+  filterStore.clearFilters()
+  showFilters.value = false
+  // Re-run previous search without filters
+  if (chatStore.lastSearchParams) {
+    chatStore.setSearchContext(chatStore.lastSearchParams, chatStore.lastIntent)
     const useIntent = chatStore.lastIntent || { intent: 'searchByTopic' }
-    suggestedActions.value = getSuggestedActions(
-      useIntent,
-      results.length > 0,
-      { hasMore, hasActiveFilters: false }
-    )
+    executeSearch(chatStore.lastSearchParams, 1, useIntent)
+  }
+}
 
-    userStore.decrementSearchCount()
-  } catch (err) {
-    chatStore.addAssistantMessage(
-      "I'm sorry, I encountered an error loading more results. Please try again."
-    )
-    chatStore.setError(err.message)
-  } finally {
-    chatStore.setTyping(false)
+/**
+ * Handle filter change from ChatFilterBar — re-run search with new filters.
+ */
+const handleFilterChange = () => {
+  if (chatStore.lastSearchParams) {
+    chatStore.setSearchContext(chatStore.lastSearchParams, chatStore.lastIntent)
+    const useIntent = chatStore.lastIntent || { intent: 'searchByTopic' }
+    executeSearch(chatStore.lastSearchParams, 1, useIntent)
   }
 }
 
@@ -387,6 +470,8 @@ const startNewChat = () => {
   chatStore.clearMessages()
   suggestedActions.value = []
   inputText.value = ''
+  showFilters.value = false
+  filterStore.clearFilters()
 }
 </script>
 

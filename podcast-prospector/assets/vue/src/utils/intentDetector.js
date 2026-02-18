@@ -204,6 +204,12 @@ export function generateResponse(detectedIntent, resultCount = 0) {
     case 'showMore':
       return "Loading more results..."
 
+    case 'filter':
+      if (extractedValue) {
+        return `Got it — I'll filter results by "${extractedValue}".`
+      }
+      return "I'll apply that filter for you."
+
     case 'import':
       return "I'll add that to your pipeline right away."
 
@@ -243,6 +249,11 @@ export function getSuggestedActions(detectedIntent, hasResults = false, { hasMor
       if (hasMore) {
         actions.push({ label: 'Show more results', action: 'loadMore' })
       }
+      if (hasActiveFilters) {
+        actions.push({ label: 'Clear filters', action: 'clearFilters' })
+      } else {
+        actions.push({ label: 'Add filters', action: 'openFilters' })
+      }
       actions.push({ label: 'New search', action: 'newSearch' })
       return actions
     }
@@ -259,4 +270,53 @@ export function getSuggestedActions(detectedIntent, hasResults = false, { hasMor
         { label: 'Start a new search', action: 'newSearch' }
       ]
   }
+}
+
+/**
+ * Parse a natural-language filter value into a filterStore-compatible key/value pair.
+ * @param {string} value - Extracted filter value (e.g. "english", "us", "business")
+ * @returns {{ key: string, value: string } | null}
+ */
+export function parseFilterValue(value) {
+  if (!value) return null
+
+  const normalized = value.toLowerCase().trim()
+
+  // Language names → codes
+  const LANGUAGE_MAP = {
+    english: 'en', spanish: 'es', french: 'fr', german: 'de',
+    portuguese: 'pt', italian: 'it', japanese: 'ja', chinese: 'zh'
+  }
+  if (LANGUAGE_MAP[normalized]) {
+    return { key: 'language', value: LANGUAGE_MAP[normalized] }
+  }
+
+  // Country names / abbreviations → codes
+  const COUNTRY_MAP = {
+    us: 'us', usa: 'us', 'united states': 'us',
+    uk: 'gb', 'united kingdom': 'gb', gb: 'gb',
+    canada: 'ca', ca: 'ca',
+    australia: 'au', au: 'au',
+    germany: 'de', de: 'de',
+    france: 'fr', fr: 'fr',
+    spain: 'es', es: 'es',
+    mexico: 'mx', mx: 'mx'
+  }
+  if (COUNTRY_MAP[normalized]) {
+    return { key: 'country', value: COUNTRY_MAP[normalized] }
+  }
+
+  // Genre names
+  const GENRE_MAP = {
+    business: 'business', technology: 'technology', tech: 'technology',
+    health: 'health', fitness: 'health', 'health & fitness': 'health',
+    education: 'education', society: 'society', culture: 'society',
+    'society & culture': 'society', comedy: 'comedy', news: 'news',
+    sports: 'sports'
+  }
+  if (GENRE_MAP[normalized]) {
+    return { key: 'genre', value: GENRE_MAP[normalized] }
+  }
+
+  return null
 }
