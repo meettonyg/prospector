@@ -70,17 +70,57 @@
 
       <!-- Action Buttons -->
       <div class="prospector-result-grid__action">
-        <!-- Not tracked: Import button -->
-        <button
-          v-if="!isTracked(index)"
-          @click.stop="$emit('import', { result, index })"
-          :disabled="isImporting(index)"
-          class="prospector-result-grid__import-btn"
-          title="Add to Pipeline"
-        >
-          <ArrowDownTrayIcon v-if="!isImporting(index)" class="prospector-result-grid__import-icon" />
-          <LoadingSpinner v-else size="sm" />
-        </button>
+        <!-- Not tracked: Import button(s) -->
+        <template v-if="!isTracked(index)">
+          <!-- Episode-level search: split button with dropdown -->
+          <div v-if="isEpisodeLevelSearch" class="prospector-import-split" @click.stop>
+            <button
+              @click="$emit('import', { result, index, importMode: 'potential' })"
+              :disabled="isImporting(index)"
+              class="prospector-import-split__main"
+              title="Add to pipeline as potential opportunity"
+            >
+              <ArrowDownTrayIcon v-if="!isImporting(index)" class="prospector-result-grid__import-icon" />
+              <LoadingSpinner v-else size="sm" />
+            </button>
+            <button
+              @click="toggleDropdown(index)"
+              :disabled="isImporting(index)"
+              class="prospector-import-split__toggle"
+              title="Import options"
+            >
+              <ChevronDownIcon class="prospector-import-split__chevron" />
+            </button>
+            <div v-if="openDropdown === index" class="prospector-import-split__menu">
+              <button
+                @click="$emit('import', { result, index, importMode: 'potential' }); openDropdown = null"
+                class="prospector-import-split__option"
+              >
+                <PlusIcon class="prospector-import-split__option-icon" />
+                Import as Potential
+              </button>
+              <button
+                @click="$emit('import', { result, index, importMode: 'aired' }); openDropdown = null"
+                class="prospector-import-split__option"
+              >
+                <LinkIcon class="prospector-import-split__option-icon" />
+                Import as Aired
+              </button>
+            </div>
+          </div>
+
+          <!-- Podcast-level search: single import button -->
+          <button
+            v-else
+            @click.stop="$emit('import', { result, index, importMode: 'potential' })"
+            :disabled="isImporting(index)"
+            class="prospector-result-grid__import-btn"
+            title="Add to Pipeline"
+          >
+            <ArrowDownTrayIcon v-if="!isImporting(index)" class="prospector-result-grid__import-icon" />
+            <LoadingSpinner v-else size="sm" />
+          </button>
+        </template>
 
         <!-- Tracked but no episode linked: Link Episode button -->
         <button
@@ -110,12 +150,15 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
   ArrowDownTrayIcon,
   EyeIcon,
   LinkIcon,
   MicrophoneIcon,
-  PresentationChartBarIcon
+  PresentationChartBarIcon,
+  ChevronDownIcon,
+  PlusIcon
 } from '@heroicons/vue/24/outline'
 import LoadingSpinner from './LoadingSpinner.vue'
 
@@ -148,6 +191,29 @@ const props = defineProps({
 })
 
 defineEmits(['result-click', 'toggle-select', 'import', 'link-episode'])
+
+const isEpisodeLevelSearch = computed(() =>
+  ['byperson', 'byadvancedepisode', 'byyoutube'].includes(props.searchMode)
+)
+
+const openDropdown = ref(null)
+const toggleDropdown = (index) => {
+  openDropdown.value = openDropdown.value === index ? null : index
+}
+
+const closeDropdown = (e) => {
+  if (openDropdown.value !== null) {
+    openDropdown.value = null
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', closeDropdown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeDropdown)
+})
 
 const getHydration = (index) => props.hydrationMap[index]
 const isTracked = (index) => props.hydrationMap[index]?.tracked
@@ -371,6 +437,107 @@ const handleImageError = (e) => {
 .prospector-result-grid__import-icon {
   width: 1rem;
   height: 1rem;
+}
+
+/* Split button for import mode choice */
+.prospector-import-split {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.prospector-import-split__main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--prospector-space-sm);
+  background: white;
+  border: 1px solid var(--prospector-slate-200);
+  border-right: none;
+  border-radius: var(--prospector-radius-lg) 0 0 var(--prospector-radius-lg);
+  color: var(--prospector-slate-400);
+  cursor: pointer;
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-import-split__main:hover:not(:disabled) {
+  background: var(--prospector-primary-50);
+  border-color: var(--prospector-primary-500);
+  color: var(--prospector-primary-500);
+}
+
+.prospector-import-split__main:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prospector-import-split__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--prospector-space-sm) 0.25rem;
+  background: white;
+  border: 1px solid var(--prospector-slate-200);
+  border-radius: 0 var(--prospector-radius-lg) var(--prospector-radius-lg) 0;
+  color: var(--prospector-slate-400);
+  cursor: pointer;
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-import-split__toggle:hover:not(:disabled) {
+  background: var(--prospector-primary-50);
+  border-color: var(--prospector-primary-500);
+  color: var(--prospector-primary-500);
+}
+
+.prospector-import-split__toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prospector-import-split__chevron {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.prospector-import-split__menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.25rem;
+  background: white;
+  border: 1px solid var(--prospector-slate-200);
+  border-radius: var(--prospector-radius-lg);
+  box-shadow: var(--prospector-shadow-lg, 0 4px 12px rgba(0, 0, 0, 0.15));
+  z-index: 50;
+  min-width: 10rem;
+  overflow: hidden;
+}
+
+.prospector-import-split__option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  font-size: var(--prospector-font-size-sm, 0.875rem);
+  color: var(--prospector-slate-700);
+  cursor: pointer;
+  transition: background var(--prospector-transition-fast);
+  white-space: nowrap;
+}
+
+.prospector-import-split__option:hover {
+  background: var(--prospector-primary-50);
+  color: var(--prospector-primary-600);
+}
+
+.prospector-import-split__option-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
 }
 
 .prospector-result-grid__link-btn {

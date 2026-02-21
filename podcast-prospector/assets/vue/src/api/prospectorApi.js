@@ -57,11 +57,12 @@ export default {
    * @param {Object} searchMeta - Search metadata
    * @returns {Promise<Object>} Import results
    */
-  async importToPipeline(podcasts, searchMeta) {
+  async importToPipeline(podcasts, searchMeta, importMode = 'auto') {
     const response = await api.post('/import', {
       podcasts: podcasts.map(p => JSON.stringify(p)),
       search_term: searchMeta.term || '',
-      search_type: searchMeta.type || 'byperson'
+      search_type: searchMeta.type || 'byperson',
+      import_mode: importMode
     })
     return response.data
   },

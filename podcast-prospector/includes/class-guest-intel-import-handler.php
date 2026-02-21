@@ -65,6 +65,7 @@ class Podcast_Prospector_Guest_Intel_Import_Handler {
     public function import_items( array $podcasts, array $post_data ): array {
         $search_term = isset( $post_data['search_term'] ) ? sanitize_text_field( $post_data['search_term'] ) : 'N/A';
         $search_type = isset( $post_data['search_type'] ) ? sanitize_text_field( $post_data['search_type'] ) : 'byperson';
+        $import_mode = isset( $post_data['import_mode'] ) ? sanitize_text_field( $post_data['import_mode'] ) : 'auto';
         $current_user = get_current_user_id();
 
         $total_to_import = count( $podcasts );
@@ -137,22 +138,25 @@ class Podcast_Prospector_Guest_Intel_Import_Handler {
                 'episode_linked' => false,
             ];
 
-            // Auto-link episode if episode-level data is available
-            $episode_data = $this->extract_episode_data( $decoded, $search_type );
-            if ( $episode_data ) {
-                $link_result = $this->link_episode_to_opportunity(
-                    $opportunity_id,
-                    $podcast_id,
-                    $episode_data,
-                    $current_user
-                );
+            // Auto-link episode if episode-level data is available and import mode allows it
+            $should_link = 'aired' === $import_mode || ( 'auto' === $import_mode );
+            if ( 'potential' !== $import_mode && $should_link ) {
+                $episode_data = $this->extract_episode_data( $decoded, $search_type );
+                if ( $episode_data ) {
+                    $link_result = $this->link_episode_to_opportunity(
+                        $opportunity_id,
+                        $podcast_id,
+                        $episode_data,
+                        $current_user
+                    );
 
-                if ( $link_result ) {
-                    $detail['episode_linked']  = true;
-                    $detail['engagement_id']   = $link_result['engagement_id'];
-                    $detail['credit_id']       = $link_result['credit_id'];
-                    $detail['status']          = 'aired';
-                    $detail['episode_title']   = $episode_data['title'];
+                    if ( $link_result ) {
+                        $detail['episode_linked']  = true;
+                        $detail['engagement_id']   = $link_result['engagement_id'];
+                        $detail['credit_id']       = $link_result['credit_id'];
+                        $detail['status']          = 'aired';
+                        $detail['episode_title']   = $episode_data['title'];
+                    }
                 }
             }
 

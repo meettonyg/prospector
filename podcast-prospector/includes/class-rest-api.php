@@ -335,6 +335,7 @@ class Podcast_Prospector_REST_API {
             [
                 'search_term' => $validation->get( 'search_term' ),
                 'search_type' => $validation->get( 'search_type' ),
+                'import_mode' => $validation->get( 'import_mode', 'auto' ),
             ]
         );
 
@@ -767,6 +768,12 @@ class Podcast_Prospector_REST_API {
                 'required' => false,
                 'type'     => 'string',
                 'default'  => 'byperson',
+            ],
+            'import_mode' => [
+                'required' => false,
+                'type'     => 'string',
+                'default'  => 'auto',
+                'enum'     => [ 'potential', 'aired', 'auto' ],
             ],
         ];
     }

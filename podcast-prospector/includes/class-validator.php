@@ -360,6 +360,13 @@ class Podcast_Prospector_Validator {
         $result->set( 'search_term', $this->sanitize_search_term( $input['search_term'] ?? '' ) );
         $result->set( 'search_type', $this->validate_search_type( $input['search_type'] ?? '' ) );
 
+        // Import mode (potential, aired, or auto)
+        $import_mode = sanitize_text_field( $input['import_mode'] ?? 'auto' );
+        if ( ! in_array( $import_mode, [ 'potential', 'aired', 'auto' ], true ) ) {
+            $import_mode = 'auto';
+        }
+        $result->set( 'import_mode', $import_mode );
+
         return $result;
     }
 }

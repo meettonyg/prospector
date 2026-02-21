@@ -93,16 +93,54 @@
           <!-- Action -->
           <td class="prospector-result-table__td prospector-result-table__td--action">
             <!-- Not tracked: Import -->
-            <button
-              v-if="!isTracked(index)"
-              @click="$emit('import', { result, index })"
-              :disabled="isImporting(index)"
-              class="prospector-result-table__action-btn"
-            >
-              <ArrowDownTrayIcon v-if="!isImporting(index)" class="prospector-result-table__action-icon" />
-              <LoadingSpinner v-else size="xs" />
-              <span>Import</span>
-            </button>
+            <template v-if="!isTracked(index)">
+              <!-- Episode-level search: split button -->
+              <div v-if="isEpisodeLevelSearch" class="prospector-table-import-split" @click.stop>
+                <button
+                  @click="$emit('import', { result, index, importMode: 'potential' })"
+                  :disabled="isImporting(index)"
+                  class="prospector-table-import-split__main"
+                >
+                  <ArrowDownTrayIcon v-if="!isImporting(index)" class="prospector-result-table__action-icon" />
+                  <LoadingSpinner v-else size="xs" />
+                  <span>Import</span>
+                </button>
+                <button
+                  @click="toggleDropdown(index)"
+                  :disabled="isImporting(index)"
+                  class="prospector-table-import-split__toggle"
+                >
+                  <ChevronDownIcon class="prospector-table-import-split__chevron" />
+                </button>
+                <div v-if="openDropdown === index" class="prospector-table-import-split__menu">
+                  <button
+                    @click="$emit('import', { result, index, importMode: 'potential' }); openDropdown = null"
+                    class="prospector-table-import-split__option"
+                  >
+                    <PlusIcon class="prospector-table-import-split__option-icon" />
+                    Import as Potential
+                  </button>
+                  <button
+                    @click="$emit('import', { result, index, importMode: 'aired' }); openDropdown = null"
+                    class="prospector-table-import-split__option"
+                  >
+                    <LinkIcon class="prospector-table-import-split__option-icon" />
+                    Import as Aired
+                  </button>
+                </div>
+              </div>
+              <!-- Podcast-level search: single button -->
+              <button
+                v-else
+                @click="$emit('import', { result, index, importMode: 'potential' })"
+                :disabled="isImporting(index)"
+                class="prospector-result-table__action-btn"
+              >
+                <ArrowDownTrayIcon v-if="!isImporting(index)" class="prospector-result-table__action-icon" />
+                <LoadingSpinner v-else size="xs" />
+                <span>Import</span>
+              </button>
+            </template>
             <!-- Tracked but no episode: Link Episode -->
             <button
               v-else-if="!hasEngagement(index)"
@@ -131,13 +169,15 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
   ArrowDownTrayIcon,
   EyeIcon,
   LinkIcon,
   MicrophoneIcon,
-  PresentationChartBarIcon
+  PresentationChartBarIcon,
+  ChevronDownIcon,
+  PlusIcon
 } from '@heroicons/vue/24/outline'
 import LoadingSpinner from '../common/LoadingSpinner.vue'
 
@@ -170,6 +210,29 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['result-click', 'toggle-select', 'import', 'link-episode'])
+
+const isEpisodeLevelSearch = computed(() =>
+  ['byperson', 'byadvancedepisode', 'byyoutube'].includes(props.searchMode)
+)
+
+const openDropdown = ref(null)
+const toggleDropdown = (index) => {
+  openDropdown.value = openDropdown.value === index ? null : index
+}
+
+const closeDropdown = () => {
+  if (openDropdown.value !== null) {
+    openDropdown.value = null
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', closeDropdown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeDropdown)
+})
 
 const getHydration = (index) => props.hydrationMap[index]
 const isTracked = (index) => props.hydrationMap[index]?.tracked
@@ -432,6 +495,109 @@ const handleImageError = (e) => {
 .prospector-result-table__action-icon {
   width: 0.875rem;
   height: 0.875rem;
+}
+
+/* Table split button for import mode choice */
+.prospector-table-import-split {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.prospector-table-import-split__main {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--prospector-space-sm);
+  padding: 0.375rem 0.75rem;
+  font-size: var(--prospector-font-size-xs);
+  font-weight: 500;
+  color: var(--prospector-slate-500);
+  background: white;
+  border: 1px solid var(--prospector-slate-200);
+  border-right: none;
+  border-radius: var(--prospector-radius-lg) 0 0 var(--prospector-radius-lg);
+  cursor: pointer;
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-table-import-split__main:hover:not(:disabled) {
+  color: var(--prospector-primary-500);
+  border-color: var(--prospector-primary-500);
+  background: var(--prospector-slate-50);
+}
+
+.prospector-table-import-split__main:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prospector-table-import-split__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem 0.375rem;
+  background: white;
+  border: 1px solid var(--prospector-slate-200);
+  border-radius: 0 var(--prospector-radius-lg) var(--prospector-radius-lg) 0;
+  color: var(--prospector-slate-400);
+  cursor: pointer;
+  transition: all var(--prospector-transition-fast);
+}
+
+.prospector-table-import-split__toggle:hover:not(:disabled) {
+  color: var(--prospector-primary-500);
+  border-color: var(--prospector-primary-500);
+  background: var(--prospector-slate-50);
+}
+
+.prospector-table-import-split__toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.prospector-table-import-split__chevron {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.prospector-table-import-split__menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.25rem;
+  background: white;
+  border: 1px solid var(--prospector-slate-200);
+  border-radius: var(--prospector-radius-lg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 50;
+  min-width: 10rem;
+  overflow: hidden;
+}
+
+.prospector-table-import-split__option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  font-size: var(--prospector-font-size-sm, 0.875rem);
+  color: var(--prospector-slate-700);
+  cursor: pointer;
+  transition: background var(--prospector-transition-fast);
+  white-space: nowrap;
+}
+
+.prospector-table-import-split__option:hover {
+  background: var(--prospector-primary-50);
+  color: var(--prospector-primary-600);
+}
+
+.prospector-table-import-split__option-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
 }
 
 @keyframes prospectorFadeIn {

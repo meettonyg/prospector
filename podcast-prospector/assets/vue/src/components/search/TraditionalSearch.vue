@@ -89,17 +89,41 @@
 
         <!-- View Toggle & Actions -->
         <div class="prospector-results-toolbar__actions">
-          <!-- Bulk Import Button -->
-          <button
-            v-if="searchStore.selectedCount > 0"
-            type="button"
-            @click="handleBulkImport"
-            :disabled="bulkImporting"
-            class="prospector-btn prospector-btn--primary"
-          >
-            <ArrowDownTrayIcon class="prospector-btn__icon" />
-            Import {{ searchStore.selectedCount }} Selected
-          </button>
+          <!-- Bulk Import Buttons -->
+          <template v-if="searchStore.selectedCount > 0">
+            <!-- Episode-level searches: two import options -->
+            <template v-if="isEpisodeLevelSearch">
+              <button
+                type="button"
+                @click="handleBulkImport('potential')"
+                :disabled="bulkImporting"
+                class="prospector-btn prospector-btn--primary"
+              >
+                <ArrowDownTrayIcon class="prospector-btn__icon" />
+                Import {{ searchStore.selectedCount }} as Potential
+              </button>
+              <button
+                type="button"
+                @click="handleBulkImport('aired')"
+                :disabled="bulkImporting"
+                class="prospector-btn prospector-btn--secondary"
+              >
+                <LinkIcon class="prospector-btn__icon" />
+                Import {{ searchStore.selectedCount }} as Aired
+              </button>
+            </template>
+            <!-- Podcast-level searches: single import button -->
+            <button
+              v-else
+              type="button"
+              @click="handleBulkImport('potential')"
+              :disabled="bulkImporting"
+              class="prospector-btn prospector-btn--primary"
+            >
+              <ArrowDownTrayIcon class="prospector-btn__icon" />
+              Import {{ searchStore.selectedCount }} Selected
+            </button>
+          </template>
 
           <!-- View Toggle -->
           <div class="prospector-view-toggle">
@@ -178,7 +202,8 @@ import {
   AdjustmentsHorizontalIcon,
   Squares2X2Icon,
   ListBulletIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  LinkIcon
 } from '@heroicons/vue/24/outline'
 import { useSearchStore } from '../../stores/searchStore'
 import { useUserStore } from '../../stores/userStore'
@@ -219,6 +244,10 @@ const bulkImporting = ref(false)
 const selectedChannel = ref('podcasts')
 
 // Computed
+const isEpisodeLevelSearch = computed(() =>
+  ['byperson', 'byadvancedepisode', 'byyoutube'].includes(searchStore.mode)
+)
+
 const searchPlaceholder = computed(() => {
   const placeholders = {
     byperson: 'Enter guest or host name (e.g., Tim Ferriss)...',
@@ -276,11 +305,11 @@ const handleClearFilters = () => {
   filterStore.clearFilters()
 }
 
-const handleSingleImport = async ({ result, index }) => {
+const handleSingleImport = async ({ result, index, importMode = 'potential' }) => {
   importingIndices.value.push(index)
 
   try {
-    const response = await api.importToPipeline([result], searchStore.searchMeta)
+    const response = await api.importToPipeline([result], searchStore.searchMeta, importMode)
 
     if (response.success_count > 0) {
       success(
@@ -322,14 +351,14 @@ const handleLinkEpisode = async ({ result, index }) => {
   }
 }
 
-const handleBulkImport = async () => {
+const handleBulkImport = async (importMode = 'potential') => {
   const selected = searchStore.selectedResults
   if (selected.length === 0) return
 
   bulkImporting.value = true
 
   try {
-    const response = await api.importToPipeline(selected, searchStore.searchMeta)
+    const response = await api.importToPipeline(selected, searchStore.searchMeta, importMode)
     const isPartial = response.fail_count > 0
 
     if (isPartial) {
