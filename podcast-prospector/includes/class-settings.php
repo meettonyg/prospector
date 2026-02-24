@@ -234,9 +234,10 @@ class Podcast_Prospector_Settings {
      * @return void
      */
     public function add_admin_menu(): void {
-        add_options_page(
-            __( 'Interview Finder Settings', 'podcast-prospector' ),
-            __( 'Interview Finder', 'podcast-prospector' ),
+        add_submenu_page(
+            'podcast-prospector',
+            __( 'Settings', 'podcast-prospector' ),
+            __( 'Settings', 'podcast-prospector' ),
             'manage_options',
             self::PAGE_SLUG,
             [ $this, 'render_settings_page' ]
