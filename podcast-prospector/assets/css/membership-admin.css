@@ -1,0 +1,28 @@
+/**
+ * Membership Tier Admin Styles
+ *
+ * @package Podcast_Prospector
+ * @since 2.4.0
+ */
+
+.membership-tier-form {
+    margin-top: 20px;
+}
+
+.membership-tier-form .form-table th {
+    width: 250px;
+}
+
+.membership-tier-form .description {
+    color: #646970;
+    font-style: italic;
+}
+
+.membership-tier-form .checkbox-group label {
+    display: inline-block;
+    margin-right: 20px;
+}
+
+.membership-tier-form fieldset label {
+    margin-bottom: 4px;
+}
