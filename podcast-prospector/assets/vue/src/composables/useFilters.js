@@ -161,10 +161,10 @@ export function useFilters() {
         language.value = 'en'
         break
       case 'business':
-        genre.value = 'business'
+        genre.value = 'PODCASTSERIES_BUSINESS'
         break
       case 'technology':
-        genre.value = 'technology'
+        genre.value = 'PODCASTSERIES_TECHNOLOGY'
         break
       default:
         break

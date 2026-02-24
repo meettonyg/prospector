@@ -137,6 +137,7 @@ final class Podcast_Prospector {
         require_once $includes_dir . 'class-youtube-channel-repository.php';
         require_once $includes_dir . 'class-sponsored-listings.php';
         require_once $includes_dir . 'class-sponsored-listings-admin.php';
+        require_once $includes_dir . 'class-membership-admin.php';
         require_once $includes_dir . 'class-impression-queue.php';
         require_once $includes_dir . 'class-vue-assets.php';
         require_once $includes_dir . 'class-user-shortcodes.php';
@@ -337,6 +338,11 @@ final class Podcast_Prospector {
 
         // Initialize webhooks
         Podcast_Prospector_Webhooks::get_instance()->init();
+
+        // Initialize membership admin (creates top-level menu, must init before sponsored)
+        $membership = Podcast_Prospector_Membership::get_instance();
+        $membership_admin = new Podcast_Prospector_Membership_Admin( $membership );
+        $membership_admin->init();
 
         // Initialize sponsored listings admin
         $sponsored_listings = Podcast_Prospector_Sponsored_Listings::get_instance();

@@ -51,6 +51,7 @@
 
 <script setup>
 import { useFilterStore } from '../../stores/filterStore'
+import { LANGUAGES, COUNTRIES, GENRES } from '../../utils/constants'
 
 const filterStore = useFilterStore()
 
@@ -61,38 +62,6 @@ const handleChange = (key, value) => {
   emit('change')
 }
 
-const LANGUAGES = [
-  { value: 'en', label: 'English' },
-  { value: 'es', label: 'Spanish' },
-  { value: 'fr', label: 'French' },
-  { value: 'de', label: 'German' },
-  { value: 'pt', label: 'Portuguese' },
-  { value: 'it', label: 'Italian' },
-  { value: 'ja', label: 'Japanese' },
-  { value: 'zh', label: 'Chinese' }
-]
-
-const COUNTRIES = [
-  { value: 'us', label: 'United States' },
-  { value: 'gb', label: 'United Kingdom' },
-  { value: 'ca', label: 'Canada' },
-  { value: 'au', label: 'Australia' },
-  { value: 'de', label: 'Germany' },
-  { value: 'fr', label: 'France' },
-  { value: 'es', label: 'Spain' },
-  { value: 'mx', label: 'Mexico' }
-]
-
-const GENRES = [
-  { value: 'business', label: 'Business' },
-  { value: 'technology', label: 'Technology' },
-  { value: 'health', label: 'Health & Fitness' },
-  { value: 'education', label: 'Education' },
-  { value: 'society', label: 'Society & Culture' },
-  { value: 'comedy', label: 'Comedy' },
-  { value: 'news', label: 'News' },
-  { value: 'sports', label: 'Sports' }
-]
 </script>
 
 <style scoped>

@@ -197,10 +197,10 @@ export const useFilterStore = defineStore('filters', {
           this.language = 'en'
           break
         case 'business':
-          this.genre = 'business'
+          this.genre = 'PODCASTSERIES_BUSINESS'
           break
         case 'technology':
-          this.genre = 'technology'
+          this.genre = 'PODCASTSERIES_TECHNOLOGY'
           break
         default:
           break

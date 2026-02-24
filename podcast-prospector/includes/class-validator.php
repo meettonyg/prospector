@@ -53,6 +53,33 @@ class Podcast_Prospector_Validator {
     private const VALID_MATCH_BY = [ 'MOST_TERMS', 'ALL_TERMS', 'EXACT_PHRASE' ];
 
     /**
+     * Genre short-name to Taddy enum mapping for backwards compatibility.
+     *
+     * @var array
+     */
+    private const GENRE_SHORT_MAP = [
+        'ARTS'       => 'PODCASTSERIES_ARTS',
+        'BUSINESS'   => 'PODCASTSERIES_BUSINESS',
+        'COMEDY'     => 'PODCASTSERIES_COMEDY',
+        'EDUCATION'  => 'PODCASTSERIES_EDUCATION',
+        'FICTION'    => 'PODCASTSERIES_FICTION',
+        'GOVERNMENT' => 'PODCASTSERIES_GOVERNMENT',
+        'HEALTH'     => 'PODCASTSERIES_HEALTH_AND_FITNESS',
+        'HISTORY'    => 'PODCASTSERIES_HISTORY',
+        'KIDS'       => 'PODCASTSERIES_KIDS_AND_FAMILY',
+        'LEISURE'    => 'PODCASTSERIES_LEISURE',
+        'MUSIC'      => 'PODCASTSERIES_MUSIC',
+        'NEWS'       => 'PODCASTSERIES_NEWS',
+        'RELIGION'   => 'PODCASTSERIES_RELIGION_AND_SPIRITUALITY',
+        'SCIENCE'    => 'PODCASTSERIES_SCIENCE',
+        'SOCIETY'    => 'PODCASTSERIES_SOCIETY_AND_CULTURE',
+        'SPORTS'     => 'PODCASTSERIES_SPORTS',
+        'TECHNOLOGY' => 'PODCASTSERIES_TECHNOLOGY',
+        'TRUECRIME'  => 'PODCASTSERIES_TRUE_CRIME',
+        'TV'         => 'PODCASTSERIES_TV_AND_FILM',
+    ];
+
+    /**
      * Valid languages.
      *
      * @var array
@@ -168,11 +195,11 @@ class Podcast_Prospector_Validator {
     public function validate_genre( string $genre ): string {
         $genre = strtoupper( trim( $genre ) );
 
-        if ( 'ALL' === $genre ) {
+        if ( 'ALL' === $genre || empty( $genre ) ) {
             return 'ALL';
         }
 
-        // Must start with PODCASTSERIES_
+        // Already in correct PODCASTSERIES_ format
         if ( strpos( $genre, 'PODCASTSERIES_' ) === 0 ) {
             // Basic validation - only alphanumeric and underscores
             if ( preg_match( '/^PODCASTSERIES_[A-Z_]+$/', $genre ) ) {
@@ -180,7 +207,8 @@ class Podcast_Prospector_Validator {
             }
         }
 
-        return 'ALL';
+        // Map short names for backwards compatibility
+        return self::GENRE_SHORT_MAP[ $genre ] ?? 'ALL';
     }
 
     /**

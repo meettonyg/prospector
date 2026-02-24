@@ -67,82 +67,138 @@ class Podcast_Prospector_Membership {
     }
 
     /**
+     * Option name for stored membership config.
+     */
+    const OPTION_NAME = 'podcast_prospector_membership_config';
+
+    /**
      * Initialize membership configuration.
+     *
+     * Loads from database if available, falling back to hardcoded defaults.
      *
      * @return void
      */
     private function init_config(): void {
-        $this->config = [
+        $saved = get_option( self::OPTION_NAME, [] );
+
+        $hardcoded = $this->get_hardcoded_config();
+        $hardcoded_defaults = $this->get_hardcoded_defaults();
+
+        // Merge saved config with hardcoded fallbacks
+        if ( ! empty( $saved['tiers'] ) ) {
+            $this->config = [];
+            foreach ( $hardcoded as $tier => $hardcoded_settings ) {
+                $this->config[ $tier ] = wp_parse_args(
+                    $saved['tiers'][ $tier ] ?? [],
+                    $hardcoded_settings
+                );
+            }
+        } else {
+            $this->config = $hardcoded;
+        }
+
+        $this->defaults = ! empty( $saved['defaults'] )
+            ? wp_parse_args( $saved['defaults'], $hardcoded_defaults )
+            : $hardcoded_defaults;
+    }
+
+    /**
+     * Get hardcoded tier configuration (used as fallback).
+     *
+     * @return array
+     */
+    public function get_hardcoded_config(): array {
+        return [
             self::TIER_ZENITH => [
-                // Taddy pagination
                 'max_pages'                      => 20,
                 'max_results_per_page'           => 25,
-
-                // PodcastIndex
                 'podcastindex_max'               => 50,
-
-                // Feature toggles
+                'default_search_cap'             => 0,
                 'can_filter_country'             => true,
                 'can_filter_language'            => true,
                 'can_filter_genre'               => true,
                 'can_filter_date'                => true,
-
-                // Sort options
                 'sort_by_date_published_options' => [ 'LATEST', 'OLDEST' ],
-
-                // Safe mode
                 'safe_mode_forced'               => false,
-
-                // PodcastIndex sorting
                 'podcastindex_sort_options'      => [ 'LATEST', 'OLDEST' ],
             ],
-
             self::TIER_VELOCITY => [
                 'max_pages'                      => 10,
                 'max_results_per_page'           => 15,
                 'podcastindex_max'               => 25,
-
+                'default_search_cap'             => 0,
                 'can_filter_country'             => true,
                 'can_filter_language'            => true,
                 'can_filter_genre'               => true,
                 'can_filter_date'                => false,
-
                 'sort_by_date_published_options' => [ 'LATEST' ],
                 'safe_mode_forced'               => false,
                 'podcastindex_sort_options'      => [ 'LATEST' ],
             ],
-
             self::TIER_ACCELERATOR => [
                 'max_pages'                      => 5,
                 'max_results_per_page'           => 10,
                 'podcastindex_max'               => 10,
-
+                'default_search_cap'             => 0,
                 'can_filter_country'             => false,
                 'can_filter_language'            => false,
                 'can_filter_genre'               => false,
                 'can_filter_date'                => false,
-
                 'sort_by_date_published_options' => [],
                 'safe_mode_forced'               => true,
                 'podcastindex_sort_options'      => [],
             ],
         ];
+    }
 
-        // Default settings for unknown/unassigned membership
-        $this->defaults = [
+    /**
+     * Get hardcoded default settings (used as fallback for unknown tiers).
+     *
+     * @return array
+     */
+    public function get_hardcoded_defaults(): array {
+        return [
             'max_pages'                      => 5,
             'max_results_per_page'           => 10,
             'podcastindex_max'               => 5,
-
+            'default_search_cap'             => 0,
             'can_filter_country'             => false,
             'can_filter_language'            => false,
             'can_filter_genre'               => false,
             'can_filter_date'                => false,
-
             'sort_by_date_published_options' => [],
             'safe_mode_forced'               => true,
             'podcastindex_sort_options'      => [],
         ];
+    }
+
+    /**
+     * Reload configuration from database.
+     *
+     * Call after saving settings to invalidate in-memory cache.
+     *
+     * @return void
+     */
+    public function reload_config(): void {
+        $this->init_config();
+    }
+
+    /**
+     * Get current tier configuration.
+     *
+     * @return array
+     */
+    public function get_config(): array {
+        return $this->config;
+    }
+
+    /**
+     * Get current default settings.
+     *
+     * @return array
+     */
+    public function get_defaults_config(): array {
+        return $this->defaults;
     }
 
     /**
@@ -256,7 +312,13 @@ class Podcast_Prospector_Membership {
      */
     public function get_search_cap( int $user_id ): int {
         $cap = get_user_meta( $user_id, 'podcast_prospector_search_cap', true );
-        return (int) $cap;
+        if ( '' !== $cap && false !== $cap ) {
+            return (int) $cap;
+        }
+        // Fall back to tier default
+        $tier = $this->get_user_membership_level( $user_id );
+        $settings = $this->get_settings_for_tier( $tier );
+        return (int) ( $settings['default_search_cap'] ?? 0 );
     }
 
     /**

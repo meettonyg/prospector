@@ -175,6 +175,7 @@ import { computed } from 'vue'
 import { LockClosedIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { useFilterStore } from '../../stores/filterStore'
 import { useUserStore } from '../../stores/userStore'
+import { LANGUAGES, COUNTRIES, GENRES } from '../../utils/constants'
 
 const props = defineProps({
   searchMode: {
@@ -193,9 +194,13 @@ const isPremiumMode = computed(() => props.searchMode.includes('advanced'))
 
 // Determine if a filter is locked based on mode and user permissions
 const isFilterLocked = (filterName) => {
-  // For free modes (byperson, bytitle), lock advanced filters
+  // Genre is available in all modes for users with genre access (needed for guest disambiguation)
+  if (filterName === 'genre') {
+    return !canUseAdvanced.value
+  }
+  // For free modes (byperson, bytitle), lock other advanced filters
   if (!isPremiumMode.value) {
-    const advancedFilters = ['language', 'country', 'genre', 'dateFrom', 'dateTo']
+    const advancedFilters = ['language', 'country', 'dateFrom', 'dateTo']
     return advancedFilters.includes(filterName)
   }
   // For premium modes, lock if user doesn't have access
@@ -206,39 +211,6 @@ const toggleSafeMode = () => {
   filterStore.setFilter('safeMode', !filterStore.safeMode)
 }
 
-// Filter options
-const LANGUAGES = [
-  { value: 'en', label: 'English' },
-  { value: 'es', label: 'Spanish' },
-  { value: 'fr', label: 'French' },
-  { value: 'de', label: 'German' },
-  { value: 'pt', label: 'Portuguese' },
-  { value: 'it', label: 'Italian' },
-  { value: 'ja', label: 'Japanese' },
-  { value: 'zh', label: 'Chinese' }
-]
-
-const COUNTRIES = [
-  { value: 'us', label: 'United States' },
-  { value: 'gb', label: 'United Kingdom' },
-  { value: 'ca', label: 'Canada' },
-  { value: 'au', label: 'Australia' },
-  { value: 'de', label: 'Germany' },
-  { value: 'fr', label: 'France' },
-  { value: 'es', label: 'Spain' },
-  { value: 'mx', label: 'Mexico' }
-]
-
-const GENRES = [
-  { value: 'business', label: 'Business' },
-  { value: 'technology', label: 'Technology' },
-  { value: 'health', label: 'Health & Fitness' },
-  { value: 'education', label: 'Education' },
-  { value: 'society', label: 'Society & Culture' },
-  { value: 'comedy', label: 'Comedy' },
-  { value: 'news', label: 'News' },
-  { value: 'sports', label: 'Sports' }
-]
 </script>
 
 <style scoped>
