@@ -211,16 +211,23 @@ class Podcast_Prospector_API_Taddy {
         $results_per_page = max( 5, min( 25, (int) ( $params['results_per_page'] ?? 10 ) ) );
         $is_safe_mode = (bool) ( $params['is_safe_mode'] ?? true );
         $sort_order = $params['sort_order'] ?? 'BEST_MATCH';
+        $genre = $params['genre'] ?? 'ALL';
 
         // Build query parameters
-        $query_params = $this->build_search_params( [
+        $build_params = [
             'term'           => $search_term,
             'page'           => $page,
             'limitPerPage'   => $results_per_page,
             'filterForTypes' => 'PODCASTEPISODE',
             'isSafeMode'     => $is_safe_mode,
             'sortOrder'      => $sort_order,
-        ] );
+        ];
+
+        if ( 'ALL' !== $genre && ! empty( $genre ) ) {
+            $build_params['filterForGenres'] = $genre;
+        }
+
+        $query_params = $this->build_search_params( $build_params );
 
         // Build GraphQL query
         $query = <<<GRAPHQL
@@ -281,6 +288,11 @@ GRAPHQL;
         // Safe mode
         $parts[] = sprintf( 'isSafeMode: %s', $params['isSafeMode'] ? 'true' : 'false' );
 
+        // Genre filter (unquoted GraphQL enum value)
+        if ( ! empty( $params['filterForGenres'] ) ) {
+            $parts[] = sprintf( 'filterForGenres: [%s]', $params['filterForGenres'] );
+        }
+
         return implode( ', ', $parts );
     }
 
@@ -296,16 +308,23 @@ GRAPHQL;
         $results_per_page = max( 5, min( 25, (int) ( $params['results_per_page'] ?? 10 ) ) );
         $is_safe_mode = (bool) ( $params['is_safe_mode'] ?? true );
         $sort_order = $params['sort_order'] ?? 'BEST_MATCH';
+        $genre = $params['genre'] ?? 'ALL';
 
         // Build query parameters
-        $query_params = $this->build_search_params( [
+        $build_params = [
             'term'           => $search_term,
             'page'           => $page,
             'limitPerPage'   => $results_per_page,
             'filterForTypes' => 'PODCASTSERIES',
             'isSafeMode'     => $is_safe_mode,
             'sortOrder'      => $sort_order,
-        ] );
+        ];
+
+        if ( 'ALL' !== $genre && ! empty( $genre ) ) {
+            $build_params['filterForGenres'] = $genre;
+        }
+
+        $query_params = $this->build_search_params( $build_params );
 
         // Build GraphQL query
         $query = <<<GRAPHQL

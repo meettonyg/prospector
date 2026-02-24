@@ -193,9 +193,13 @@ const isPremiumMode = computed(() => props.searchMode.includes('advanced'))
 
 // Determine if a filter is locked based on mode and user permissions
 const isFilterLocked = (filterName) => {
-  // For free modes (byperson, bytitle), lock advanced filters
+  // Genre is available in all modes for users with genre access (needed for guest disambiguation)
+  if (filterName === 'genre') {
+    return !canUseAdvanced.value
+  }
+  // For free modes (byperson, bytitle), lock other advanced filters
   if (!isPremiumMode.value) {
-    const advancedFilters = ['language', 'country', 'genre', 'dateFrom', 'dateTo']
+    const advancedFilters = ['language', 'country', 'dateFrom', 'dateTo']
     return advancedFilters.includes(filterName)
   }
   // For premium modes, lock if user doesn't have access
@@ -230,14 +234,25 @@ const COUNTRIES = [
 ]
 
 const GENRES = [
-  { value: 'business', label: 'Business' },
-  { value: 'technology', label: 'Technology' },
-  { value: 'health', label: 'Health & Fitness' },
-  { value: 'education', label: 'Education' },
-  { value: 'society', label: 'Society & Culture' },
-  { value: 'comedy', label: 'Comedy' },
-  { value: 'news', label: 'News' },
-  { value: 'sports', label: 'Sports' }
+  { value: 'PODCASTSERIES_ARTS', label: 'Arts' },
+  { value: 'PODCASTSERIES_BUSINESS', label: 'Business' },
+  { value: 'PODCASTSERIES_COMEDY', label: 'Comedy' },
+  { value: 'PODCASTSERIES_EDUCATION', label: 'Education' },
+  { value: 'PODCASTSERIES_FICTION', label: 'Fiction' },
+  { value: 'PODCASTSERIES_GOVERNMENT', label: 'Government' },
+  { value: 'PODCASTSERIES_HEALTH_AND_FITNESS', label: 'Health & Fitness' },
+  { value: 'PODCASTSERIES_HISTORY', label: 'History' },
+  { value: 'PODCASTSERIES_KIDS_AND_FAMILY', label: 'Kids & Family' },
+  { value: 'PODCASTSERIES_LEISURE', label: 'Leisure' },
+  { value: 'PODCASTSERIES_MUSIC', label: 'Music' },
+  { value: 'PODCASTSERIES_NEWS', label: 'News' },
+  { value: 'PODCASTSERIES_RELIGION_AND_SPIRITUALITY', label: 'Religion & Spirituality' },
+  { value: 'PODCASTSERIES_SCIENCE', label: 'Science' },
+  { value: 'PODCASTSERIES_SOCIETY_AND_CULTURE', label: 'Society & Culture' },
+  { value: 'PODCASTSERIES_SPORTS', label: 'Sports' },
+  { value: 'PODCASTSERIES_TECHNOLOGY', label: 'Technology' },
+  { value: 'PODCASTSERIES_TRUE_CRIME', label: 'True Crime' },
+  { value: 'PODCASTSERIES_TV_AND_FILM', label: 'TV & Film' }
 ]
 </script>
 

@@ -185,18 +185,59 @@ class Podcast_Prospector_API_PodcastIndex {
     }
 
     /**
+     * Map Taddy genre enum to Apple Podcast category name for PodcastIndex.
+     *
+     * @param string $genre Genre in PODCASTSERIES_* format.
+     * @return string Apple Podcast category name, or empty string if no match.
+     */
+    private function map_genre_to_category( string $genre ): string {
+        $map = [
+            'PODCASTSERIES_ARTS'                      => 'Arts',
+            'PODCASTSERIES_BUSINESS'                  => 'Business',
+            'PODCASTSERIES_COMEDY'                    => 'Comedy',
+            'PODCASTSERIES_EDUCATION'                 => 'Education',
+            'PODCASTSERIES_FICTION'                    => 'Fiction',
+            'PODCASTSERIES_GOVERNMENT'                => 'Government',
+            'PODCASTSERIES_HEALTH_AND_FITNESS'        => 'Health & Fitness',
+            'PODCASTSERIES_HISTORY'                   => 'History',
+            'PODCASTSERIES_KIDS_AND_FAMILY'           => 'Kids & Family',
+            'PODCASTSERIES_LEISURE'                   => 'Leisure',
+            'PODCASTSERIES_MUSIC'                     => 'Music',
+            'PODCASTSERIES_NEWS'                      => 'News',
+            'PODCASTSERIES_RELIGION_AND_SPIRITUALITY' => 'Religion & Spirituality',
+            'PODCASTSERIES_SCIENCE'                   => 'Science',
+            'PODCASTSERIES_SOCIETY_AND_CULTURE'       => 'Society & Culture',
+            'PODCASTSERIES_SPORTS'                    => 'Sports',
+            'PODCASTSERIES_TECHNOLOGY'                => 'Technology',
+            'PODCASTSERIES_TRUE_CRIME'                => 'True Crime',
+            'PODCASTSERIES_TV_AND_FILM'               => 'TV & Film',
+        ];
+
+        return $map[ $genre ] ?? '';
+    }
+
+    /**
      * Search episodes by person name.
      *
      * @param string $search_term Person name to search.
      * @param int    $max_results Maximum results to return.
+     * @param string $genre       Genre filter in PODCASTSERIES_* format.
      * @return array|WP_Error
      */
-    public function search_by_person( string $search_term, int $max_results = 33 ) {
+    public function search_by_person( string $search_term, int $max_results = 33, string $genre = 'ALL' ) {
         $params = [
             'q'      => sanitize_text_field( $search_term ),
             'pretty' => 'true',
             'max'    => min( $max_results, 100 ), // API max is 100
         ];
+
+        // Map genre to PodcastIndex category name
+        if ( 'ALL' !== $genre && ! empty( $genre ) ) {
+            $category = $this->map_genre_to_category( $genre );
+            if ( ! empty( $category ) ) {
+                $params['cat'] = $category;
+            }
+        }
 
         $response = $this->request( '/search/byperson', $params );
 
@@ -218,14 +259,23 @@ class Podcast_Prospector_API_PodcastIndex {
      *
      * @param string $search_term Search term.
      * @param int    $max_results Maximum results to return.
+     * @param string $genre       Genre filter in PODCASTSERIES_* format.
      * @return array|WP_Error
      */
-    public function search_by_term( string $search_term, int $max_results = 33 ) {
+    public function search_by_term( string $search_term, int $max_results = 33, string $genre = 'ALL' ) {
         $params = [
             'q'      => sanitize_text_field( $search_term ),
             'pretty' => 'true',
             'max'    => min( $max_results, 100 ),
         ];
+
+        // Map genre to PodcastIndex category name
+        if ( 'ALL' !== $genre && ! empty( $genre ) ) {
+            $category = $this->map_genre_to_category( $genre );
+            if ( ! empty( $category ) ) {
+                $params['cat'] = $category;
+            }
+        }
 
         $response = $this->request( '/search/byterm', $params );
 

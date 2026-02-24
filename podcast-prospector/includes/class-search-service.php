@@ -283,14 +283,16 @@ class Podcast_Prospector_Search_Service {
             case 'bytitle':
                 return $this->podcastindex_api->search_by_term(
                     $params['search_term'],
-                    $params['results_per_page'] ?? 10
+                    $params['results_per_page'] ?? 10,
+                    $params['genre'] ?? 'ALL'
                 );
 
             case 'byperson':
             default:
                 return $this->podcastindex_api->search_by_person(
                     $params['search_term'],
-                    $params['results_per_page'] ?? 10
+                    $params['results_per_page'] ?? 10,
+                    $params['genre'] ?? 'ALL'
                 );
         }
     }

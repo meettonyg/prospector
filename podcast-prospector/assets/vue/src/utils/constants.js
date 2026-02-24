@@ -38,27 +38,27 @@ export const DEFAULT_MODES = {
   [CHANNELS.SUMMITS]: 'bysummit'
 }
 
-// Podcast genres (for Taddy API filters)
+// Podcast genres (Taddy API enum format, also mapped to PodcastIndex categories)
 export const GENRES = [
-  { value: 'arts', label: 'Arts' },
-  { value: 'business', label: 'Business' },
-  { value: 'comedy', label: 'Comedy' },
-  { value: 'education', label: 'Education' },
-  { value: 'fiction', label: 'Fiction' },
-  { value: 'government', label: 'Government' },
-  { value: 'health', label: 'Health & Fitness' },
-  { value: 'history', label: 'History' },
-  { value: 'kids', label: 'Kids & Family' },
-  { value: 'leisure', label: 'Leisure' },
-  { value: 'music', label: 'Music' },
-  { value: 'news', label: 'News' },
-  { value: 'religion', label: 'Religion & Spirituality' },
-  { value: 'science', label: 'Science' },
-  { value: 'society', label: 'Society & Culture' },
-  { value: 'sports', label: 'Sports' },
-  { value: 'technology', label: 'Technology' },
-  { value: 'truecrime', label: 'True Crime' },
-  { value: 'tv', label: 'TV & Film' }
+  { value: 'PODCASTSERIES_ARTS', label: 'Arts' },
+  { value: 'PODCASTSERIES_BUSINESS', label: 'Business' },
+  { value: 'PODCASTSERIES_COMEDY', label: 'Comedy' },
+  { value: 'PODCASTSERIES_EDUCATION', label: 'Education' },
+  { value: 'PODCASTSERIES_FICTION', label: 'Fiction' },
+  { value: 'PODCASTSERIES_GOVERNMENT', label: 'Government' },
+  { value: 'PODCASTSERIES_HEALTH_AND_FITNESS', label: 'Health & Fitness' },
+  { value: 'PODCASTSERIES_HISTORY', label: 'History' },
+  { value: 'PODCASTSERIES_KIDS_AND_FAMILY', label: 'Kids & Family' },
+  { value: 'PODCASTSERIES_LEISURE', label: 'Leisure' },
+  { value: 'PODCASTSERIES_MUSIC', label: 'Music' },
+  { value: 'PODCASTSERIES_NEWS', label: 'News' },
+  { value: 'PODCASTSERIES_RELIGION_AND_SPIRITUALITY', label: 'Religion & Spirituality' },
+  { value: 'PODCASTSERIES_SCIENCE', label: 'Science' },
+  { value: 'PODCASTSERIES_SOCIETY_AND_CULTURE', label: 'Society & Culture' },
+  { value: 'PODCASTSERIES_SPORTS', label: 'Sports' },
+  { value: 'PODCASTSERIES_TECHNOLOGY', label: 'Technology' },
+  { value: 'PODCASTSERIES_TRUE_CRIME', label: 'True Crime' },
+  { value: 'PODCASTSERIES_TV_AND_FILM', label: 'TV & Film' }
 ]
 
 // Languages

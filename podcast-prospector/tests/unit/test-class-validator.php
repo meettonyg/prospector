@@ -95,8 +95,22 @@ class Test_Podcast_Prospector_Validator extends WP_UnitTestCase {
      * Test genre validation.
      */
     public function test_validate_genre() {
+        // Full format passes through
         $this->assertEquals( 'PODCASTSERIES_BUSINESS', $this->validator->validate_genre( 'PODCASTSERIES_BUSINESS' ) );
+        $this->assertEquals( 'PODCASTSERIES_TECHNOLOGY', $this->validator->validate_genre( 'PODCASTSERIES_TECHNOLOGY' ) );
+        $this->assertEquals( 'PODCASTSERIES_HEALTH_AND_FITNESS', $this->validator->validate_genre( 'PODCASTSERIES_HEALTH_AND_FITNESS' ) );
+        // Short names map to full format
+        $this->assertEquals( 'PODCASTSERIES_BUSINESS', $this->validator->validate_genre( 'BUSINESS' ) );
+        $this->assertEquals( 'PODCASTSERIES_TECHNOLOGY', $this->validator->validate_genre( 'TECHNOLOGY' ) );
+        $this->assertEquals( 'PODCASTSERIES_HEALTH_AND_FITNESS', $this->validator->validate_genre( 'HEALTH' ) );
+        $this->assertEquals( 'PODCASTSERIES_TRUE_CRIME', $this->validator->validate_genre( 'TRUECRIME' ) );
+        $this->assertEquals( 'PODCASTSERIES_TV_AND_FILM', $this->validator->validate_genre( 'TV' ) );
+        // Case insensitive
+        $this->assertEquals( 'PODCASTSERIES_BUSINESS', $this->validator->validate_genre( 'business' ) );
+        $this->assertEquals( 'PODCASTSERIES_TECHNOLOGY', $this->validator->validate_genre( 'technology' ) );
+        // ALL and invalid
         $this->assertEquals( 'ALL', $this->validator->validate_genre( 'ALL' ) );
+        $this->assertEquals( 'ALL', $this->validator->validate_genre( '' ) );
         $this->assertEquals( 'ALL', $this->validator->validate_genre( 'INVALID_GENRE' ) );
     }
 
