@@ -51,6 +51,7 @@
 
 <script setup>
 import { useFilterStore } from '../../stores/filterStore'
+import { LANGUAGES, COUNTRIES, GENRES } from '../../utils/constants'
 
 const filterStore = useFilterStore()
 
@@ -61,49 +62,6 @@ const handleChange = (key, value) => {
   emit('change')
 }
 
-const LANGUAGES = [
-  { value: 'en', label: 'English' },
-  { value: 'es', label: 'Spanish' },
-  { value: 'fr', label: 'French' },
-  { value: 'de', label: 'German' },
-  { value: 'pt', label: 'Portuguese' },
-  { value: 'it', label: 'Italian' },
-  { value: 'ja', label: 'Japanese' },
-  { value: 'zh', label: 'Chinese' }
-]
-
-const COUNTRIES = [
-  { value: 'us', label: 'United States' },
-  { value: 'gb', label: 'United Kingdom' },
-  { value: 'ca', label: 'Canada' },
-  { value: 'au', label: 'Australia' },
-  { value: 'de', label: 'Germany' },
-  { value: 'fr', label: 'France' },
-  { value: 'es', label: 'Spain' },
-  { value: 'mx', label: 'Mexico' }
-]
-
-const GENRES = [
-  { value: 'PODCASTSERIES_ARTS', label: 'Arts' },
-  { value: 'PODCASTSERIES_BUSINESS', label: 'Business' },
-  { value: 'PODCASTSERIES_COMEDY', label: 'Comedy' },
-  { value: 'PODCASTSERIES_EDUCATION', label: 'Education' },
-  { value: 'PODCASTSERIES_FICTION', label: 'Fiction' },
-  { value: 'PODCASTSERIES_GOVERNMENT', label: 'Government' },
-  { value: 'PODCASTSERIES_HEALTH_AND_FITNESS', label: 'Health & Fitness' },
-  { value: 'PODCASTSERIES_HISTORY', label: 'History' },
-  { value: 'PODCASTSERIES_KIDS_AND_FAMILY', label: 'Kids & Family' },
-  { value: 'PODCASTSERIES_LEISURE', label: 'Leisure' },
-  { value: 'PODCASTSERIES_MUSIC', label: 'Music' },
-  { value: 'PODCASTSERIES_NEWS', label: 'News' },
-  { value: 'PODCASTSERIES_RELIGION_AND_SPIRITUALITY', label: 'Religion & Spirituality' },
-  { value: 'PODCASTSERIES_SCIENCE', label: 'Science' },
-  { value: 'PODCASTSERIES_SOCIETY_AND_CULTURE', label: 'Society & Culture' },
-  { value: 'PODCASTSERIES_SPORTS', label: 'Sports' },
-  { value: 'PODCASTSERIES_TECHNOLOGY', label: 'Technology' },
-  { value: 'PODCASTSERIES_TRUE_CRIME', label: 'True Crime' },
-  { value: 'PODCASTSERIES_TV_AND_FILM', label: 'TV & Film' }
-]
 </script>
 
 <style scoped>

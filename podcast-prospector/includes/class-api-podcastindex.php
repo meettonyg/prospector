@@ -217,6 +217,22 @@ class Podcast_Prospector_API_PodcastIndex {
     }
 
     /**
+     * Apply genre filter to API request parameters.
+     *
+     * @param array  $params Request parameters (modified by reference).
+     * @param string $genre  Genre in PODCASTSERIES_* format.
+     * @return void
+     */
+    private function apply_genre_filter( array &$params, string $genre ): void {
+        if ( 'ALL' !== $genre && ! empty( $genre ) ) {
+            $category = $this->map_genre_to_category( $genre );
+            if ( ! empty( $category ) ) {
+                $params['cat'] = $category;
+            }
+        }
+    }
+
+    /**
      * Search episodes by person name.
      *
      * @param string $search_term Person name to search.
@@ -231,13 +247,7 @@ class Podcast_Prospector_API_PodcastIndex {
             'max'    => min( $max_results, 100 ), // API max is 100
         ];
 
-        // Map genre to PodcastIndex category name
-        if ( 'ALL' !== $genre && ! empty( $genre ) ) {
-            $category = $this->map_genre_to_category( $genre );
-            if ( ! empty( $category ) ) {
-                $params['cat'] = $category;
-            }
-        }
+        $this->apply_genre_filter( $params, $genre );
 
         $response = $this->request( '/search/byperson', $params );
 
@@ -269,13 +279,7 @@ class Podcast_Prospector_API_PodcastIndex {
             'max'    => min( $max_results, 100 ),
         ];
 
-        // Map genre to PodcastIndex category name
-        if ( 'ALL' !== $genre && ! empty( $genre ) ) {
-            $category = $this->map_genre_to_category( $genre );
-            if ( ! empty( $category ) ) {
-                $params['cat'] = $category;
-            }
-        }
+        $this->apply_genre_filter( $params, $genre );
 
         $response = $this->request( '/search/byterm', $params );
 
