@@ -855,13 +855,23 @@ class Podcast_Prospector_REST_API {
         $search = $request->get_param( 'search' ) ?? '';
         $limit = (int) ( $request->get_param( 'limit' ) ?? 50 );
 
+        // 1-hour transient cache — location data rarely changes
+        $cache_key = 'pp_locations_cities_' . md5( $search . '_' . $limit );
+        $cached = get_transient( $cache_key );
+        if ( $cached !== false ) {
+            return new WP_REST_Response( $cached, 200 );
+        }
+
         $cities = $this->location_repo->get_distinct_cities( $search, $limit );
 
-        return new WP_REST_Response( [
+        $result = [
             'success' => true,
             'data'    => $cities,
             'count'   => count( $cities ),
-        ], 200 );
+        ];
+        set_transient( $cache_key, $result, HOUR_IN_SECONDS );
+
+        return new WP_REST_Response( $result, 200 );
     }
 
     /**
@@ -882,13 +892,23 @@ class Podcast_Prospector_REST_API {
         $search = $request->get_param( 'search' ) ?? '';
         $limit = (int) ( $request->get_param( 'limit' ) ?? 50 );
 
+        // 1-hour transient cache
+        $cache_key = 'pp_locations_states_' . md5( $search . '_' . $limit );
+        $cached = get_transient( $cache_key );
+        if ( $cached !== false ) {
+            return new WP_REST_Response( $cached, 200 );
+        }
+
         $states = $this->location_repo->get_distinct_states( $search, $limit );
 
-        return new WP_REST_Response( [
+        $result = [
             'success' => true,
             'data'    => $states,
             'count'   => count( $states ),
-        ], 200 );
+        ];
+        set_transient( $cache_key, $result, HOUR_IN_SECONDS );
+
+        return new WP_REST_Response( $result, 200 );
     }
 
     /**
@@ -909,13 +929,23 @@ class Podcast_Prospector_REST_API {
         $search = $request->get_param( 'search' ) ?? '';
         $limit = (int) ( $request->get_param( 'limit' ) ?? 50 );
 
+        // 1-hour transient cache
+        $cache_key = 'pp_locations_countries_' . md5( $search . '_' . $limit );
+        $cached = get_transient( $cache_key );
+        if ( $cached !== false ) {
+            return new WP_REST_Response( $cached, 200 );
+        }
+
         $countries = $this->location_repo->get_distinct_countries( $search, $limit );
 
-        return new WP_REST_Response( [
+        $result = [
             'success' => true,
             'data'    => $countries,
             'count'   => count( $countries ),
-        ], 200 );
+        ];
+        set_transient( $cache_key, $result, HOUR_IN_SECONDS );
+
+        return new WP_REST_Response( $result, 200 );
     }
 
     /**

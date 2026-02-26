@@ -175,23 +175,29 @@ class Podcast_Prospector_Rate_Limiter {
     }
 
     /**
-     * Wait until rate limit allows request.
+     * Check if a request slot is available, return immediately if not.
      *
-     * @param string $api         API identifier.
-     * @param int    $max_wait    Maximum seconds to wait.
-     * @return bool True if can proceed, false if timed out.
+     * Non-blocking replacement for the old wait_for_slot() loop.
+     * Returns true if allowed, or a WP_Error with 429 status and retry_after.
+     *
+     * @param string $api API identifier.
+     * @return true|WP_Error True if can proceed, WP_Error if rate limited.
      */
-    public function wait_for_slot( string $api, int $max_wait = 30 ): bool {
-        $start = time();
-
-        while ( ! $this->can_make_request( $api ) ) {
-            if ( time() - $start >= $max_wait ) {
-                return false;
-            }
-            sleep( 1 );
+    public function wait_for_slot( string $api, int $max_wait = 30 ) {
+        if ( $this->can_make_request( $api ) ) {
+            return true;
         }
 
-        return true;
+        $retry_after = $this->get_retry_after( $api );
+
+        return new WP_Error(
+            'rate_limited',
+            __( 'Rate limit exceeded. Please try again later.', 'podcast-prospector' ),
+            [
+                'status'      => 429,
+                'retry_after' => $retry_after,
+            ]
+        );
     }
 
     /**
