@@ -148,6 +148,9 @@ final class Podcast_Prospector {
             require_once $includes_dir . 'class-agency-bridge.php';
         }
 
+        // Competitive Intelligence Bridge (ShowAuthority integration)
+        require_once $includes_dir . 'class-competitive-intel-bridge.php';
+
         // Initialize core instances
         $this->settings = Podcast_Prospector_Settings::get_instance();
         $this->logger = Podcast_Prospector_Logger::get_instance();
@@ -316,6 +319,9 @@ final class Podcast_Prospector {
     public function init(): void {
         // Load text domain
         load_plugin_textdomain( 'podcast-prospector', false, dirname( PODCAST_PROSPECTOR_PLUGIN_BASENAME ) . '/languages' );
+
+        // Initialize Competitive Intelligence Bridge (exposes Taddy/PodcastIndex to ShowAuthority)
+        Podcast_Prospector_Competitive_Intel_Bridge::get_instance();
 
         // Initialize settings admin page
         $this->settings->init();
