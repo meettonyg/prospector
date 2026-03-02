@@ -290,6 +290,12 @@ class Podcast_Prospector_REST_API {
         $response_data = $result->get_data();
         $enriched_data = $this->enrich_with_location( $response_data );
 
+        // Apply timing intelligence filter (Launch Campaign mode)
+        $max_lead_time = (int) ( $request->get_param( 'max_lead_time_days' ) ?? 0 );
+        if ( $max_lead_time > 0 ) {
+            $enriched_data = $this->filter_by_lead_time( $enriched_data, $max_lead_time );
+        }
+
         // Use increment_result values directly to avoid redundant database query
         $search_count = $increment_result ? (int) $increment_result['search_count'] : 0;
         $total_searches = $increment_result ? (int) $increment_result['total_searches'] : 0;
@@ -745,6 +751,14 @@ class Podcast_Prospector_REST_API {
                 'sanitize_callback' => 'sanitize_text_field',
                 'description'       => __( 'Filter by podcast country (requires location features enabled)', 'podcast-prospector' ),
             ],
+            'max_lead_time_days' => [
+                'required'          => false,
+                'type'              => 'integer',
+                'default'           => 0,
+                'minimum'           => 0,
+                'sanitize_callback' => 'absint',
+                'description'       => __( 'Filter shows by max booking-to-air lead time in days (Launch Campaign mode). Requires ShowAuthority timing intelligence.', 'podcast-prospector' ),
+            ],
         ];
     }
 
@@ -1013,6 +1027,90 @@ class Podcast_Prospector_REST_API {
         // Attach locations to response
         $data['locations'] = $locations;
         $data['location_count'] = count( $locations );
+
+        return $data;
+    }
+
+    /**
+     * Filter search results by max lead time using ShowAuthority timing intelligence.
+     *
+     * Cross-references pit_show_timelines table to exclude shows whose
+     * avg_total_lead_to_air exceeds the max_lead_time_days threshold.
+     *
+     * @param array $data       Search result data.
+     * @param int   $max_days   Maximum lead time in days.
+     * @return array Filtered data with timing info attached.
+     */
+    private function filter_by_lead_time( array $data, int $max_days ): array {
+        global $wpdb;
+
+        $timelines_table = $wpdb->prefix . 'pit_show_timelines';
+        $podcasts_table  = $wpdb->prefix . 'pit_podcasts';
+
+        // Verify the timelines table exists
+        if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $timelines_table ) ) !== $timelines_table ) {
+            return $data;
+        }
+
+        // Extract iTunes IDs from results
+        $itunes_ids = $this->extract_itunes_ids( $data );
+        if ( empty( $itunes_ids ) ) {
+            return $data;
+        }
+
+        // Batch lookup lead times by iTunes ID
+        $placeholders = implode( ',', array_fill( 0, count( $itunes_ids ), '%s' ) );
+        $query = $wpdb->prepare(
+            "SELECT p.itunes_id, t.avg_total_lead_to_air, t.confidence_score, t.sample_size
+             FROM {$timelines_table} t
+             INNER JOIN {$podcasts_table} p ON t.podcast_id = p.id
+             WHERE p.itunes_id IN ({$placeholders})",
+            ...$itunes_ids
+        );
+        $timing_rows = $wpdb->get_results( $query, OBJECT_K );
+
+        // Build lookup: itunes_id => lead_time_days
+        $lead_times = [];
+        foreach ( $timing_rows as $itunes_id => $row ) {
+            $lead_times[ $itunes_id ] = (int) $row->avg_total_lead_to_air;
+        }
+
+        // Filter podcast series results
+        $filter_key = null;
+        if ( isset( $data['data']['search']['podcastSeries'] ) ) {
+            $filter_key = 'podcastSeries';
+            $data['data']['search']['podcastSeries'] = array_values( array_filter(
+                $data['data']['search']['podcastSeries'],
+                function ( $podcast ) use ( $lead_times, $max_days ) {
+                    $itunes_id = (string) ( $podcast['itunesId'] ?? '' );
+                    if ( empty( $itunes_id ) || ! isset( $lead_times[ $itunes_id ] ) ) {
+                        return true; // Keep shows with no timing data (unknown lead time)
+                    }
+                    return $lead_times[ $itunes_id ] <= $max_days;
+                }
+            ) );
+        }
+
+        // Filter legacy format
+        if ( isset( $data['data']['searchForTerm']['podcastSeries'] ) ) {
+            $data['data']['searchForTerm']['podcastSeries'] = array_values( array_filter(
+                $data['data']['searchForTerm']['podcastSeries'],
+                function ( $podcast ) use ( $lead_times, $max_days ) {
+                    $itunes_id = (string) ( $podcast['itunesId'] ?? '' );
+                    if ( empty( $itunes_id ) || ! isset( $lead_times[ $itunes_id ] ) ) {
+                        return true;
+                    }
+                    return $lead_times[ $itunes_id ] <= $max_days;
+                }
+            ) );
+        }
+
+        // Attach timing metadata to response
+        $data['timing_filter'] = [
+            'max_lead_time_days' => $max_days,
+            'shows_with_timing'  => count( $lead_times ),
+            'lead_times'         => $lead_times,
+        ];
 
         return $data;
     }

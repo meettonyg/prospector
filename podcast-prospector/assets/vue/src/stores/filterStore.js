@@ -20,6 +20,9 @@ export const useFilterStore = defineStore('filters', {
     locationState: null,
     locationCountry: null,
 
+    // Timing filter (Launch Campaign mode)
+    maxLeadTimeDays: 0,
+
     // Filter panel state
     expanded: false,
 
@@ -44,7 +47,8 @@ export const useFilterStore = defineStore('filters', {
         state.dateTo ||
         state.locationCity ||
         state.locationState ||
-        state.locationCountry
+        state.locationCountry ||
+        state.maxLeadTimeDays
       )
     },
 
@@ -61,6 +65,7 @@ export const useFilterStore = defineStore('filters', {
       if (state.locationCity) count++
       if (state.locationState) count++
       if (state.locationCountry) count++
+      if (state.maxLeadTimeDays) count++
       return count
     },
 
@@ -86,6 +91,9 @@ export const useFilterStore = defineStore('filters', {
       // Date filters
       if (state.dateFrom) params.date_from = state.dateFrom
       if (state.dateTo) params.date_to = state.dateTo
+
+      // Timing filter
+      if (state.maxLeadTimeDays) params.max_lead_time_days = state.maxLeadTimeDays
 
       return params
     },
@@ -119,6 +127,9 @@ export const useFilterStore = defineStore('filters', {
       }
       if (state.locationCountry) {
         filters.push({ key: 'locationCountry', label: 'Country', value: state.locationCountry })
+      }
+      if (state.maxLeadTimeDays) {
+        filters.push({ key: 'maxLeadTimeDays', label: 'Max Lead Time', value: state.maxLeadTimeDays + ' days' })
       }
 
       return filters
@@ -156,6 +167,7 @@ export const useFilterStore = defineStore('filters', {
       this.locationCity = null
       this.locationState = null
       this.locationCountry = null
+      this.maxLeadTimeDays = 0
       this.sortBy = 'BEST_MATCH'
       this.matchBy = 'MOST_TERMS'
       this.perPage = 25

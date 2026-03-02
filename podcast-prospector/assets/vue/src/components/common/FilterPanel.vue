@@ -136,7 +136,26 @@
         </select>
       </div>
 
-      <!-- 8. Explicit Toggle -->
+      <!-- 8. Max Lead Time (Launch Campaign mode) -->
+      <div class="prospector-filter-panel__field">
+        <div class="prospector-filter-panel__label">
+          <label class="prospector-filter-panel__label-text">Max Lead Time</label>
+        </div>
+        <select
+          :value="filterStore.maxLeadTimeDays"
+          @change="filterStore.setFilter('maxLeadTimeDays', parseInt($event.target.value))"
+          class="prospector-select--native"
+        >
+          <option :value="0">Any</option>
+          <option :value="30">30 days</option>
+          <option :value="60">60 days</option>
+          <option :value="90">90 days</option>
+          <option :value="120">120 days</option>
+          <option :value="180">180 days</option>
+        </select>
+      </div>
+
+      <!-- 9. Explicit Toggle -->
       <div class="prospector-filter-panel__field prospector-filter-panel__field--toggle">
         <div 
           class="prospector-toggle"
