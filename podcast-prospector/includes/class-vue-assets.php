@@ -285,10 +285,11 @@ class Podcast_Prospector_Vue_Assets {
 
             return [
                 // Chat is enabled if either chat_enabled OR chatgpt_enabled is on
-                'chat'    => $chat_enabled || $chatgpt_enabled,
-                'youtube' => (bool) $this->settings->get('youtube_features_enabled', true),
-                'summits' => (bool) get_option('prospector_enable_summits', false),
-                'chatGpt' => $chatgpt_enabled,
+                'chat'        => $chat_enabled || $chatgpt_enabled,
+                'youtube'     => (bool) $this->settings->get('youtube_features_enabled', true),
+                'summits'     => (bool) get_option('prospector_enable_summits', false),
+                'chatGpt'     => $chatgpt_enabled,
+                'maxLeadTime' => (bool) get_option('prospector_enable_max_lead_time', false),
             ];
         }
 
@@ -297,10 +298,11 @@ class Podcast_Prospector_Vue_Assets {
         $chat_enabled = (bool) get_option('prospector_enable_chat', false);
 
         return [
-            'chat'    => $chat_enabled || $chatgpt_enabled,
-            'youtube' => (bool) get_option('prospector_enable_youtube', true),
-            'summits' => (bool) get_option('prospector_enable_summits', false),
-            'chatGpt' => $chatgpt_enabled,
+            'chat'        => $chat_enabled || $chatgpt_enabled,
+            'youtube'     => (bool) get_option('prospector_enable_youtube', true),
+            'summits'     => (bool) get_option('prospector_enable_summits', false),
+            'chatGpt'     => $chatgpt_enabled,
+            'maxLeadTime' => (bool) get_option('prospector_enable_max_lead_time', false),
         ];
     }
 }

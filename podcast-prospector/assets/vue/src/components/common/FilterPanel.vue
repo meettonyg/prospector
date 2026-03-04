@@ -136,8 +136,8 @@
         </select>
       </div>
 
-      <!-- 8. Max Lead Time (Launch Campaign mode) -->
-      <div class="prospector-filter-panel__field">
+      <!-- 8. Max Lead Time (Launch Campaign mode — feature flagged) -->
+      <div v-if="features.maxLeadTime" class="prospector-filter-panel__field">
         <div class="prospector-filter-panel__label">
           <label class="prospector-filter-panel__label-text">Max Lead Time</label>
         </div>
@@ -190,11 +190,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { LockClosedIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { useFilterStore } from '../../stores/filterStore'
 import { useUserStore } from '../../stores/userStore'
 import { LANGUAGES, COUNTRIES, GENRES } from '../../utils/constants'
+
+const config = inject('config', {})
+const features = computed(() => config.features || {})
 
 const props = defineProps({
   searchMode: {
